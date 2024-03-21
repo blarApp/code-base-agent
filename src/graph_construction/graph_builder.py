@@ -7,7 +7,7 @@ from llama_index.core.schema import NodeRelationship, BaseNode
 from llama_index.core.text_splitter import CodeSplitter
 from llama_index.packs.code_hierarchy import CodeHierarchyNodeParser
 from graph_construction.neo4j_manager import Neo4jManager
-from utils import format_nodes
+from utils import format_nodes, tree_parser
 
 
 class GraphConstructor:
@@ -18,8 +18,6 @@ class GraphConstructor:
 
     def __init__(self, graph_manager: Neo4jManager):
         self.graph_manager = graph_manager
-        self.directories_map = {}
-        self.global_imports = {}
 
     def _process_file(self, file_path, languaje, directory_path):
         path = Path(file_path)
@@ -84,24 +82,16 @@ class GraphConstructor:
             type_node = scope["type"]
 
         if type_node == "function_definition":
-            processed_node = format_nodes.format_function_node(node, scope)
+            function_calls = tree_parser.get_function_calls(node)
+            processed_node = format_nodes.format_function_node(
+                node, scope, function_calls
+            )
         elif type_node == "class_definition":
             processed_node = format_nodes.format_class_node(node, scope)
         else:
             processed_node = format_nodes.format_file_node(node)
 
-        self.global_imports[processed_node.get("attributes", {}).get("name")] = (
-            processed_node.get("attributes", {}).get("node_id")
-        )
-
         return processed_node, relationships
-
-    def _get_directories_map(self, path):
-        self.directories_map = {}
-        for entry in os.scandir(path):
-            self.directories_map[entry.name] = entry.path
-            if entry.is_dir():
-                self._get_directories_map(entry.path)
 
     def _scan_directory(
         self,
@@ -266,8 +256,6 @@ class GraphConstructor:
         return function_calls
 
     def build_graph(self, path, languaje):
-        # get directories map and save it in self.directories_map
-        self._get_directories_map(path)
 
         # process every node to create the graph structure
         nodes, relationships, imports_dict = self._scan_directory(path, languaje)
