@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "code-base-agent"
+version = "0.1.0"
+description = "llm agent to search code in a repository"
+authors = ["berrazuriz1 <berrazuriz1@uc.cl>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.12"
+llama-index-packs-code-hierarchy = "^0.1.1"
+llama-index = "^0.10.20"
+python-dotenv = "^1.0.1"
+
+[tool.poetry.group.dev.dependencies]
+llama-index = "^0.10.20"
+neo4j = "^5.18.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
