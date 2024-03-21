@@ -17,10 +17,10 @@ class Neo4jManager:
     # Close the connection to the database
     self.driver.close()
 
-  def create_nodes(self, nodeList: List[Any], attributes: str):
+  def create_nodes(self, nodeList: List[Any]):
     # Function to create nodes in the Neo4j database
     with self.driver.session() as session:
-      session.write_transaction(self._create_nodes_txn, nodeList, attributes)
+      session.write_transaction(self._create_nodes_txn, nodeList)
 
   def create_edges(self, edgesList: List[Any]):
     # Function to create edges between nodes in the Neo4j database
@@ -28,11 +28,11 @@ class Neo4jManager:
       session.write_transaction(self._create_edges_txn, edgesList)
 
   @staticmethod
-  def _create_nodes_txn(tx, nodeList: List[Any], attributes: str):
+  def _create_nodes_txn(tx, nodeList: List[Any]):
     # Transaction function for creating nodes with dynamic labels
     node_query = f'''
     UNWIND $nodeList AS node
-    CALL apoc.create.node([node.type], {attributes})
+    CALL apoc.create.node([node.type], node.attributes)
     YIELD node as n
     RETURN count(n) as createdNodesCount
     '''

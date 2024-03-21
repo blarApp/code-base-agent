@@ -37,9 +37,11 @@ class GraphConstructor:
     typeNode = 'file' if is_parent_node else node.metadata['inclusive_scopes'][0]['type'] if node.metadata['inclusive_scopes'] else ''
     processed_node = {
       'type': self.NODES_NAME_MAP.get(typeNode, 'UNKNOWN'),
-      'language': node.metadata['language'],
-      'text': node.text,
-      'node_id': node.node_id,
+      'attributes': {
+        'language': node.metadata['language'],
+        'text': node.text,
+        'node_id': node.node_id,
+      },
     }
     return processed_node, relationships
 
@@ -67,7 +69,7 @@ class GraphConstructor:
       node_list.append(processed_node)
       edges_list.extend(relationships)
 
-    self.graph_manager.create_nodes(node_list, '{node_id: node.node_id, language: node.language, text: node.text}')
+    self.graph_manager.create_nodes(node_list)
     self.graph_manager.create_edges(edges_list)
 
 if __name__ == '__main__':
