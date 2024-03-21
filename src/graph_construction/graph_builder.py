@@ -5,6 +5,7 @@ from llama_index.packs.code_hierarchy import CodeHierarchyNodeParser
 from llama_index.core.schema import NodeRelationship
 from neo4j_manager import Neo4jManager
 from pathlib import Path
+
 import os
 import uuid
 
@@ -25,13 +26,12 @@ class GraphConstructor:
         self.graph_manager = graph_manager
 
     def __process_node__(self, node):
-        is_parent_node = False
         relationships = []
         for relation in node.relationships.items():
             if relation[0] == NodeRelationship.CHILD:
                 for child in relation[1]:
                     relation_type = (
-                        child.metadata["inclusive_scopes"][0]["type"]
+                        child.metadata["inclusive_scopes"][-1]["type"]
                         if child.metadata["inclusive_scopes"]
                         else ""
                     )
@@ -44,27 +44,31 @@ class GraphConstructor:
                             ),
                         }
                     )
-            elif relation[0] == NodeRelationship.PARENT:
-                if relation[1] is None:
-                    is_parent_node = True
 
-        typeNode = (
-            "file"
-            if is_parent_node
-            else (
-                node.metadata["inclusive_scopes"][0]["type"]
-                if node.metadata["inclusive_scopes"]
-                else ""
-            )
+        scope = (
+            node.metadata["inclusive_scopes"][-1]
+            if node.metadata["inclusive_scopes"]
+            else None
         )
+        type_node = "file"
+        name = ""
+        signature = ""
+        if scope:
+            name = scope["name"]
+            signature = scope["signature"]
+            type_node = scope["type"]
+
         processed_node = {
-            "type": self.NODES_NAME_MAP.get(typeNode, "UNKNOWN"),
+            "type": self.NODES_NAME_MAP.get(type_node, "UNKNOWN"),
             "attributes": {
-                "language": node.metadata["language"],
+                "name": name,
+                "signature": signature,
                 "text": node.text,
                 "node_id": node.node_id,
             },
         }
+        if type_node == "file":
+            processed_node["attributes"]["language"] = node.metadata["language"]
         return processed_node, relationships
 
     def scan_directory(self, path, nodes=[], relationships=[], parent_id=None):
