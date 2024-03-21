@@ -1,6 +1,8 @@
 import test2
 
 def hello():
+  def hello2():
+    print('Hello, world! 2')
   a = 1
   print('Hello, world!')
 
