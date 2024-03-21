@@ -5,7 +5,6 @@ from llama_index.packs.code_hierarchy import CodeHierarchyNodeParser
 from llama_index.core.schema import NodeRelationship
 from neo4j_manager import Neo4jManager
 from pathlib import Path
-import os
 
 class GraphConstructor:
   NODES_NAME_MAP = {
@@ -35,10 +34,12 @@ class GraphConstructor:
           is_parent_node = True
 
     typeNode = 'file' if is_parent_node else node.metadata['inclusive_scopes'][0]['type'] if node.metadata['inclusive_scopes'] else ''
+    
     processed_node = {
       'type': self.NODES_NAME_MAP.get(typeNode, 'UNKNOWN'),
       'attributes': {
         'language': node.metadata['language'],
+        'name': node.metadata['language'],
         'text': node.text,
         'node_id': node.node_id,
       },
