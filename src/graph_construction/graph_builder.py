@@ -5,6 +5,7 @@ from llama_index.packs.code_hierarchy import CodeHierarchyNodeParser
 from llama_index.core.schema import NodeRelationship
 from neo4j_manager import Neo4jManager
 from pathlib import Path
+import tree_sitter_languages
 
 import os
 import uuid
@@ -71,42 +72,67 @@ class GraphConstructor:
             processed_node["attributes"]["language"] = node.metadata["language"]
         return processed_node, relationships
 
-    def scan_directory(self, path, nodes=[], relationships=[], parent_id=None):
+    def scan_directory(
+        self,
+        path,
+        languaje="python",
+        nodes=[],
+        relationships=[],
+        parent_id=None,
+        imports_dict={},
+    ):
         package = False
         init_py_path = os.path.join(path, "__init__.py")
         if os.path.exists(init_py_path):
             package = True
-        node_type = "Package" if package else "Folder"
         directory_node = {
-            "type": node_type,
             "attributes": {
-                "path": path,
+                "path": path + "/",
                 "name": os.path.basename(path),
                 "node_id": str(uuid.uuid4()),
             },
+            "type": "Package" if package else "Folder",
         }
+        if package:
+            imports_dict[os.path.basename(path)] = directory_node["attributes"][
+                "node_id"
+            ]
         if parent_id is not None:
             relationships.append(
                 {
                     "sourceId": parent_id,
-                    "targetId": directory_node["node_id"],
+                    "targetId": directory_node["attributes"]["node_id"],
                     "type": "contains",
                 }
             )
+
         nodes.append(directory_node)
         for entry in os.scandir(path):
             if entry.is_file():
                 if entry.name.endswith(".py") and not entry.name == ("__init__.py"):
                     # imports, function_imports, relative_imports = get_imports(entry.path)
-                    node_list, edge_list = self.process_file(entry.path)
-                    nodes.extend(node_list)
-                    relationships.extend(edge_list)
+                    entry_name = entry.name.split(".py")[0]
+                    node, relations, imports = self.process_file(entry.path, languaje)
+                    node[0]["attributes"]["directory"] = directory_node["attributes"][
+                        "path"
+                    ]
+                    node[0]["imports"] = imports
+                    node[0]["attributes"]["name"] = os.path.basename(entry.path)
+                    nodes.extend(node)
+                    relationships.extend(relations)
                     relationships.append(
                         {
-                            "sourceId": directory_node["node_id"],
-                            "targetId": node_list[0]["node_id"],
+                            "sourceId": directory_node["attributes"]["node_id"],
+                            "targetId": node[0]["attributes"]["node_id"],
                             "type": "contains",
                         }
+                    )
+                    if package:
+                        imports_dict[
+                            directory_node["attributes"]["name"] + "." + entry_name
+                        ] = node[0]["attributes"]["node_id"]
+                    imports_dict[directory_node["attributes"]["path"] + entry_name] = (
+                        node[0]["attributes"]["node_id"]
                     )
                 else:
                     file_node = {
@@ -120,21 +146,88 @@ class GraphConstructor:
                     nodes.append(file_node)
                     relationships.append(
                         {
-                            "sourceId": directory_node["node_id"],
-                            "targetId": file_node["node_id"],
+                            "sourceId": directory_node["attributes"]["node_id"],
+                            "targetId": file_node["attributes"]["node_id"],
                             "type": "contains",
                         }
                     )
             if entry.is_dir():
-                nodes, relationships = self.scan_directory(
-                    entry.path, nodes, relationships, directory_node["node_id"]
+                nodes, relationships, imports_dict = self.scan_directory(
+                    entry.path,
+                    languaje,
+                    nodes,
+                    relationships,
+                    directory_node["attributes"]["node_id"],
+                    imports_dict,
                 )
-        return nodes, relationships
+        return nodes, relationships, imports_dict
 
-    def build_graph(self, path):
-        nodes, relationships = self.scan_directory(path)
+    def build_graph(self, path, languaje):
+        nodes, relationships, imports_dict = self.scan_directory(path, languaje)
+        relationships.extend(self.relate_imports(nodes, imports_dict))
+
         self.graph_manager.create_nodes(nodes)
-        self.graph_manager.create_relationships(relationships)
+        self.graph_manager.create_edges(relationships)
+
+    def relate_imports(self, node_list, imports_dict):
+        import_edges = []
+        for node in node_list:
+            if node.get("imports"):
+                for imp in node["imports"]:
+                    if node["attributes"]["directory"] + imp in imports_dict:
+                        import_edges.append(
+                            {
+                                "sourceId": node["attributes"]["node_id"],
+                                "targetId": imports_dict[
+                                    node["attributes"]["directory"] + imp
+                                ],
+                                "type": "Imports",
+                            }
+                        )
+                        print("added edge", node["attributes"]["directory"] + imp)
+                    elif imp in imports_dict:
+                        import_edges.append(
+                            {
+                                "sourceId": node["attributes"]["node_id"],
+                                "targetId": imports_dict[imp],
+                                "type": "Imports",
+                            }
+                        )
+                        print("added edge", imp)
+                del node["imports"]
+
+        return import_edges
+
+    def get_imports(self, path):
+        parser = tree_sitter_languages.get_parser("python")
+        with open(path, "r") as file:
+            code = file.read()
+        tree = parser.parse(bytes(code, "utf-8"))
+
+        imports = set()
+        function_imports = set()
+        relative_imports = set()
+        for node in tree.root_node.children:
+            if node.type == "import_from_statement":
+                from_import = True
+                for child in node.children:
+                    if from_import:
+                        if child.type == "dotted_name":
+                            imports.add(child.text.decode())
+                            from_import = False
+                        elif child.type == "relative_import":
+                            relative_imports.add(child.text.decode())
+                            from_import = False
+
+                    else:
+                        if child.type == "dotted_name":
+                            function_imports.add(child.text.decode())
+
+            elif node.type == "import_statement":
+                for child in node.children:
+                    if child.type == "dotted_name":
+                        imports.add(child.text.decode())
+        return imports, function_imports, relative_imports
 
     def process_file(self, file_path, languaje):
         path = Path(file_path)
@@ -161,11 +254,13 @@ class GraphConstructor:
             processed_node, relationships = self.__process_node__(node)
             node_list.append(processed_node)
             edges_list.extend(relationships)
-        return node_list, edges_list
+        imports, _, _ = self.get_imports(path)
+
+        return node_list, edges_list, imports
 
 
 if __name__ == "__main__":
     graph_manager = Neo4jManager()
     graph_constructor = GraphConstructor(graph_manager)
-    graph_constructor.build_graph(".", "python")
+    graph_constructor.build_graph("src", "python")
     graph_manager.close()
