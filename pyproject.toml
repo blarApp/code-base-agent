@@ -10,6 +10,8 @@ python = ">=3.10,<3.12"
 llama-index-packs-code-hierarchy = "^0.1.1"
 llama-index = "^0.10.20"
 python-dotenv = "^1.0.1"
+isort = "^5.13.2"
+black = "^24.3.0"
 
 [tool.poetry.group.dev.dependencies]
 llama-index = "^0.10.20"
@@ -18,3 +20,6 @@ neo4j = "^5.18.0"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 119

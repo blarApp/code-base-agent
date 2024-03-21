@@ -1,14 +1,14 @@
+import os
+import uuid
+from pathlib import Path
+
+import tree_sitter_languages
 from llama_index.core import SimpleDirectoryReader
+from llama_index.core.schema import NodeRelationship
 from llama_index.core.text_splitter import CodeSplitter
 from llama_index.llms.openai import OpenAI
 from llama_index.packs.code_hierarchy import CodeHierarchyNodeParser
-from llama_index.core.schema import NodeRelationship
 from neo4j_manager import Neo4jManager
-from pathlib import Path
-import tree_sitter_languages
-
-import os
-import uuid
 
 
 class GraphConstructor:
@@ -32,25 +32,17 @@ class GraphConstructor:
             if relation[0] == NodeRelationship.CHILD:
                 for child in relation[1]:
                     relation_type = (
-                        child.metadata["inclusive_scopes"][-1]["type"]
-                        if child.metadata["inclusive_scopes"]
-                        else ""
+                        child.metadata["inclusive_scopes"][-1]["type"] if child.metadata["inclusive_scopes"] else ""
                     )
                     relationships.append(
                         {
                             "sourceId": node.node_id,
                             "targetId": child.node_id,
-                            "type": self.RELATIONS_TYPES_MAP.get(
-                                relation_type, "UNKNOWN"
-                            ),
+                            "type": self.RELATIONS_TYPES_MAP.get(relation_type, "UNKNOWN"),
                         }
                     )
 
-        scope = (
-            node.metadata["inclusive_scopes"][-1]
-            if node.metadata["inclusive_scopes"]
-            else None
-        )
+        scope = node.metadata["inclusive_scopes"][-1] if node.metadata["inclusive_scopes"] else None
         type_node = "file"
         name = ""
         signature = ""
@@ -94,9 +86,7 @@ class GraphConstructor:
             "type": "Package" if package else "Folder",
         }
         if package:
-            imports_dict[os.path.basename(path)] = directory_node["attributes"][
-                "node_id"
-            ]
+            imports_dict[os.path.basename(path)] = directory_node["attributes"]["node_id"]
         if parent_id is not None:
             relationships.append(
                 {
@@ -113,9 +103,7 @@ class GraphConstructor:
                     # imports, function_imports, relative_imports = get_imports(entry.path)
                     entry_name = entry.name.split(".py")[0]
                     node, relations, imports = self.process_file(entry.path, languaje)
-                    node[0]["attributes"]["directory"] = directory_node["attributes"][
-                        "path"
-                    ]
+                    node[0]["attributes"]["directory"] = directory_node["attributes"]["path"]
                     node[0]["imports"] = imports
                     node[0]["attributes"]["name"] = os.path.basename(entry.path)
                     nodes.extend(node)
@@ -128,12 +116,10 @@ class GraphConstructor:
                         }
                     )
                     if package:
-                        imports_dict[
-                            directory_node["attributes"]["name"] + "." + entry_name
-                        ] = node[0]["attributes"]["node_id"]
-                    imports_dict[directory_node["attributes"]["path"] + entry_name] = (
-                        node[0]["attributes"]["node_id"]
-                    )
+                        imports_dict[directory_node["attributes"]["name"] + "." + entry_name] = node[0]["attributes"][
+                            "node_id"
+                        ]
+                    imports_dict[directory_node["attributes"]["path"] + entry_name] = node[0]["attributes"]["node_id"]
                 else:
                     file_node = {
                         "type": "File",
@@ -178,9 +164,7 @@ class GraphConstructor:
                         import_edges.append(
                             {
                                 "sourceId": node["attributes"]["node_id"],
-                                "targetId": imports_dict[
-                                    node["attributes"]["directory"] + imp
-                                ],
+                                "targetId": imports_dict[node["attributes"]["directory"] + imp],
                                 "type": "Imports",
                             }
                         )
@@ -242,9 +226,7 @@ class GraphConstructor:
         code = CodeHierarchyNodeParser(
             language=languaje,
             chunk_min_characters=3,
-            code_splitter=CodeSplitter(
-                language=languaje, max_chars=1000, chunk_lines=10
-            ),
+            code_splitter=CodeSplitter(language=languaje, max_chars=1000, chunk_lines=10),
         )
 
         split_nodes = code.get_nodes_from_documents(documents)
