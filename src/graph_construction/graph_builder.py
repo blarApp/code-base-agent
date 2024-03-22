@@ -189,29 +189,28 @@ class GraphConstructor:
         tree = parser.parse(bytes(code, "utf-8"))
 
         imports = set()
-        function_imports = set()
         relative_imports = set()
         for node in tree.root_node.children:
             if node.type == "import_from_statement":
-                from_import = True
+                from_import = ""
                 for child in node.children:
-                    if from_import:
+                    if not from_import:
                         if child.type == "dotted_name":
                             imports.add(child.text.decode())
-                            from_import = False
+                            from_import = child.text.decode()
                         elif child.type == "relative_import":
                             relative_imports.add(child.text.decode())
-                            from_import = False
+                            from_import = child.text.decode()
 
                     else:
                         if child.type == "dotted_name":
-                            function_imports.add(child.text.decode())
+                            imports.add(f"{from_import}.{child.text.decode()}")
 
             elif node.type == "import_statement":
                 for child in node.children:
                     if child.type == "dotted_name":
                         imports.add(child.text.decode())
-        return imports, function_imports, relative_imports
+        return imports, relative_imports
 
     def process_file(self, file_path, languaje):
         path = Path(file_path)
@@ -236,7 +235,7 @@ class GraphConstructor:
             processed_node, relationships = self.__process_node__(node)
             node_list.append(processed_node)
             edges_list.extend(relationships)
-        imports, _, _ = self.get_imports(path)
+        imports, _ = self.get_imports(path)
 
         return node_list, edges_list, imports
 
