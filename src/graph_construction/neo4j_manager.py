@@ -51,6 +51,8 @@ class Neo4jManager:
     UNWIND edges AS edgeObject
     MATCH (node1 {node_id: edgeObject.sourceId})
     MATCH (node2 {node_id: edgeObject.targetId})
-    CREATE (node1)-[:CHILD]->(node2)
+    CALL apoc.create.relationship(node1, edgeObject.type, {}, node2)
+    YIELD rel
+    RETURN rel;
     """
         tx.run(edge_query, edgesList=edgesList)
