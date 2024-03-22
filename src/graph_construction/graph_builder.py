@@ -7,7 +7,7 @@ from llama_index.core.schema import NodeRelationship, BaseNode
 from llama_index.core.text_splitter import CodeSplitter
 from llama_index.packs.code_hierarchy import CodeHierarchyNodeParser
 from graph_construction.neo4j_manager import Neo4jManager
-from utils import format_nodes
+from utils import format_nodes, tree_parser
 
 class GraphConstructor:
     RELATIONS_TYPES_MAP = {
@@ -36,7 +36,7 @@ class GraphConstructor:
             language=language,
             chunk_min_characters=3,
             code_splitter=CodeSplitter(
-                language=language, max_chars=1000, chunk_lines=10
+                language=language, max_chars=10000, chunk_lines=10
             ),
         )
         no_extension_path = file_path.replace(".py", "")
@@ -68,7 +68,10 @@ class GraphConstructor:
             type_node = scope["type"]
 
         if type_node == "function_definition":
-            processed_node = format_nodes.format_function_node(node, scope)
+            function_calls = tree_parser.get_function_calls(node)
+            processed_node = format_nodes.format_function_node(
+                node, scope, function_calls
+            )
         elif type_node == "class_definition":
             processed_node = format_nodes.format_class_node(node, scope)
         else:
@@ -101,13 +104,6 @@ class GraphConstructor:
         self.global_imports[node_path] = node.node_id
         self.visited_nodes[node.node_id] = node_path
         return processed_node, relationships
-
-    def _get_directories_map(self, path):
-        self.directories_map = {}
-        for entry in os.scandir(path):
-            self.directories_map[entry.name] = entry.path
-            if entry.is_dir():
-                self._get_directories_map(entry.path)
 
     def _scan_directory(
         self,
@@ -235,34 +231,33 @@ class GraphConstructor:
         return imports, relative_imports
 
     def _relate_function_calls(self, node_list):
-        function_calls = []
+        function_calls_relations = []
         for node in node_list:
-            function_calls = node["attributes"]["function_calls"]
+            function_calls = node["attributes"].get("function_calls")
             if function_calls:
-                # for call in function_calls:
-                #     if call in imports_dict:
-                #         function_calls.append(
-                #             {
-                #                 "sourceId": node["attributes"]["node_id"],
-                #                 "targetId": imports_dict[call],
-                #                 "type": "CALLS",
-                #             }
-                #         )
-                #         print("added edge", call)
-                del node["function_calls"]
+                for call in function_calls:
+                    for key in self.global_imports.keys():
+                        if key.endswith(call):
+                            function_calls_relations.append(
+                                {
+                                    "sourceId": node["attributes"]["node_id"],
+                                    "targetId": self.global_imports[key],
+                                    "type": "CALLS",
+                                }
+                            )
+                            print("added edge", call)
+                del node["attributes"]["function_calls"]
 
-        return function_calls
+        return function_calls_relations
 
     def build_graph(self, path, language):
-        # get directories map and save it in self.directories_map
-        self._get_directories_map(path)
 
         # process every node to create the graph structure
         nodes, relationships = self._scan_directory(path, language)
         # relate imports between file nodes
         relationships.extend(self._relate_imports(nodes))
         # relate functions calls
-        # relationships.extend(self._relate_function_calls(nodes))
+        relationships.extend(self._relate_function_calls(nodes))
 
         self.graph_manager.create_nodes(nodes)
         self.graph_manager.create_edges(relationships)
