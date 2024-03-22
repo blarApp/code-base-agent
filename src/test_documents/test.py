@@ -5,7 +5,7 @@ class Test:
             print("Hello, world! 2")
 
         hello2()
-        self.factorial(5)
+        self.hello2()
         a = 1
         print("Hello, world!")
 
@@ -20,6 +20,9 @@ class Test:
         while a < n:
             print(a, end=" ")
             a, b = b, a + b
+
+    def hello2(self):
+        print("hc")
 
 
 test = Test()

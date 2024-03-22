@@ -51,8 +51,12 @@ def parse_function_call(func_call_bytes: bytes, inclusive_scopes) -> tuple[str, 
         params_str = match.group(2)  # The parameters as a single string
 
         num_params = count_parameters(params_str)
-        for parent in reversed(inclusive_scopes):
-            func_name = parent["name"] + "." + func_name
+        if "self." in func_name:
+            for parent in reversed(inclusive_scopes[:-1]):
+                func_name = parent["name"] + "." + func_name.strip("self.")
+        else:
+            for parent in reversed(inclusive_scopes):
+                func_name = parent["name"] + "." + func_name
 
         return func_name, num_params
     else:
