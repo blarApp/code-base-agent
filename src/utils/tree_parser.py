@@ -39,13 +39,12 @@ def count_parameters(params_str):
     return param_count
 
 
-def parse_function_call(func_call_bytes: bytes, inclusive_scopes) -> tuple[str, int]:
+def parse_function_call(func_call: str, inclusive_scopes) -> tuple[str, int]:
     # Regular expression to match a single function call.
     # It captures the function name and its parameters.
     pattern = re.compile(r"^([\w\.]+)\(([^)]*)\)$")
 
-    func_call_str = func_call_bytes.decode("utf-8")
-    match = pattern.match(func_call_str)
+    match = pattern.match(func_call)
     if match:
         func_name = match.group(1)  # The function name
         params_str = match.group(2)  # The parameters as a single string
@@ -62,23 +61,57 @@ def parse_function_call(func_call_bytes: bytes, inclusive_scopes) -> tuple[str, 
         return None, None
 
 
-def get_function_calls(node) -> list[str]:
+def get_function_calls(node, assigments_dict: dict) -> list[str]:
     code_text = node.text
 
     parser = tree_sitter_languages.get_parser("python")
     tree = parser.parse(bytes(code_text, "utf-8"))
     node_names = map(lambda node: node, traverse_tree(tree))
+
     function_calls = []
+
     for tree_node in node_names:
+        if tree_node.type == "expression_statement":
+            statement_children = tree_node.children
+            if statement_children[0].type == "assignment":
+                assigment = statement_children[0].named_children
+
+                variable_identifier = assigment[0]
+                assign_value = assigment[1]
+                if assign_value.type == "call":
+                    expression = assign_value
+                    expression_identifier = expression.named_children[0].text.decode(
+                        "utf-8"
+                    )
+
+                    assigments_dict[variable_identifier.text.decode("utf-8")] = (
+                        expression_identifier
+                    )
+
         if tree_node.type == "call":
-            function_calls.append(tree_node.text)
+            call_children = tree_node.named_children
+            if (
+                call_children[0].type == "attribute"
+                and call_children[1].type == "argument_list"
+            ):
+                attribute_children = call_children[0].named_children
+                root_caller = attribute_children[0]
+                if root_caller.type == "identifier":
+                    root_caller_identifier = root_caller.text.decode("utf-8")
+                    if root_caller_identifier in assigments_dict:
+                        function_calls.append(
+                            assigments_dict[root_caller_identifier]
+                            + "."
+                            + attribute_children[1].text.decode("utf-8")
+                            + "()"
+                        )
+                        continue
+            function_calls.append(tree_node.text.decode("utf-8"))
 
     parsed_function_calls = map(
         lambda x: parse_function_call(x, node.metadata["inclusive_scopes"]),
         function_calls,
     )
-    
 
-    file_path = node.metadata["filepath"].replace(".py", "").replace("/", ".")
     filtered_calls = filter(lambda x: x[0] is not None, parsed_function_calls)
     return list(map(lambda x: x[0], filtered_calls))
