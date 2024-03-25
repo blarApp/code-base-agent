@@ -53,10 +53,9 @@ def parse_function_call(func_call_bytes: bytes, inclusive_scopes) -> tuple[str, 
         num_params = count_parameters(params_str)
         if "self." in func_name:
             for parent in reversed(inclusive_scopes[:-1]):
-                func_name = parent["name"] + "." + func_name.strip("self.")
-        else:
-            for parent in reversed(inclusive_scopes):
-                func_name = parent["name"] + "." + func_name
+                if parent["type"] == "class_definition":
+                    func_name = func_name.replace("self.", parent["name"] + ".")
+                    break
 
         return func_name, num_params
     else:
@@ -78,6 +77,8 @@ def get_function_calls(node) -> list[str]:
         lambda x: parse_function_call(x, node.metadata["inclusive_scopes"]),
         function_calls,
     )
+    
 
     file_path = node.metadata["filepath"].replace(".py", "").replace("/", ".")
-    return list(map(lambda x: file_path + "." + x[0], parsed_function_calls))
+    filtered_calls = filter(lambda x: x[0] is not None, parsed_function_calls)
+    return list(map(lambda x: x[0], filtered_calls))
