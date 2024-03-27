@@ -17,6 +17,7 @@ class GraphFileParser:
     def __init__(
         self,
         file_path: str,
+        root_path: str,
         language: str,
         directory_path: str,
         visited_nodes: dict,
@@ -27,6 +28,7 @@ class GraphFileParser:
         self.directory_path = directory_path
         self.visited_nodes = visited_nodes
         self.global_imports = global_imports
+        self.root_path = root_path
 
     def parse(self):
         path = Path(self.file_path)
@@ -66,7 +68,7 @@ class GraphFileParser:
             node_list.append(processed_node)
             edges_list.extend(relationships)
 
-        imports = self._get_imports(path, node_list[0]["attributes"]["node_id"])
+        imports = self._get_imports(str(path), node_list[0]["attributes"]["node_id"])
 
         return node_list, edges_list, imports
 
@@ -137,16 +139,13 @@ class GraphFileParser:
         for node in tree.root_node.children:
             if node.type == "import_from_statement":
                 import_statements = node.named_children
+
                 from_statement = import_statements[0]
-                import_statement = import_statements[1]
-                from_text = str(path).replace(".py", "").replace("/", ".")
-                from_text = ".".join(from_text.rsplit(".", maxsplit=1)[:-1])
-                for directory in from_statement.named_children:
-                    if directory.type == "identifier":
-                        directory_text = directory.text.decode()
-                        if directory_text not in from_text:
-                            from_text += f".{directory_text}"
-                imports[import_statement.text.decode()] = from_text
+                from_text = from_statement.text.decode()
+                for import_statement in import_statements[1:]:
+                    imports[import_statement.text.decode()] = (
+                        tree_parser.resolve_import_path(from_text, path, self.root_path)
+                    )
 
             elif node.type == "import_statement":
                 import_statement = node.named_children[0]
