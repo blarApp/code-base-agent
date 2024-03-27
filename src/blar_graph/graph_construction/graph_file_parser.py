@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 import tree_sitter_languages
-from utils import format_nodes, tree_parser
+from blar_graph.utils import format_nodes, tree_parser
 from llama_index.core import SimpleDirectoryReader
 from llama_index.core.schema import NodeRelationship, BaseNode
 from llama_index.core.text_splitter import CodeSplitter

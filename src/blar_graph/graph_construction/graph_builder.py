@@ -1,8 +1,8 @@
 import os
 import uuid
-from graph_construction.neo4j_manager import Neo4jManager
-from graph_construction.graph_file_parser import GraphFileParser
-from utils import format_nodes
+from blar_graph.graph_construction.neo4j_manager import Neo4jManager
+from blar_graph.graph_construction.graph_file_parser import GraphFileParser
+from blar_graph.utils import format_nodes
 
 
 class GraphConstructor:
