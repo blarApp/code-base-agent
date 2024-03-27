@@ -125,7 +125,10 @@ class GraphFileParser:
                 else:
                     node_path = no_extension_path.replace("/", ".")
         processed_node["attributes"]["path"] = node_path
-        self.global_imports[node_path] = node.node_id
+        self.global_imports[node_path] = {
+            "id": processed_node["attributes"]["node_id"],
+            "type": processed_node["type"],
+        }
         self.visited_nodes[node.node_id] = node_path
         return processed_node, relationships
 
