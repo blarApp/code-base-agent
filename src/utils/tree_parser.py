@@ -80,9 +80,7 @@ def get_function_calls(node, assigments_dict: dict) -> list[str]:
                 assign_value = assigment[1]
                 if assign_value.type == "call":
                     expression = assign_value
-                    expression_identifier = expression.named_children[0].text.decode(
-                        "utf-8"
-                    )
+                    expression_identifier = expression.named_children[0].text.decode()
 
                     assigments_dict[variable_identifier.text.decode("utf-8")] = (
                         expression_identifier
