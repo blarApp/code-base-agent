@@ -71,7 +71,10 @@ class GraphConstructor:
                     imports.update(file_imports)
 
                     global_import_key = (directory_path + entry_name).replace("/", ".")
-                    self.global_imports[global_import_key] = file_root_node_id
+                    self.global_imports[global_import_key] = {
+                        "id": file_root_node_id,
+                        "type": "FILE",
+                    }
                 else:
                     file_node = {
                         "type": "FILE",
@@ -111,7 +114,7 @@ class GraphConstructor:
                         import_edges.append(
                             {
                                 "sourceId": file_node_id,
-                                "targetId": self.global_imports[key],
+                                "targetId": self.global_imports[key]["id"],
                                 "type": "IMPORTS",
                             }
                         )
@@ -121,8 +124,6 @@ class GraphConstructor:
     def _relate_function_calls(self, node_list, imports):
         function_calls_relations = []
         for node in node_list:
-            if node["attributes"]["name"] == "_scan_directory":
-                print(node)
             function_calls = node["attributes"].get("function_calls")
             if function_calls:
                 for function_call in function_calls:
@@ -140,16 +141,42 @@ class GraphConstructor:
                         directory = function_import
 
                     for module in function_call.split("."):
-                        if module not in directory:
+                        final_module = "." + module
+                        intermediate_module = "." + module + "."
+                        if not (
+                            final_module in directory
+                            or intermediate_module in directory
+                        ):
                             directory += f".{module}"
                     if directory in self.global_imports:
-                        function_calls_relations.append(
-                            {
-                                "sourceId": node["attributes"]["node_id"],
-                                "targetId": self.global_imports[directory],
-                                "type": "CALLS",
-                            }
-                        )
+                        target_node_type = self.global_imports[directory]["type"]
+                        if target_node_type == "FUNCTION" or target_node_type == "FILE":
+                            function_calls_relations.append(
+                                {
+                                    "sourceId": node["attributes"]["node_id"],
+                                    "targetId": self.global_imports[directory]["id"],
+                                    "type": "CALLS",
+                                }
+                            )
+                        elif target_node_type == "CLASS":
+                            function_calls_relations.append(
+                                {
+                                    "sourceId": node["attributes"]["node_id"],
+                                    "targetId": self.global_imports[directory]["id"],
+                                    "type": "INSTANTIATES",
+                                }
+                            )
+
+                            init_directory = directory + ".__init__"
+                            function_calls_relations.append(
+                                {
+                                    "sourceId": node["attributes"]["node_id"],
+                                    "targetId": self.global_imports[init_directory][
+                                        "id"
+                                    ],
+                                    "type": "CALLS",
+                                }
+                            )
 
         return function_calls_relations
 
