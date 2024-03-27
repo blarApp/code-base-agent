@@ -3,6 +3,7 @@ class Test:
         def hello2():
             self.fibonacci(2)
             print("Hello, world! 2")
+            raise Exception("Error!")
 
         hello2()
         self.hello2()
@@ -25,5 +26,6 @@ class Test:
         print("hc")
 
 
-test = Test()
-test.hello()
+def run():
+    test = Test()
+    test.hello()

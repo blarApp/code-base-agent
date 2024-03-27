@@ -93,7 +93,9 @@ class GraphFileParser:
             processed_node = format_nodes.format_class_node(node, scope, file_node_id)
         else:
             function_calls = tree_parser.get_function_calls(node, asignments_dict)
-            processed_node = format_nodes.format_file_node(node, function_calls)
+            processed_node = format_nodes.format_file_node(
+                node, no_extension_path, function_calls
+            )
 
         for relation in node.relationships.items():
             if relation[0] == NodeRelationship.CHILD:
@@ -137,7 +139,14 @@ class GraphFileParser:
                 import_statements = node.named_children
                 from_statement = import_statements[0]
                 import_statement = import_statements[1]
-                imports[import_statement.text.decode()] = from_statement.text.decode()
+                from_text = str(path).replace(".py", "").replace("/", ".")
+                from_text = ".".join(from_text.rsplit(".", maxsplit=1)[:-1])
+                for directory in from_statement.named_children:
+                    if directory.type == "identifier":
+                        directory_text = directory.text.decode()
+                        if directory_text not in from_text:
+                            from_text += f".{directory_text}"
+                imports[import_statement.text.decode()] = from_text
 
             elif node.type == "import_statement":
                 import_statement = node.named_children[0]

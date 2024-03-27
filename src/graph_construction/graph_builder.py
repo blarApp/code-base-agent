@@ -2,7 +2,6 @@ import os
 import uuid
 from graph_construction.neo4j_manager import Neo4jManager
 from graph_construction.graph_file_parser import GraphFileParser
-from graph_construction.example import hello
 from utils import format_nodes
 
 
@@ -90,6 +89,8 @@ class GraphConstructor:
                         }
                     )
             if entry.is_dir():
+                if entry.name == "__pycache__":
+                    continue
                 nodes, relationships, imports = self._scan_directory(
                     entry.path,
                     language,
@@ -122,25 +123,32 @@ class GraphConstructor:
             function_calls = node["attributes"].get("function_calls")
             if function_calls:
                 for function_call in function_calls:
+                    if "traverse_tree" in function_call:
+                        print("here")
                     if node["type"] == "FILE":
                         file_imports = imports[node["attributes"]["node_id"]]
                     else:
                         file_imports = imports[node["attributes"]["file_node_id"]]
 
                     function_import = file_imports.get(function_call.split(".")[0])
-                    directory = node["attributes"]["path"] + "." + function_call
+                    root_directory = node["attributes"]["path"].replace(
+                        "." + node["attributes"]["name"], ""
+                    )
+                    directory = root_directory
                     if function_import:
-                        directory = function_import + "." + function_call
-                    for key in self.global_imports.keys():
-                        if key.endswith(directory):
-                            function_calls_relations.append(
-                                {
-                                    "sourceId": node["attributes"]["node_id"],
-                                    "targetId": self.global_imports[key],
-                                    "type": "CALLS",
-                                }
-                            )
-                            break
+                        directory = function_import
+
+                    for module in function_call.split("."):
+                        if module not in directory:
+                            directory += f".{module}"
+                    if directory in self.global_imports:
+                        function_calls_relations.append(
+                            {
+                                "sourceId": node["attributes"]["node_id"],
+                                "targetId": self.global_imports[directory],
+                                "type": "CALLS",
+                            }
+                        )
 
         return function_calls_relations
 
