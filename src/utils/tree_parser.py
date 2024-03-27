@@ -1,4 +1,5 @@
 import tree_sitter_languages
+import os
 import re
 
 
@@ -39,26 +40,27 @@ def count_parameters(params_str):
     return param_count
 
 
-def parse_function_call(func_call: str, inclusive_scopes) -> tuple[str, int]:
-    # Regular expression to match a single function call.
-    # It captures the function name and its parameters.
-    pattern = re.compile(r"^([\w\.]+)\(([^)]*)\)$")
-
-    match = pattern.match(func_call)
+def get_function_name(call_str):
+    match = re.match(r"([a-zA-Z_][\w\.]*)\s*\(", call_str)
     if match:
-        func_name = match.group(1)  # The function name
-        params_str = match.group(2)  # The parameters as a single string
+        return match.group(1)  # Return the captured function name
+    else:
+        return None  # No function name found
 
-        num_params = count_parameters(params_str)
+
+def parse_function_call(func_call: str, inclusive_scopes) -> tuple[str, int]:
+    func_name = get_function_name(func_call)
+
+    if func_name:
         if "self." in func_name:
             for parent in reversed(inclusive_scopes[:-1]):
                 if parent["type"] == "class_definition":
                     func_name = func_name.replace("self.", parent["name"] + ".")
                     break
 
-        return func_name, num_params
-    else:
-        return None, None
+        return func_name
+
+    return None
 
 
 def get_function_calls(node, assigments_dict: dict) -> list[str]:
@@ -80,9 +82,7 @@ def get_function_calls(node, assigments_dict: dict) -> list[str]:
                 assign_value = assigment[1]
                 if assign_value.type == "call":
                     expression = assign_value
-                    expression_identifier = expression.named_children[0].text.decode(
-                        "utf-8"
-                    )
+                    expression_identifier = expression.named_children[0].text.decode()
 
                     assigments_dict[variable_identifier.text.decode("utf-8")] = (
                         expression_identifier
@@ -113,5 +113,51 @@ def get_function_calls(node, assigments_dict: dict) -> list[str]:
         function_calls,
     )
 
-    filtered_calls = filter(lambda x: x[0] is not None, parsed_function_calls)
-    return list(map(lambda x: x[0], filtered_calls))
+    filtered_calls = filter(lambda x: x is not None, parsed_function_calls)
+    return list(filtered_calls)
+
+
+def is_package(directory):
+    return os.path.exists(os.path.join(directory, "__init__.py"))
+
+
+def find_module_path(module_name, start_dir, project_root):
+    current_dir = start_dir
+    components = module_name.split(".")
+
+    # Try to find the module by traversing up towards the root until the module path is found or root is reached
+    while current_dir.startswith(project_root):
+        possible_path = os.path.join(current_dir, *components)
+        # Check for a direct module or package
+        if os.path.exists(possible_path + ".py") or is_package(possible_path):
+            return possible_path.replace("/", ".")
+        # Move one directory up
+        current_dir = os.path.dirname(current_dir)
+    return None
+
+
+def resolve_import_path(import_statement, current_file_directory, project_root):
+    """
+    Resolve the absolute path of an import statement.
+    import_statement: The imported module as a string (e.g., 'os', 'my_package.my_module').
+    current_file_directory: The directory of the file containing the import statement.
+    project_root: The root directory of the project.
+    """
+    # Handling relative imports
+    if import_statement.startswith("."):
+        parent_levels = import_statement.count(".")
+        relative_path = import_statement[parent_levels:].replace(".", os.sep)
+        base_path = current_file_directory
+        for _ in range(parent_levels - 1):
+            base_path = os.path.dirname(base_path)
+        absolute_path = os.path.join(base_path, relative_path)
+        if os.path.exists(absolute_path + ".py"):
+            return absolute_path + ".py"
+        elif is_package(absolute_path):
+            return absolute_path
+    else:
+        # Handling absolute imports
+        return find_module_path(import_statement, current_file_directory, project_root)
+
+    # If the module wasn't found, it might be a built-in or third-party module not contained within the project
+    return None

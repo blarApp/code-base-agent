@@ -13,6 +13,8 @@ python-dotenv = "^1.0.1"
 isort = "^5.13.2"
 black = "^24.3.0"
 tree-sitter-languages = "^1.10.2"
+langchain = "^0.1.13"
+langchain-openai = "^0.1.1"
 
 [tool.poetry.group.dev.dependencies]
 llama-index = "^0.10.20"
