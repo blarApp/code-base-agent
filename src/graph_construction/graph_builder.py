@@ -48,6 +48,7 @@ class GraphConstructor:
                 if entry.name.endswith(".py") and not entry.name == ("__init__.py"):
                     file_parser = GraphFileParser(
                         entry.path,
+                        self.root,
                         language,
                         directory_path,
                         visited_nodes=self.visited_nodes,
@@ -120,11 +121,11 @@ class GraphConstructor:
     def _relate_function_calls(self, node_list, imports):
         function_calls_relations = []
         for node in node_list:
+            if node["attributes"]["name"] == "_scan_directory":
+                print(node)
             function_calls = node["attributes"].get("function_calls")
             if function_calls:
                 for function_call in function_calls:
-                    if "traverse_tree" in function_call:
-                        print("here")
                     if node["type"] == "FILE":
                         file_imports = imports[node["attributes"]["node_id"]]
                     else:
