@@ -1,5 +1,5 @@
 import os
-from typing import Any, List
+from typing import Any, List, Dict
 
 from dotenv import load_dotenv
 from neo4j import GraphDatabase
@@ -20,7 +20,7 @@ class Neo4jManager:
         # Creates a fulltext index on the name and path properties of the nodes
         with self.driver.session() as session:
             node_query = """
-            CREATE FULLTEXT INDEX functionNames IF NOT EXISTS FOR (n:CLASS|FUNCTION|FILE_ROOT) ON EACH [n.name, n.path, n.node_id]
+            CREATE FULLTEXT INDEX functionNames IF NOT EXISTS FOR (n:CLASS|FUNCTION|FILE) ON EACH [n.name, n.path, n.node_id]
             """
             session.run(node_query)
 
@@ -90,13 +90,14 @@ class Neo4jManager:
             result = session.run(query, {"node_id": node_id})
             return result.data()[0]
 
-    def get_code(self, query: str):
+    def get_code(self, query: str) -> List[Dict[str, Any]]:
         # Function to get code from the Neo4j database based on a keyword query
         formatted_query = self.format_query(query)
         node_query = f"""
     CALL db.index.fulltext.queryNodes("functionNames", "*{formatted_query}") YIELD node, score
     RETURN node, score
         """
+
         with self.driver.session() as session:
             result = session.run(node_query)
             return result.data()
