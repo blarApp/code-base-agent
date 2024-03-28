@@ -3,11 +3,12 @@ from typing import Any, List
 
 from dotenv import load_dotenv
 from neo4j import GraphDatabase
+from blar_graph.db_managers.base_manager import BaseDBManager
 
 load_dotenv()
 
 
-class Neo4jManager:
+class Neo4jManager(BaseDBManager):
     def __init__(self):
         uri = os.getenv("NEO4J_URI")
         user = os.getenv("NEO4J_USERNAME")
@@ -15,6 +16,13 @@ class Neo4jManager:
 
         self.driver = GraphDatabase.driver(uri, auth=(user, password))
         self.create_function_name_index()
+
+    def query(self, query: str, result_format: str = "data"):
+        with self.driver.session() as session:
+            result = session.run(query)
+            if result_format == "graph":
+                return result.graph()
+            return result.data()
 
     def create_function_name_index(self):
         # Creates a fulltext index on the name and path properties of the nodes
@@ -27,6 +35,10 @@ class Neo4jManager:
     def close(self):
         # Close the connection to the database
         self.driver.close()
+
+    def save_graph(self, nodes: List[Any], edges: List[Any]):
+        self.create_nodes(nodes)
+        self.create_edges(edges)
 
     def create_nodes(self, nodeList: List[Any]):
         # Function to create nodes in the Neo4j database
