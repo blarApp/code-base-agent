@@ -1,1 +1,46 @@
 # code-base-agent
+
+## Introduction
+
+This repo introduces a method to represent a local code repository as a graph structure. The objective is to allow an LLM to traverse this graph to understand the code logic and flow. Providing the LLM with the power to debug, refactor, and optimize queries. However, several tasks are yet unexplored
+
+## Technology Stack
+
+We used a combination of `llama-index`, `CodeHierarchy` module, and `tree-sitter-languages` for parsing code into a graph structure, `Neo4j` for storing and querying the graph data, and `langchain` to create the agents.
+
+## Installation
+
+**Install the package:**
+
+```shell
+pip install blar-graph
+```
+
+Set the env variables
+
+```.env
+NEO4J_URI=neo4j+s://YOUR_NEO4J.databases.neo4j.io
+NEO4J_USERNAME=neo4j
+NEO4J_PASSWORD=YOUR_NEO4J_PASSWORD
+OPENAI_API_KEY=YOUR_OPEN_AI_KEY
+```
+
+If you are new to Neo4j you can deploy a free instance of neo4j with [Aura](https://login.neo4j.com/u/signup/identifier?state=hKFo2SBIWW01eGl6SEhHVTVZQ2g1VU9rSk1BZlVVblJPd2FzSqFur3VuaXZlcnNhbC1sb2dpbqN0aWTZIFNSUXR5UEtwZThoQTBlOWs0ck1hN0ZTekFOY3JfWkNho2NpZNkgV1NMczYwNDdrT2pwVVNXODNnRFo0SnlZaElrNXpZVG8). Also you can host your own version in [AWS](https://aws.amazon.com/marketplace/seller-profile?id=23ec694a-d2af-4641-b4d3-b7201ab2f5f9) or [GCP](https://console.cloud.google.com/marketplace/product/endpoints/prod.n4gcp.neo4j.io?rapt=AEjHL4O-iQH8W8STKpH0_zwz8HEyQqA9XFkpnFUkJotAt2wAT0Zmjhraww8X6covdYdzJdUi_LwtQtG8qDChLOLYHeEG4x1kZyhfzukM2WkabnwQlQpu5ws&project=direct-album-395214)
+
+### Quick start guide
+
+To build the graph, you have to instantiate the graph manager and constructor. The graph manager handles the connection with Neo4j, and the graph constructor processes the directory input to create the graph.
+
+```python
+from blar_graph.graph_construction.graph_builder import GraphConstructor
+from blar_graph.graph_construction.neo4j_manager import Neo4jManager
+
+graph_manager = Neo4jManager()
+graph_constructor = GraphConstructor(graph_manager)
+graph_constructor.build_graph("YOUR_LOCAL_DIRECTORY", "python")
+graph_manager.close()
+```
+
+*Note: The supported language for now is python, we are going to include Typescript (or other language) if you ask for it enough. So don't hesitate to reach out through the [issues](https://github.com/blarApp/code-base-agent/issues) or directly to benjamin@blar.io or jose@blar.io*
+
+
