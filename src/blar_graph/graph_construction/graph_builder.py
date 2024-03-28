@@ -3,6 +3,7 @@ import uuid
 from blar_graph.graph_construction.neo4j_manager import Neo4jManager
 from blar_graph.graph_construction.graph_file_parser import GraphFileParser
 from blar_graph.utils import format_nodes
+import traceback
 
 
 class GraphConstructor:
@@ -22,6 +23,8 @@ class GraphConstructor:
         imports={},
         parent_id=None,
     ):
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"Directory {path} not found")
         if self.root is None:
             self.root = path
         package = False
@@ -44,6 +47,8 @@ class GraphConstructor:
 
         nodes.append(directory_node)
         for entry in os.scandir(path):
+            if "legacy" in entry.name:
+                continue
             if entry.is_file():
                 if entry.name.endswith(".py") and not entry.name == ("__init__.py"):
                     file_parser = GraphFileParser(
@@ -56,7 +61,13 @@ class GraphConstructor:
                     )
 
                     entry_name = entry.name.split(".py")[0]
-                    processed_nodes, relations, file_imports = file_parser.parse()
+                    try:
+                        processed_nodes, relations, file_imports = file_parser.parse()
+                    except Exception as e:
+                        traceback.print_exc()
+                        print(f"Error parsing {entry.path}: {e}")
+                        continue
+
                     file_root_node_id = processed_nodes[0]["attributes"]["node_id"]
 
                     nodes.extend(processed_nodes)
@@ -168,15 +179,16 @@ class GraphConstructor:
                             )
 
                             init_directory = directory + ".__init__"
-                            function_calls_relations.append(
-                                {
-                                    "sourceId": node["attributes"]["node_id"],
-                                    "targetId": self.global_imports[init_directory][
-                                        "id"
-                                    ],
-                                    "type": "CALLS",
-                                }
-                            )
+                            if os.path.exists(init_directory + ".py"):
+                                function_calls_relations.append(
+                                    {
+                                        "sourceId": node["attributes"]["node_id"],
+                                        "targetId": self.global_imports[init_directory][
+                                            "id"
+                                        ],
+                                        "type": "CALLS",
+                                    }
+                                )
 
         return function_calls_relations
 
