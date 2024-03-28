@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This repo introduces a method to represent a local code repository as a graph structure. The objective is allowing an LLM traverse this graph to understand the code logic and flow. This capability provides the LLM with the power to debug, refactor, optimize queries and a number of tasks yet to explore.
+This repo introduces a method to represent a local code repository as a graph structure. The objective is to allow an LLM to traverse this graph to understand the code logic and flow. Providing the LLM with the power to debug, refactor, and optimize queries. However, several tasks are yet unexplored
 
 ## Technology Stack
 
@@ -29,7 +29,7 @@ If you are new to Neo4j you can deploy a free instance of neo4j with [Aura](http
 
 ### Quick start guide
 
-To build the graph you have to instantiate the graph manager and constructor. The graph manager manages the connection with Neo4j, and the graph constructor process the directory that you input and creates the graph.
+To build the graph, you have to instantiate the graph manager and constructor. The graph manager handles the connection with Neo4j, and the graph constructor processes the directory input to create the graph.
 
 ```python
 from blar_graph.graph_construction.graph_builder import GraphConstructor
@@ -41,6 +41,6 @@ graph_constructor.build_graph("YOUR_LOCAL_DIRECTORY", "python")
 graph_manager.close()
 ```
 
-*Note: The supported language for now is python, we are going to include Typescript (or other language) if you ask for it enough. So don't hesitate to reach out through the [issues](https://github.com/blarApp/code-base-agent/issues) or directly to benjamin@blar.io*
+*Note: The supported language for now is python, we are going to include Typescript (or other language) if you ask for it enough. So don't hesitate to reach out through the [issues](https://github.com/blarApp/code-base-agent/issues) or directly to benjamin@blar.io or jose@blar.io*
 
 
