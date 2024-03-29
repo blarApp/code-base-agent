@@ -162,3 +162,6 @@ cython_debug/
 .vscode/
 
 .ruff_cache/
+
+# Remove example repos
+blar-example-repos/
