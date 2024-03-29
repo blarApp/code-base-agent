@@ -3,12 +3,11 @@ from typing import Any, List, Dict
 
 from dotenv import load_dotenv
 from neo4j import GraphDatabase
-from blar_graph.db_managers.base_manager import BaseDBManager
 
 load_dotenv()
 
 
-class Neo4jManager(BaseDBManager):
+class Neo4jManager:
     def __init__(self):
         uri = os.getenv("NEO4J_URI")
         user = os.getenv("NEO4J_USERNAME")
@@ -16,13 +15,6 @@ class Neo4jManager(BaseDBManager):
 
         self.driver = GraphDatabase.driver(uri, auth=(user, password))
         self.create_function_name_index()
-
-    def query(self, query: str, result_format: str = "data"):
-        with self.driver.session() as session:
-            result = session.run(query)
-            if result_format == "graph":
-                return result.graph()
-            return result.data()
 
     def create_function_name_index(self):
         # Creates a fulltext index on the name and path properties of the nodes
@@ -35,10 +27,6 @@ class Neo4jManager(BaseDBManager):
     def close(self):
         # Close the connection to the database
         self.driver.close()
-
-    def save_graph(self, nodes: List[Any], edges: List[Any]):
-        self.create_nodes(nodes)
-        self.create_edges(edges)
 
     def create_nodes(self, nodeList: List[Any]):
         # Function to create nodes in the Neo4j database
@@ -102,25 +90,17 @@ class Neo4jManager(BaseDBManager):
             result = session.run(query, {"node_id": node_id})
             return result.data()[0]
 
-    def get_code(self, query: str):
+    def get_code(self, query: str) -> List[Dict[str, Any]]:
         # Function to get code from the Neo4j database based on a keyword query
         formatted_query = self.format_query(query)
         node_query = f"""
     CALL db.index.fulltext.queryNodes("functionNames", "*{formatted_query}") YIELD node, score
-    RETURN node.text, node.node_id, node.name, score
+    RETURN node, score
         """
-        node_query2 = f"""
-    CALL db.index.fulltext.queryNodes("functionNames", "{formatted_query}") YIELD node, score
-    RETURN node.text, node.node_id, node.name, score
-        """
+
         with self.driver.session() as session:
             result = session.run(node_query)
-            first_result = result.peek()
-            if first_result is None:
-                result = session.run(node_query2)
-                first_result = result.peek()
-            neighbours = self.get_n_hop_neighbours(first_result['node.node_id'], 1)
-            return first_result, neighbours
+            return result.data()
 
     def get_graph_by_path(self, path: str):
         node_query = f"""
@@ -138,16 +118,13 @@ class Neo4jManager(BaseDBManager):
                 MATCH (p {node_id: $node_id})
                 CALL apoc.neighbors.byhop(p, ">", $num_hops)
                 YIELD nodes
-                UNWIND nodes AS all_nodes
-                RETURN all_nodes.node_id AS node_id, all_nodes.name AS function_name, labels(all_nodes) AS labels
+                UNWIND [p] + nodes AS all_nodes
+                RETURN all_nodes.text AS text
                 """,
                 node_id=node_id,
-                num_hops=num_hops
+                num_hops=num_hops,
             )
-            data = result.data()
-            # Construct list of objects containing node_id and function_name
-            nodes_info = [{"node_id": record["node_id"], "function_name": record["function_name"], "labels": record["labels"]} for record in data]
-            return nodes_info
+            return result.data()
 
     @staticmethod
     def _create_nodes_txn(tx, nodeList: List[Any]):

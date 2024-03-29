@@ -1,6 +1,6 @@
 import os
 import uuid
-from blar_graph.db_managers import Neo4jManager
+from blar_graph.graph_construction.neo4j_manager import Neo4jManager
 from blar_graph.graph_construction.graph_file_parser import GraphFileParser
 from blar_graph.utils import format_nodes
 import traceback
@@ -200,4 +200,5 @@ class GraphConstructor:
         # relate functions calls
         relationships.extend(self._relate_function_calls(nodes, imports))
 
-        self.graph_manager.save_graph(nodes, relationships)
+        self.graph_manager.create_nodes(nodes)
+        self.graph_manager.create_edges(relationships)
