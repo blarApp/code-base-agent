@@ -1,9 +1,8 @@
 import os
 from typing import Any, List, Dict
-
+from blar_graph.db_managers.base_manager import BaseDBManager
 from dotenv import load_dotenv
 from neo4j import GraphDatabase
-from blar_graph.db_managers.base_manager import BaseDBManager
 
 load_dotenv()
 
@@ -18,12 +17,9 @@ class Neo4jManager(BaseDBManager):
         self.create_function_name_index()
         self.create_node_id_index()
 
-    def query(self, query: str, result_format: str = "data"):
-        with self.driver.session() as session:
-            result = session.run(query)
-            if result_format == "graph":
-                return result.graph()
-            return result.data()
+    def save_graph(self, nodes: List[Any], edges: List[Any]):
+        self.create_nodes(nodes)
+        self.create_edges(edges)
 
     def create_function_name_index(self):
         # Creates a fulltext index on the name and path properties of the nodes
@@ -45,10 +41,6 @@ class Neo4jManager(BaseDBManager):
     def close(self):
         # Close the connection to the database
         self.driver.close()
-
-    def save_graph(self, nodes: List[Any], edges: List[Any]):
-        self.create_nodes(nodes)
-        self.create_edges(edges)
 
     def create_nodes(self, nodeList: List[Any]):
         # Function to create nodes in the Neo4j database
@@ -129,7 +121,7 @@ class Neo4jManager(BaseDBManager):
             if first_result is None:
                 result = session.run(node_query2)
                 first_result = result.peek()
-            neighbours = self.get_n_hop_neighbours(first_result['node.node_id'], 1)
+            neighbours = self.get_n_hop_neighbours(first_result["node.node_id"], 1)
             return first_result, neighbours
 
     def get_graph_by_path(self, path: str):
@@ -152,11 +144,14 @@ class Neo4jManager(BaseDBManager):
                 RETURN all_nodes.node_id AS node_id, all_nodes.name AS function_name, labels(all_nodes) AS labels
                 """,
                 node_id=node_id,
-                num_hops=num_hops
+                num_hops=num_hops,
             )
             data = result.data()
             # Construct list of objects containing node_id and function_name
-            nodes_info = [{"node_id": record["node_id"], "function_name": record["function_name"], "labels": record["labels"]} for record in data]
+            nodes_info = [
+                {"node_id": record["node_id"], "function_name": record["function_name"], "labels": record["labels"]}
+                for record in data
+            ]
             return nodes_info
 
     @staticmethod
