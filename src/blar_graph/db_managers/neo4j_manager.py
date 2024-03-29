@@ -102,17 +102,25 @@ class Neo4jManager(BaseDBManager):
             result = session.run(query, {"node_id": node_id})
             return result.data()[0]
 
-    def get_code(self, query: str) -> List[Dict[str, Any]]:
+    def get_code(self, query: str):
         # Function to get code from the Neo4j database based on a keyword query
         formatted_query = self.format_query(query)
         node_query = f"""
     CALL db.index.fulltext.queryNodes("functionNames", "*{formatted_query}") YIELD node, score
-    RETURN node, score
+    RETURN node.text, node.node_id, node.name, score
         """
-
+        node_query2 = f"""
+    CALL db.index.fulltext.queryNodes("functionNames", "{formatted_query}") YIELD node, score
+    RETURN node.text, node.node_id, node.name, score
+        """
         with self.driver.session() as session:
             result = session.run(node_query)
-            return result.data()
+            first_result = result.peek()
+            if first_result is None:
+                result = session.run(node_query2)
+                first_result = result.peek()
+            neighbours = self.get_n_hop_neighbours(first_result['node.node_id'], 1)
+            return first_result, neighbours
 
     def get_graph_by_path(self, path: str):
         node_query = f"""
@@ -130,13 +138,16 @@ class Neo4jManager(BaseDBManager):
                 MATCH (p {node_id: $node_id})
                 CALL apoc.neighbors.byhop(p, ">", $num_hops)
                 YIELD nodes
-                UNWIND [p] + nodes AS all_nodes
-                RETURN all_nodes.text AS text
+                UNWIND nodes AS all_nodes
+                RETURN all_nodes.node_id AS node_id, all_nodes.name AS function_name, labels(all_nodes) AS labels
                 """,
                 node_id=node_id,
-                num_hops=num_hops,
+                num_hops=num_hops
             )
-            return result.data()
+            data = result.data()
+            # Construct list of objects containing node_id and function_name
+            nodes_info = [{"node_id": record["node_id"], "function_name": record["function_name"], "labels": record["labels"]} for record in data]
+            return nodes_info
 
     @staticmethod
     def _create_nodes_txn(tx, nodeList: List[Any]):
