@@ -162,3 +162,5 @@ cython_debug/
 .vscode/
 
 .ruff_cache/
+
+blar-example-repos/
