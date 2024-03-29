@@ -3,7 +3,6 @@ import uuid
 from blar_graph.db_managers import Neo4jManager
 from blar_graph.graph_construction.graph_file_parser import GraphFileParser
 from blar_graph.utils import format_nodes
-import traceback
 
 
 class GraphConstructor:
@@ -64,10 +63,9 @@ class GraphConstructor:
                     try:
                         processed_nodes, relations, file_imports = file_parser.parse()
                     except Exception as e:
-                        traceback.print_exc()
-                        print(f"Error parsing {entry.path}: {e}")
+                        print(f"\rError {entry.path}", end="")
                         continue
-
+                    print(f"\rProcessed {entry.path}", end="")
                     file_root_node_id = processed_nodes[0]["attributes"]["node_id"]
 
                     nodes.extend(processed_nodes)
@@ -139,14 +137,12 @@ class GraphConstructor:
             if function_calls:
                 for function_call in function_calls:
                     if node["type"] == "FILE":
-                        file_imports = imports[node["attributes"]["node_id"]]
+                        file_imports = imports.get(node["attributes"]["node_id"], {})
                     else:
-                        file_imports = imports[node["attributes"]["file_node_id"]]
+                        file_imports = imports.get(node["attributes"]["file_node_id"], {})
 
                     function_import = file_imports.get(function_call.split(".")[0])
-                    root_directory = node["attributes"]["path"].replace(
-                        "." + node["attributes"]["name"], ""
-                    )
+                    root_directory = node["attributes"]["path"].replace("." + node["attributes"]["name"], "")
                     directory = root_directory
                     if function_import:
                         directory = function_import
@@ -154,10 +150,7 @@ class GraphConstructor:
                     for module in function_call.split("."):
                         final_module = "." + module
                         intermediate_module = "." + module + "."
-                        if not (
-                            final_module in directory
-                            or intermediate_module in directory
-                        ):
+                        if not (final_module in directory or intermediate_module in directory):
                             directory += f".{module}"
                     if directory in self.global_imports:
                         target_node_type = self.global_imports[directory]["type"]
@@ -183,9 +176,7 @@ class GraphConstructor:
                                 function_calls_relations.append(
                                     {
                                         "sourceId": node["attributes"]["node_id"],
-                                        "targetId": self.global_imports[init_directory][
-                                            "id"
-                                        ],
+                                        "targetId": self.global_imports[init_directory]["id"],
                                         "type": "CALLS",
                                     }
                                 )
