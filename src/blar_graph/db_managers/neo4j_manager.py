@@ -16,6 +16,7 @@ class Neo4jManager(BaseDBManager):
 
         self.driver = GraphDatabase.driver(uri, auth=(user, password))
         self.create_function_name_index()
+        self.create_node_id_index()
 
     def query(self, query: str, result_format: str = "data"):
         with self.driver.session() as session:
@@ -32,6 +33,15 @@ class Neo4jManager(BaseDBManager):
             """
             session.run(node_query)
 
+    def create_node_id_index(self):
+        with self.driver.session() as session:
+            node_types = ["CLASS", "FUNCTION", "FILE", "PACKAGE", "FOLDER"]
+            for node_type in node_types:
+                node_query = f"""
+                CREATE INDEX node_id IF NOT EXISTS FOR (n:{node_type}) ON (n.node_id)
+                """
+                session.run(node_query)
+
     def close(self):
         # Close the connection to the database
         self.driver.close()
@@ -43,12 +53,12 @@ class Neo4jManager(BaseDBManager):
     def create_nodes(self, nodeList: List[Any]):
         # Function to create nodes in the Neo4j database
         with self.driver.session() as session:
-            session.write_transaction(self._create_nodes_txn, nodeList)
+            session.write_transaction(self._create_nodes_txn, nodeList, 10000)
 
     def create_edges(self, edgesList: List[Any]):
         # Function to create edges between nodes in the Neo4j database
         with self.driver.session() as session:
-            session.write_transaction(self._create_edges_txn, edgesList)
+            session.write_transaction(self._create_edges_txn, edgesList, 10000)
 
     def format_query(self, query: str):
         # Function to format the query to be used in the fulltext index
@@ -150,32 +160,50 @@ class Neo4jManager(BaseDBManager):
             return nodes_info
 
     @staticmethod
-    def _create_nodes_txn(tx, nodeList: List[Any]):
-        # Transaction function for creating nodes with dynamic labels
-        node_query = f"""
-    UNWIND $nodeList AS node
-    CALL apoc.create.node([node.type], node.attributes)
-    YIELD node as n
-    RETURN count(n) as createdNodesCount
-    """
-        result = tx.run(node_query, nodeList=nodeList)
+    def _create_nodes_txn(tx, nodeList: List[Any], batch_size: int):
+        # Revised Cypher query using apoc.periodic.iterate for creating nodes
+        node_creation_query = """
+        CALL apoc.periodic.iterate(
+            "UNWIND $nodeList AS node RETURN node",
+            "CALL apoc.create.node([node.type], node.attributes) YIELD node as n RETURN count(n) as count",
+            {batchSize:$batchSize, parallel:true, iterateList: true, params:{nodeList:$nodeList}}
+        )
+        YIELD batches, total, errorMessages, updateStatistics
+        RETURN batches, total, errorMessages, updateStatistics
+        """
 
+        result = tx.run(node_creation_query, nodeList=nodeList, batchSize=batch_size)
+
+        # Fetch the result
         for record in result:
-            print(f"Created {record['createdNodesCount']} nodes")
+            total = record["total"]
+            batches = record["batches"]
+            error_messages = record["errorMessages"]
+            update_statistics = record["updateStatistics"]
+            print(f"Created {record['total']} nodes")
 
     @staticmethod
-    def _create_edges_txn(tx, edgesList: List[Any]):
-        # Transaction function for creating edges
-        edge_query = """
-    WITH $edgesList AS edges
-    UNWIND edges AS edgeObject
-    MATCH (node1 {node_id: edgeObject.sourceId})
-    MATCH (node2 {node_id: edgeObject.targetId})
-    CALL apoc.create.relationship(node1, edgeObject.type, {}, node2)
-    YIELD rel
-    RETURN rel;
-    """
-        tx.run(edge_query, edgesList=edgesList)
+    def _create_edges_txn(tx, edgesList: List[Any], batch_size: int):
+        # Cypher query using apoc.periodic.iterate for creating edges
+        edge_creation_query = """
+        CALL apoc.periodic.iterate(
+            'WITH $edgesList AS edges UNWIND edges AS edgeObject RETURN edgeObject',
+            'MATCH (node1 {node_id: edgeObject.sourceId}) MATCH (node2 {node_id: edgeObject.targetId}) CALL apoc.create.relationship(node1, edgeObject.type, {}, node2) YIELD rel RETURN rel',
+            {batchSize:$batchSize, parallel:true, iterateList: true, params:{edgesList:$edgesList}}
+        )
+        YIELD batches, total, errorMessages, updateStatistics
+        RETURN batches, total, errorMessages, updateStatistics
+        """
+        # Execute the query
+        result = tx.run(edge_creation_query, edgesList=edgesList, batchSize=batch_size)
+
+        # Fetch the result
+        for record in result:
+            total = record["total"]
+            batches = record["batches"]
+            error_messages = record["errorMessages"]
+            update_statistics = record["updateStatistics"]
+            print(f"Created {record['total']} edges")
 
 
 if __name__ == "__main__":
