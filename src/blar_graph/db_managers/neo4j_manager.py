@@ -17,6 +17,13 @@ class Neo4jManager(BaseDBManager):
         self.create_function_name_index()
         self.create_node_id_index()
 
+    def query(self, query: str, result_format: str = "data"):
+        with self.driver.session() as session:
+            result = session.run(query)
+            if result_format == "graph":
+                return result.graph()
+            return result.data()
+        
     def save_graph(self, nodes: List[Any], edges: List[Any]):
         self.create_nodes(nodes)
         self.create_edges(edges)
