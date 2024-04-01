@@ -2,9 +2,12 @@
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
+[tool.black]
+line-length = 119
+
 [tool.poetry]
 name = "blar-graph"
-version = "0.0.5"
+version = "0.0.6"
 description = "Llm agent to search within a graph"
 authors = ["Benjamín Errazuriz <benjamin@blar.io>", "José Domínguez <jose@blar.io>"]
 readme = "README.md"
@@ -12,6 +15,9 @@ homepage = "https://blar.io"
 repository = "https://github.com/blarApp/code-base-agent"
 license = "MIT"
 packages = [{include = "blar_graph", from = "src"}]
+exclude = [
+  {path = "src/blar_graph/examples"}
+]
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.12"
@@ -26,6 +32,4 @@ neo4j = "^5.18.0"
 [tool.poetry.group.dev.dependencies]
 isort = "^5.13.2"
 black = "^24.3.0"
-
-[tool.black]
-line-length = 119
+pre-commit = "^3.7.0"

@@ -1,4 +1,3 @@
-from langchain_core.utils.function_calling import convert_pydantic_to_openai_tool
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.agents.format_scratchpad.openai_tools import (
     format_to_openai_tool_messages,
@@ -33,9 +32,7 @@ def get_debug_agent(graph_manager: BaseDBManager):
     agent = (
         {
             "input": lambda x: x["input"],
-            "agent_scratchpad": lambda x: format_to_openai_tool_messages(
-                x["intermediate_steps"]
-            ),
+            "agent_scratchpad": lambda x: format_to_openai_tool_messages(x["intermediate_steps"]),
         }
         | prompt
         | llm_with_tools

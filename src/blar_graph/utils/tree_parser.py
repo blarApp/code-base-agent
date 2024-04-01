@@ -21,17 +21,13 @@ def count_parameters(params_str):
     # Count parameters considering string literals and ignoring commas within them.
     # This simplistic approach assumes balanced quotes and no escaped quotes within strings.
     in_string = False
-    param_count = (
-        0 if not params_str else 1
-    )  # Start with 1 parameter if the string is not empty
+    param_count = 0 if not params_str else 1  # Start with 1 parameter if the string is not empty
 
     for char in params_str:
         if char == '"':
             in_string = not in_string  # Toggle state
         elif char == "," and not in_string:
-            param_count += (
-                1  # Count commas outside of string literals as parameter separators
-            )
+            param_count += 1  # Count commas outside of string literals as parameter separators
 
     # Edge case for empty parameter list or only spaces
     if param_count == 1 and not params_str.strip():
@@ -84,16 +80,11 @@ def get_function_calls(node, assigments_dict: dict) -> list[str]:
                     expression = assign_value
                     expression_identifier = expression.named_children[0].text.decode()
 
-                    assigments_dict[variable_identifier.text.decode("utf-8")] = (
-                        expression_identifier
-                    )
+                    assigments_dict[variable_identifier.text.decode("utf-8")] = expression_identifier
 
         if tree_node.type == "call":
             call_children = tree_node.named_children
-            if (
-                call_children[0].type == "attribute"
-                and call_children[1].type == "argument_list"
-            ):
+            if call_children[0].type == "attribute" and call_children[1].type == "argument_list":
                 attribute_children = call_children[0].named_children
                 root_caller = attribute_children[0]
                 if root_caller.type == "identifier":

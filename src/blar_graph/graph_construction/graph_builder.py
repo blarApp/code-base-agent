@@ -62,7 +62,7 @@ class GraphConstructor:
                     entry_name = entry.name.split(".py")[0]
                     try:
                         processed_nodes, relations, file_imports = file_parser.parse()
-                    except Exception as e:
+                    except Exception:
                         print(f"\rError {entry.path}", end="")
                         continue
                     print(f"\rProcessed {entry.path}", end="")
