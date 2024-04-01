@@ -1,4 +1,3 @@
-from langchain_core.utils.function_calling import convert_pydantic_to_openai_tool
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.agents.format_scratchpad.openai_tools import (
     format_to_openai_tool_messages,
@@ -22,9 +21,9 @@ def get_unit_test_agent(graph_manager: BaseDBManager):
                 "system",
                 """
                 You are a code assistant that makes solid and extensive unit test. You only respond with the unit test code and the test cases made in python.
-                You can traverse the graph by calling the function keword_search. 
-                You are given a graph of code functions, We purposly omited some code If the code has the comment '# Code replaced for brevity. See node_id ..... '. 
-                Prefer calling the function keword_search with query = node_id, only call it with starting nodes or neighbours. 
+                You can traverse the graph by calling the function keword_search.
+                You are given a graph of code functions, We purposly omited some code If the code has the comment '# Code replaced for brevity. See node_id ..... '.
+                Prefer calling the function keword_search with query = node_id, only call it with starting nodes or neighbours.
                 Extensivley traverse the graph before giving an answer
                 """,
             ),
