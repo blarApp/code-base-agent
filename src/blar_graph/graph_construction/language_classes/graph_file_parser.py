@@ -22,21 +22,22 @@ class GraphFileParser:
         directory_path: str,
         visited_nodes: dict,
         global_imports: dict,
+        extensions: list,
     ):
-        self.file_path = file_path
+        self.file_path = Path(file_path)
         self.language = language
         self.directory_path = directory_path
         self.visited_nodes = visited_nodes
         self.global_imports = global_imports
         self.root_path = root_path
+        self.extensions = extensions
 
     def parse(self):
-        path = Path(self.file_path)
-        if not path.exists():
+        if not self.file_path.exists():
             print(f"File {self.file_path} does not exist.")
             raise FileNotFoundError
         documents = SimpleDirectoryReader(
-            input_files=[path],
+            input_files=[self.file_path],
             file_metadata=lambda x: {"filepath": x},
         ).load_data()
 
@@ -45,9 +46,12 @@ class GraphFileParser:
             chunk_min_characters=3,
             code_splitter=CodeSplitter(language=self.language, max_chars=10000, chunk_lines=10),
         )
-        no_extension_path = self.file_path.replace(".py", "")
-
         split_nodes = code.get_nodes_from_documents(documents)
+        return split_nodes
+
+    def _parse_file(self):
+        split_nodes = self.parse()
+        no_extension_path = self._remove_extensions()
         node_list = []
         edges_list = []
 
@@ -64,7 +68,7 @@ class GraphFileParser:
             node_list.append(processed_node)
             edges_list.extend(relationships)
 
-        imports = self._get_imports(str(path), node_list[0]["attributes"]["node_id"])
+        imports = self._get_imports(str(self.file_path), node_list[0]["attributes"]["node_id"])
 
         return node_list, edges_list, imports
 
@@ -135,3 +139,9 @@ class GraphFileParser:
                 imports["global"] = import_statement.text.decode()
 
         return {file_node_id: imports}
+
+    def _remove_extensions(self):
+        no_extension_path = str(self.file_path)
+        for extension in self.extensions:
+            no_extension_path = no_extension_path.replace(extension, "")
+        return no_extension_path
