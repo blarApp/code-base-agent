@@ -4,7 +4,7 @@ from blar_graph.db_managers import Neo4jManager
 from blar_graph.graph_construction.graph_file_parser import GraphFileParser
 from blar_graph.utils import format_nodes
 
-API_KEY = "isuhccuygyfkjavjhsbvkmlm"
+NEO4J_PASSWORD = "Jdb34XuNJq-MXP4xT0aPVoaUB6kHIpdLmY0qoMYgREg"
 
 
 class GraphConstructor:
