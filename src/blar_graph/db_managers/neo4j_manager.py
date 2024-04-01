@@ -1,5 +1,5 @@
 import os
-from typing import Any, List, Dict
+from typing import Any, List
 from blar_graph.db_managers.base_manager import BaseDBManager
 from dotenv import load_dotenv
 from neo4j import GraphDatabase
@@ -23,7 +23,7 @@ class Neo4jManager(BaseDBManager):
             if result_format == "graph":
                 return result.graph()
             return result.data()
-        
+
     def save_graph(self, nodes: List[Any], edges: List[Any]):
         self.create_nodes(nodes)
         self.create_edges(edges)
@@ -132,7 +132,7 @@ class Neo4jManager(BaseDBManager):
             return first_result, neighbours
 
     def get_graph_by_path(self, path: str):
-        node_query = f"""
+        node_query = """
     MATCH (nodes) WHERE nodes.path CONTAINS $path return nodes
         """
         with self.driver.session() as session:
@@ -156,7 +156,11 @@ class Neo4jManager(BaseDBManager):
             data = result.data()
             # Construct list of objects containing node_id and function_name
             nodes_info = [
-                {"node_id": record["node_id"], "function_name": record["function_name"], "labels": record["labels"]}
+                {
+                    "node_id": record["node_id"],
+                    "function_name": record["function_name"],
+                    "labels": record["labels"],
+                }
                 for record in data
             ]
             return nodes_info
@@ -178,10 +182,6 @@ class Neo4jManager(BaseDBManager):
 
         # Fetch the result
         for record in result:
-            total = record["total"]
-            batches = record["batches"]
-            error_messages = record["errorMessages"]
-            update_statistics = record["updateStatistics"]
             print(f"Created {record['total']} nodes")
 
     @staticmethod
@@ -201,10 +201,6 @@ class Neo4jManager(BaseDBManager):
 
         # Fetch the result
         for record in result:
-            total = record["total"]
-            batches = record["batches"]
-            error_messages = record["errorMessages"]
-            update_statistics = record["updateStatistics"]
             print(f"Created {record['total']} edges")
 
 

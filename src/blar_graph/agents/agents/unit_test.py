@@ -12,14 +12,20 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-def get_debug_agent(graph_manager: BaseDBManager):
+def get_unit_test_agent(graph_manager: BaseDBManager):
     llm = ChatOpenAI(model="gpt-4-turbo-preview", temperature=0)
 
     prompt = ChatPromptTemplate.from_messages(
         [
             (
                 "system",
-                "You are a code debugger, Given a problem description and an initial function, you need to find the bug in the code. You are given a graph of code functions, We purposly omited some code If the code has the comment '# Code replaced for brevity. See node_id ..... '. You can traverse the graph by calling the function keword_search. Prefer calling the function keword_search with query = node_id, only call it with starting nodes or neighbours. Explain why your solution solves the bug. Extensivley traverse the graph before giving an answer",
+                """
+                You are a code assistant that makes solid and extensive unit test. You only respond with the unit test code and the test cases made in python.
+                You can traverse the graph by calling the function keword_search.
+                You are given a graph of code functions, We purposly omited some code If the code has the comment '# Code replaced for brevity. See node_id ..... '.
+                Prefer calling the function keword_search with query = node_id, only call it with starting nodes or neighbours.
+                Extensivley traverse the graph before giving an answer
+                """,
             ),
             ("user", "{input}"),
             MessagesPlaceholder(variable_name="agent_scratchpad"),

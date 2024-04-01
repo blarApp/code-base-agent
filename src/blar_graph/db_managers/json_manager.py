@@ -16,5 +16,3 @@ class JSONManager(BaseDBManager):
             path = self.default_path
         with open(path, "w") as f:
             json.dump({"nodes": nodes, "edges": edges}, f)
-
-    
