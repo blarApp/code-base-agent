@@ -1,22 +1,26 @@
 import os
 import uuid
 from blar_graph.db_managers import Neo4jManager
-from blar_graph.graph_construction.graph_file_parser import GraphFileParser
-from blar_graph.utils import format_nodes
+from blar_graph.graph_construction.languages.python.python_parser import PythonParser
+from blar_graph.graph_construction.utils import format_nodes
 
 
 class GraphConstructor:
-    def __init__(self, graph_manager: Neo4jManager):
+    def __init__(self, graph_manager: Neo4jManager, language="python"):
         self.graph_manager = graph_manager
         self.directories_map = {}
         self.visited_nodes = {}
         self.global_imports = {}
         self.root = None
+        if language == "python":
+            self.parser = PythonParser()
+        else:
+            raise ValueError(f"Language {language} not supported")
+        # TODO: Add more languages
 
     def _scan_directory(
         self,
         path,
-        language="python",
         nodes=[],
         relationships=[],
         imports={},
@@ -26,10 +30,8 @@ class GraphConstructor:
             raise FileNotFoundError(f"Directory {path} not found")
         if self.root is None:
             self.root = path
-        package = False
-        init_py_path = os.path.join(path, "__init__.py")
-        if os.path.exists(init_py_path):
-            package = True
+
+        package = self.parser.is_package(path)
 
         directory_node = format_nodes.format_directory_node(path, package)
         directory_path = directory_node["attributes"]["path"]
@@ -46,26 +48,23 @@ class GraphConstructor:
 
         nodes.append(directory_node)
         for entry in os.scandir(path):
-            if "legacy" in entry.name:
+            if "legacy" in entry.name or entry.name.startswith("."):
                 continue
             if entry.is_file():
                 if entry.name.endswith(".py") and not entry.name == ("__init__.py"):
-                    file_parser = GraphFileParser(
-                        entry.path,
-                        self.root,
-                        language,
-                        directory_path,
-                        visited_nodes=self.visited_nodes,
-                        global_imports=self.global_imports,
-                    )
-
                     entry_name = entry.name.split(".py")[0]
                     try:
-                        processed_nodes, relations, file_imports = file_parser.parse()
+                        processed_nodes, relations, file_imports = self.parser.parse(
+                            entry.path,
+                            self.root,
+                            directory_path,
+                            visited_nodes=self.visited_nodes,
+                            global_imports=self.global_imports,
+                        )
                     except Exception:
-                        print(f"\rError {entry.path}", end="")
+                        print(f"Error {entry.path}")
                         continue
-                    print(f"\rProcessed {entry.path}", end="")
+                    print(f"Processed {entry.path}")
                     file_root_node_id = processed_nodes[0]["attributes"]["node_id"]
 
                     nodes.extend(processed_nodes)
@@ -102,11 +101,10 @@ class GraphConstructor:
                         }
                     )
             if entry.is_dir():
-                if entry.name == "__pycache__":
+                if self.parser.skip_directory(entry.name):
                     continue
                 nodes, relationships, imports = self._scan_directory(
                     entry.path,
-                    language,
                     nodes,
                     relationships,
                     imports,
@@ -183,9 +181,9 @@ class GraphConstructor:
 
         return function_calls_relations
 
-    def build_graph(self, path, language):
+    def build_graph(self, path):
         # process every node to create the graph structure
-        nodes, relationships, imports = self._scan_directory(path, language)
+        nodes, relationships, imports = self._scan_directory(path)
         # relate imports between file nodes
         relationships.extend(self._relate_imports(imports))
         # relate functions calls

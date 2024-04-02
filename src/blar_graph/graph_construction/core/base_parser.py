@@ -1,14 +1,15 @@
 import os
+from abc import ABC, abstractmethod
 from pathlib import Path
 import tree_sitter_languages
-from blar_graph.utils import format_nodes, tree_parser
+from blar_graph.graph_construction.utils import format_nodes, tree_parser
 from llama_index.core import SimpleDirectoryReader
 from llama_index.core.schema import NodeRelationship, BaseNode
 from llama_index.core.text_splitter import CodeSplitter
 from llama_index.packs.code_hierarchy import CodeHierarchyNodeParser
 
 
-class GraphFileParser:
+class BaseParser(ABC):
     RELATIONS_TYPES_MAP = {
         "function_definition": "FUNCTION_DEFINITION",
         "class_definition": "CLASS_DEFINITION",
@@ -16,24 +17,21 @@ class GraphFileParser:
 
     def __init__(
         self,
+        language: str,
+    ):
+        self.language = language
+
+    def parse(
+        self,
         file_path: str,
         root_path: str,
-        language: str,
         directory_path: str,
         visited_nodes: dict,
         global_imports: dict,
     ):
-        self.file_path = file_path
-        self.language = language
-        self.directory_path = directory_path
-        self.visited_nodes = visited_nodes
-        self.global_imports = global_imports
-        self.root_path = root_path
-
-    def parse(self):
-        path = Path(self.file_path)
+        path = Path(file_path)
         if not path.exists():
-            print(f"File {self.file_path} does not exist.")
+            print(f"File {file_path} does not exist.")
             raise FileNotFoundError
         documents = SimpleDirectoryReader(
             input_files=[path],
@@ -45,30 +43,39 @@ class GraphFileParser:
             chunk_min_characters=3,
             code_splitter=CodeSplitter(language=self.language, max_chars=10000, chunk_lines=10),
         )
-        no_extension_path = self.file_path.replace(".py", "")
+        no_extension_path = self._remove_extensions(file_path)
 
         split_nodes = code.get_nodes_from_documents(documents)
         node_list = []
         edges_list = []
 
-        file_node, file_relations = self.__process_node__(split_nodes.pop(0), no_extension_path, "")
-        file_node["directory"] = self.directory_path
-        file_node["name"] = os.path.basename(self.file_path)
+        file_node, file_relations = self.__process_node__(
+            split_nodes.pop(0), no_extension_path, "", visited_nodes, global_imports
+        )
+        file_node["directory"] = directory_path
+        file_node["name"] = os.path.basename(file_path)
         node_list.append(file_node)
         edges_list.extend(file_relations)
 
         for node in split_nodes:
             processed_node, relationships = self.__process_node__(
-                node, no_extension_path, file_node["attributes"]["node_id"]
+                node, no_extension_path, file_node["attributes"]["node_id"], visited_nodes, global_imports
             )
             node_list.append(processed_node)
             edges_list.extend(relationships)
 
-        imports = self._get_imports(str(path), node_list[0]["attributes"]["node_id"])
+        imports = self._get_imports(str(path), node_list[0]["attributes"]["node_id"], root_path)
 
         return node_list, edges_list, imports
 
-    def __process_node__(self, node: BaseNode, no_extension_path: str, file_node_id: str):
+    def __process_node__(
+        self,
+        node: BaseNode,
+        no_extension_path: str,
+        file_node_id: str,
+        visited_nodes: dict,
+        global_imports: dict,
+    ):
         relationships = []
         asignments_dict = {}
         scope = node.metadata["inclusive_scopes"][-1] if node.metadata["inclusive_scopes"] else None
@@ -77,12 +84,16 @@ class GraphFileParser:
             type_node = scope["type"]
 
         if type_node == "function_definition":
-            function_calls = tree_parser.get_function_calls(node, asignments_dict)
+            function_calls = tree_parser.get_function_calls(
+                node, asignments_dict, self.parse_function_call, self.language
+            )
             processed_node = format_nodes.format_function_node(node, scope, function_calls, file_node_id)
         elif type_node == "class_definition":
             processed_node = format_nodes.format_class_node(node, scope, file_node_id)
         else:
-            function_calls = tree_parser.get_function_calls(node, asignments_dict)
+            function_calls = tree_parser.get_function_calls(
+                node, asignments_dict, self.parse_function_call, self.language
+            )
             processed_node = format_nodes.format_file_node(node, no_extension_path, function_calls)
 
         for relation in node.relationships.items():
@@ -100,19 +111,19 @@ class GraphFileParser:
                     )
             elif relation[0] == NodeRelationship.PARENT:
                 if relation[1]:
-                    parent_path = self.visited_nodes.get(relation[1].node_id, no_extension_path).replace("/", ".")
+                    parent_path = visited_nodes.get(relation[1].node_id, no_extension_path).replace("/", ".")
                     node_path = f"{parent_path}.{processed_node['attributes']['name']}"
                 else:
                     node_path = no_extension_path.replace("/", ".")
         processed_node["attributes"]["path"] = node_path
-        self.global_imports[node_path] = {
+        global_imports[node_path] = {
             "id": processed_node["attributes"]["node_id"],
             "type": processed_node["type"],
         }
-        self.visited_nodes[node.node_id] = node_path
+        visited_nodes[node.node_id] = node_path
         return processed_node, relationships
 
-    def _get_imports(self, path: str, file_node_id: str) -> dict:
+    def _get_imports(self, path: str, file_node_id: str, root_path: str) -> dict:
         parser = tree_sitter_languages.get_parser("python")
         with open(path, "r") as file:
             code = file.read()
@@ -126,12 +137,26 @@ class GraphFileParser:
                 from_statement = import_statements[0]
                 from_text = from_statement.text.decode()
                 for import_statement in import_statements[1:]:
-                    imports[import_statement.text.decode()] = tree_parser.resolve_import_path(
-                        from_text, path, self.root_path
-                    )
-
-            elif node.type == "import_statement":
-                import_statement = node.named_children[0]
-                imports["global"] = import_statement.text.decode()
+                    imports[import_statement.text.decode()] = self.resolve_import_path(from_text, path, root_path)
 
         return {file_node_id: imports}
+
+    @abstractmethod
+    def resolve_import_path(self, from_text: str, path: str, root_path: str):
+        pass
+
+    @abstractmethod
+    def _remove_extensions(self, path: str) -> str:
+        pass
+
+    @abstractmethod
+    def is_package(self, directory: str) -> bool:
+        pass
+
+    @abstractmethod
+    def parse_function_call(self, func_call: str, inclusive_scopes) -> tuple[str, int]:
+        pass
+
+    @abstractmethod
+    def skip_directory(self, directory: str) -> bool:
+        pass
