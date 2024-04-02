@@ -87,7 +87,11 @@ Now you can ask yur agent to perform a debugging process.
 list(
     agent.stream(
         {
-            "input": "The directory nodes generates multiples conections, it doesn't distinguish betweem different directories, can you fix it? The initial functions is run"
+            "input": """
+            The directory nodes generates multiples conections,
+            it doesn't distinguish betweem different directories, can you fix it?
+            The initial functions is run
+            """
         }
     )
 )
