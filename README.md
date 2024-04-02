@@ -65,6 +65,7 @@ system_prompt = """
     Explain why your solution solves the bug. Extensivley traverse the graph before giving an answer
 """
 
+
 prompt = ChatPromptTemplate.from_messages(
     [
         (
