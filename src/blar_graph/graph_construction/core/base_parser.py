@@ -18,8 +18,10 @@ class BaseParser(ABC):
     def __init__(
         self,
         language: str,
+        wildcard: str,
     ):
         self.language = language
+        self.wildcard = wildcard
 
     def parse(
         self,
@@ -129,7 +131,7 @@ class BaseParser(ABC):
             code = file.read()
         tree = parser.parse(bytes(code, "utf-8"))
 
-        imports = {}
+        imports = {"_*wildcard*_": []}
         for node in tree.root_node.children:
             if node.type == "import_from_statement":
                 import_statements = node.named_children
@@ -137,6 +139,8 @@ class BaseParser(ABC):
                 from_statement = import_statements[0]
                 from_text = from_statement.text.decode()
                 for import_statement in import_statements[1:]:
+                    if import_statement.text.decode() == self.wildcard:
+                        imports["_*wildcard*_"].append(self.resolve_import_path(from_text, path, root_path))
                     imports[import_statement.text.decode()] = self.resolve_import_path(from_text, path, root_path)
 
         return {file_node_id: imports}

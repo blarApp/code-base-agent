@@ -117,10 +117,31 @@ class GraphConstructor:
                 )
         return nodes, relationships, imports
 
+    def _relate_wildcard_imports(self, file_node_id: str, imports_list: list):
+        import_edges = []
+        for import_path in imports_list:
+            all_dir_imports = self.import_aliases.get(import_path)
+            for dir_import in all_dir_imports:
+                targetId = self.global_imports.get(dir_import)
+                if not targetId:
+                    continue
+                import_edges.append(
+                    {
+                        "sourceId": file_node_id,
+                        "targetId": targetId["id"],
+                        "type": "IMPORTS",
+                    }
+                )
+        return import_edges
+
     def _relate_imports(self, imports: dict):
         import_edges = []
         for file_node_id in imports.keys():
             for imp, path in imports[file_node_id].items():
+                if imp == "_*wildcard*_" and path:
+                    related_imports = self._relate_wildcard_imports(file_node_id, path)
+                    import_edges.extend(related_imports)
+                    continue
                 import_alias = self.import_aliases.get(f"{path}.{imp}")
                 targetId = self.global_imports.get(f"{path}.{imp}")
                 if not targetId and import_alias:
@@ -151,9 +172,15 @@ class GraphConstructor:
                     directory = root_directory
                     if function_import:
                         # Change the directory to complete path if it's an alias else it's assumed to be a regular import
-                        directory = self.import_aliases.get(
-                            function_import + "." + function_call.split(".")[0], function_import
-                        )
+                        import_alias = function_import + "." + function_call.split(".")[0]
+                        directory = self.import_aliases.get(import_alias, function_import)
+                    elif file_imports.get("_*wildcard*_"):
+                        # See if the import is present as wildcard import (*)
+                        for wildcard_path in file_imports["_*wildcard*_"]:
+                            import_alias = wildcard_path + "." + function_call.split(".")[0]
+                            if import_alias in self.import_aliases:
+                                directory = self.import_aliases[wildcard_path + "." + function_call.split(".")[0]]
+                                break
 
                     for module in function_call.split("."):
                         final_module = "." + module

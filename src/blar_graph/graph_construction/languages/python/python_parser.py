@@ -6,7 +6,7 @@ import tree_sitter_languages
 
 class PythonParser(BaseParser):
     def __init__(self):
-        super().__init__("python")
+        super().__init__("python", "*")
         self.extensions = [".py"]
 
     def _remove_extensions(self, file_path):
@@ -92,7 +92,9 @@ class PythonParser(BaseParser):
         with open(file_path, "r") as file:
             code = file.read()
         tree = parser.parse(bytes(code, "utf-8"))
-        imports = {}
+        directory = ".".join(file_path.split(os.sep)[:-1])
+        imports = {directory: []}
+        temp_imports = {}
         for node in tree.root_node.children:
             if node.type == "import_from_statement":
                 import_statements = node.named_children
@@ -102,7 +104,27 @@ class PythonParser(BaseParser):
                 for import_statement in import_statements[1:]:
                     import_path = self.resolve_import_path(from_text, file_path, root_path)
                     new_import_path = import_path + "." + import_statement.text.decode()
-                    import_alias = ".".join(file_path.split(os.sep)[:-1]) + "." + import_statement.text.decode()
+                    import_alias = directory + "." + import_statement.text.decode()
                     imports[import_alias] = new_import_path
+                    temp_imports[import_statement.text.decode()] = new_import_path
+                    imports[directory].append(new_import_path)
+
+            if node.type == "expression_statement":
+                statement_children = node.children
+                if statement_children[0].type == "assignment":
+                    assigment = statement_children[0].named_children
+
+                    variable_identifier = assigment[0]
+                    assign_value = assigment[1]
+                    if variable_identifier.text.decode() == "__all__":
+                        imports[directory] = []
+                        if assign_value.type == "list":
+                            for child in assign_value.children:
+                                if child.type == "string":
+                                    for string_child in child.children:
+                                        if string_child.type == "string_content":
+                                            child_path = temp_imports.get(string_child.text.decode())
+                                            if child_path:
+                                                imports[directory].append(child_path)
 
         return imports
