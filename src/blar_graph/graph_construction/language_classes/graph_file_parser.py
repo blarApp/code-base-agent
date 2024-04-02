@@ -117,7 +117,7 @@ class GraphFileParser:
         return processed_node, relationships
 
     def _get_imports(self, path: str, file_node_id: str) -> dict:
-        parser = tree_sitter_languages.get_parser("python")
+        parser = tree_sitter_languages.get_parser(self.language)
         with open(path, "r") as file:
             code = file.read()
         tree = parser.parse(bytes(code, "utf-8"))

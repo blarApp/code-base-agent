@@ -127,6 +127,18 @@ def find_module_path(module_name, start_dir, project_root):
     return None
 
 
+def resolve_relative_import_path(import_statement, current_file_path, project_root):
+    if import_statement.startswith(".."):
+        import_statement = import_statement[2:]
+        current_file_path = os.sep.join(current_file_path.split(os.sep)[:-1])
+    elif import_statement.startswith("."):
+        import_statement = import_statement[1:]
+    else:
+        return find_module_path(import_statement, current_file_path, project_root)
+
+    return resolve_relative_import_path(import_statement, current_file_path, project_root)
+
+
 def resolve_import_path(import_statement, current_file_directory, project_root):
     """
     Resolve the absolute path of an import statement.
@@ -136,19 +148,8 @@ def resolve_import_path(import_statement, current_file_directory, project_root):
     """
     # Handling relative imports
     if import_statement.startswith("."):
-        parent_levels = import_statement.count(".")
-        relative_path = import_statement[parent_levels:].replace(".", os.sep)
-        base_path = current_file_directory
-        for _ in range(parent_levels - 1):
-            base_path = os.path.dirname(base_path)
-        absolute_path = os.path.join(base_path, relative_path)
-        if os.path.exists(absolute_path + ".py"):
-            return absolute_path + ".py"
-        elif is_package(absolute_path):
-            return absolute_path
+        current_file_directory = os.sep.join(current_file_directory.split(os.sep)[:-1])
+        return resolve_relative_import_path(import_statement, current_file_directory, project_root)
     else:
         # Handling absolute imports
         return find_module_path(import_statement, current_file_directory, project_root)
-
-    # If the module wasn't found, it might be a built-in or third-party module not contained within the project
-    return None

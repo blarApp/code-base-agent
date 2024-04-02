@@ -1,16 +1,21 @@
 import os
 import uuid
 from blar_graph.db_managers import Neo4jManager
-from blar_graph.graph_construction.graph_file_parser import GraphFileParser
 from blar_graph.utils import format_nodes
+from blar_graph.graph_construction.language_classes.python import PythonFile
 
 
 class GraphConstructor:
+    LANGUAGE_CLASS_MAP = {
+        "python": PythonFile,
+    }
+
     def __init__(self, graph_manager: Neo4jManager):
         self.graph_manager = graph_manager
         self.directories_map = {}
         self.visited_nodes = {}
         self.global_imports = {}
+        self.import_aliases = {}
         self.root = None
 
     def _scan_directory(
@@ -22,6 +27,7 @@ class GraphConstructor:
         imports={},
         parent_id=None,
     ):
+        LanguageClass = self.LANGUAGE_CLASS_MAP.get(language)
         if not os.path.exists(path):
             raise FileNotFoundError(f"Directory {path} not found")
         if self.root is None:
@@ -49,23 +55,24 @@ class GraphConstructor:
             if "legacy" in entry.name:
                 continue
             if entry.is_file():
-                if entry.name.endswith(".py") and not entry.name == ("__init__.py"):
-                    file_parser = GraphFileParser(
+                if entry.name.endswith(".py"):
+                    file_parser = LanguageClass(
                         entry.path,
                         self.root,
-                        language,
                         directory_path,
                         visited_nodes=self.visited_nodes,
                         global_imports=self.global_imports,
                     )
-
                     entry_name = entry.name.split(".py")[0]
                     try:
-                        processed_nodes, relations, file_imports = file_parser.parse()
+                        processed_nodes, relations, file_imports = file_parser.parse_file()
                     except Exception:
                         print(f"\rError {entry.path}", end="")
                         continue
                     print(f"\rProcessed {entry.path}", end="")
+                    if not processed_nodes:
+                        self.import_aliases.update(file_imports)
+                        continue
                     file_root_node_id = processed_nodes[0]["attributes"]["node_id"]
 
                     nodes.extend(processed_nodes)
@@ -117,17 +124,19 @@ class GraphConstructor:
     def _relate_imports(self, imports: dict):
         import_edges = []
         for file_node_id in imports.keys():
-            for imp in imports[file_node_id].keys():
-                for key in self.global_imports.keys():
-                    if key.endswith(imp):
-                        import_edges.append(
-                            {
-                                "sourceId": file_node_id,
-                                "targetId": self.global_imports[key]["id"],
-                                "type": "IMPORTS",
-                            }
-                        )
-
+            for imp, path in imports[file_node_id].items():
+                import_alias = self.import_aliases.get(f"{path}.{imp}")
+                targetId = self.global_imports.get(f"{path}.{imp}")
+                if not targetId and import_alias:
+                    targetId = self.global_imports.get(import_alias)
+                if targetId:
+                    import_edges.append(
+                        {
+                            "sourceId": file_node_id,
+                            "targetId": targetId["id"],
+                            "type": "IMPORTS",
+                        }
+                    )
         return import_edges
 
     def _relate_function_calls(self, node_list, imports):
@@ -145,20 +154,24 @@ class GraphConstructor:
                     root_directory = node["attributes"]["path"].replace("." + node["attributes"]["name"], "")
                     directory = root_directory
                     if function_import:
-                        directory = function_import
+                        # Change the directory to complete path if it's an alias else it's assumed to be a regular import
+                        directory = self.import_aliases.get(
+                            function_import + "." + function_call.split(".")[0], function_import
+                        )
 
                     for module in function_call.split("."):
                         final_module = "." + module
                         intermediate_module = "." + module + "."
                         if not (final_module in directory or intermediate_module in directory):
                             directory += f".{module}"
-                    if directory in self.global_imports:
-                        target_node_type = self.global_imports[directory]["type"]
+                    target_node = self.global_imports.get(directory)
+                    if target_node:
+                        target_node_type = target_node["type"]
                         if target_node_type == "FUNCTION" or target_node_type == "FILE":
                             function_calls_relations.append(
                                 {
                                     "sourceId": node["attributes"]["node_id"],
-                                    "targetId": self.global_imports[directory]["id"],
+                                    "targetId": target_node["id"],
                                     "type": "CALLS",
                                 }
                             )
@@ -166,7 +179,7 @@ class GraphConstructor:
                             function_calls_relations.append(
                                 {
                                     "sourceId": node["attributes"]["node_id"],
-                                    "targetId": self.global_imports[directory]["id"],
+                                    "targetId": target_node["id"],
                                     "type": "INSTANTIATES",
                                 }
                             )
@@ -176,7 +189,7 @@ class GraphConstructor:
                                 function_calls_relations.append(
                                     {
                                         "sourceId": node["attributes"]["node_id"],
-                                        "targetId": self.global_imports[init_directory]["id"],
+                                        "targetId": target_node["id"],
                                         "type": "CALLS",
                                     }
                                 )
