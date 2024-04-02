@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This repo introduces a method to represent a local code repository as a graph structure. The objective is to allow an LLM to traverse this graph to understand the code logic and flow. Providing the LLM with the power to debug, refactor, and optimize queries. However, several tasks are yet unexplored
+This repo introduces a method to represent a local code repository as a graph structure. The objective is to allow an LLM to traverse this graph to understand the code logic and flow. Providing the LLM with the power to debug, refactor, and optimize queries. However, several tasks are yet unexplored.
 
 ## Technology Stack
 
@@ -40,5 +40,59 @@ graph_constructor = GraphConstructor(graph_manager)
 graph_constructor.build_graph("YOUR_LOCAL_DIRECTORY", "python")
 graph_manager.close()
 ```
+
+Now you can use our agent tools, or build your own, to create agents that resolves specific tasks. In the folder 'agents_tools' you will find all our tools (for now is just the Keyword search) and examples of agent implementations. For example, for a debugger agent you could do:
+
+```python
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain.agents.format_scratchpad.openai_tools import (
+    format_to_openai_tool_messages,
+)
+from langchain.agents.output_parsers.openai_tools import OpenAIToolsAgentOutputParser
+from blar_graph.agents_tools.tools.KeywordSearchTool import KeywordSearchTool
+from blar_graph.db_managers.base_manager import BaseDBManager
+from langchain.agents import AgentExecutor
+from langchain_openai import ChatOpenAI
+
+llm = ChatOpenAI(model="gpt-4-turbo-preview", temperature=0)
+
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                "You are a code debugger, Given a problem description and an initial function, you need to find the bug in the code. You are given a graph of code functions, We purposly omited some code If the code has the comment '# Code replaced for brevity. See node_id ..... '. You can traverse the graph by calling the function keword_search. Prefer calling the function keword_search with query = node_id, only call it with starting nodes or neighbours. Explain why your solution solves the bug. Extensivley traverse the graph before giving an answer",
+            ),
+            ("user", "{input}"),
+            MessagesPlaceholder(variable_name="agent_scratchpad"),
+        ]
+    )
+
+    tools = [KeywordSearchTool(db_manager=graph_manager)]
+    llm_with_tools = llm.bind_tools(tools)
+
+    agent = (
+        {
+            "input": lambda x: x["input"],
+            "agent_scratchpad": lambda x: format_to_openai_tool_messages(x["intermediate_steps"]),
+        }
+        | prompt
+        | llm_with_tools
+        | OpenAIToolsAgentOutputParser()
+    )
+```
+
+Now you can ask yur agent to perform a debugging process.
+
+```python
+list(
+    agent.stream(
+        {
+            "input": "The directory nodes generates multiples conections, it doesn't distinguish betweem different directories, can you fix it? The initial functions is run"
+        }
+    )
+)
+```
+
+You can find more examples in the folder 'examples'. They are comprehensive jupiter notebooks that guide you from creating the graph to deploying the agent.
 
 *Note: The supported language for now is python, we are going to include Typescript (or other language) if you ask for it enough. So don't hesitate to reach out through the [issues](https://github.com/blarApp/code-base-agent/issues) or directly to benjamin@blar.io or jose@blar.io*
