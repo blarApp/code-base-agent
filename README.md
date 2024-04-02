@@ -56,29 +56,29 @@ from langchain_openai import ChatOpenAI
 
 llm = ChatOpenAI(model="gpt-4-turbo-preview", temperature=0)
 
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
-                "You are a code debugger, Given a problem description and an initial function, you need to find the bug in the code. You are given a graph of code functions, We purposly omited some code If the code has the comment '# Code replaced for brevity. See node_id ..... '. You can traverse the graph by calling the function keword_search. Prefer calling the function keword_search with query = node_id, only call it with starting nodes or neighbours. Explain why your solution solves the bug. Extensivley traverse the graph before giving an answer",
-            ),
-            ("user", "{input}"),
-            MessagesPlaceholder(variable_name="agent_scratchpad"),
-        ]
-    )
+prompt = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            "You are a code debugger, Given a problem description and an initial function, you need to find the bug in the code. You are given a graph of code functions, We purposly omited some code If the code has the comment '# Code replaced for brevity. See node_id ..... '. You can traverse the graph by calling the function keword_search. Prefer calling the function keword_search with query = node_id, only call it with starting nodes or neighbours. Explain why your solution solves the bug. Extensivley traverse the graph before giving an answer",
+        ),
+        ("user", "{input}"),
+        MessagesPlaceholder(variable_name="agent_scratchpad"),
+    ]
+)
 
-    tools = [KeywordSearchTool(db_manager=graph_manager)]
-    llm_with_tools = llm.bind_tools(tools)
+tools = [KeywordSearchTool(db_manager=graph_manager)]
+llm_with_tools = llm.bind_tools(tools)
 
-    agent = (
-        {
-            "input": lambda x: x["input"],
-            "agent_scratchpad": lambda x: format_to_openai_tool_messages(x["intermediate_steps"]),
-        }
-        | prompt
-        | llm_with_tools
-        | OpenAIToolsAgentOutputParser()
-    )
+agent = (
+    {
+        "input": lambda x: x["input"],
+        "agent_scratchpad": lambda x: format_to_openai_tool_messages(x["intermediate_steps"]),
+    }
+    | prompt
+    | llm_with_tools
+    | OpenAIToolsAgentOutputParser()
+)
 ```
 
 Now you can ask yur agent to perform a debugging process.
@@ -87,7 +87,11 @@ Now you can ask yur agent to perform a debugging process.
 list(
     agent.stream(
         {
-            "input": "The directory nodes generates multiples conections, it doesn't distinguish betweem different directories, can you fix it? The initial functions is run"
+            "input": """
+            The directory nodes generates multiples conections,
+            it doesn't distinguish betweem different directories, can you fix it?
+            The initial functions is run
+            """
         }
     )
 )
