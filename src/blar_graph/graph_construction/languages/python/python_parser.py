@@ -1,6 +1,7 @@
 import os
 from blar_graph.graph_construction.core.base_parser import BaseParser
 from blar_graph.graph_construction.utils.tree_parser import get_function_name
+import tree_sitter_languages
 
 
 class PythonParser(BaseParser):
@@ -31,6 +32,17 @@ class PythonParser(BaseParser):
             current_dir = os.path.dirname(current_dir)
         return None
 
+    def resolve_relative_import_path(self, import_statement, current_file_path, project_root):
+        if import_statement.startswith(".."):
+            import_statement = import_statement[2:]
+            current_file_path = os.sep.join(current_file_path.split(os.sep)[:-1])
+        elif import_statement.startswith("."):
+            import_statement = import_statement[1:]
+        else:
+            return self.find_module_path(import_statement, current_file_path, project_root)
+
+        return self.resolve_relative_import_path(import_statement, current_file_path, project_root)
+
     def resolve_import_path(self, import_statement, current_file_directory, project_root):
         """
         Resolve the absolute path of an import statement.
@@ -40,22 +52,11 @@ class PythonParser(BaseParser):
         """
         # Handling relative imports
         if import_statement.startswith("."):
-            parent_levels = import_statement.count(".")
-            relative_path = import_statement[parent_levels:].replace(".", os.sep)
-            base_path = current_file_directory
-            for _ in range(parent_levels - 1):
-                base_path = os.path.dirname(base_path)
-            absolute_path = os.path.join(base_path, relative_path)
-            if os.path.exists(absolute_path + ".py"):
-                return absolute_path + ".py"
-            elif self.is_package(absolute_path):
-                return absolute_path
+            current_file_directory = os.sep.join(current_file_directory.split(os.sep)[:-1])
+            return self.resolve_relative_import_path(import_statement, current_file_directory, project_root)
         else:
             # Handling absolute imports
             return self.find_module_path(import_statement, current_file_directory, project_root)
-
-        # If the module wasn't found, it might be a built-in or third-party module not contained within the project
-        return None
 
     def parse_function_call(self, func_call: str, inclusive_scopes) -> tuple[str, int]:
         func_name = get_function_name(func_call)
@@ -73,3 +74,35 @@ class PythonParser(BaseParser):
 
     def skip_directory(self, directory: str) -> bool:
         return directory == "__pycache__"
+
+    def parse_file(
+        self,
+        file_path: str,
+        root_path: str,
+        directory_path: str,
+        visited_nodes: dict,
+        global_imports: dict,
+    ):
+        if file_path.endswith("__init__.py"):
+            return [], [], self.parse_init(file_path, root_path)
+        return self.parse(file_path, root_path, directory_path, visited_nodes, global_imports)
+
+    def parse_init(self, file_path: str, root_path: str):
+        parser = tree_sitter_languages.get_parser(self.language)
+        with open(file_path, "r") as file:
+            code = file.read()
+        tree = parser.parse(bytes(code, "utf-8"))
+        imports = {}
+        for node in tree.root_node.children:
+            if node.type == "import_from_statement":
+                import_statements = node.named_children
+
+                from_statement = import_statements[0]
+                from_text = from_statement.text.decode()
+                for import_statement in import_statements[1:]:
+                    import_path = self.resolve_import_path(from_text, file_path, root_path)
+                    new_import_path = import_path + "." + import_statement.text.decode()
+                    import_alias = ".".join(file_path.split(os.sep)[:-1]) + "." + import_statement.text.decode()
+                    imports[import_alias] = new_import_path
+
+        return imports
