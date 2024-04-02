@@ -22,7 +22,7 @@ def format_function_node(node: BaseNode, scope: dict, function_calls: list[str],
     return processed_node
 
 
-def format_class_node(node: BaseNode, scope: dict, file_node_id: str) -> dict:
+def format_class_node(node: BaseNode, scope: dict, file_node_id: str, inheritances: list[str]) -> dict:
     name = scope["name"]
     signature = scope["signature"]
 
@@ -34,6 +34,7 @@ def format_class_node(node: BaseNode, scope: dict, file_node_id: str) -> dict:
             "text": node.text,
             "node_id": node.node_id,
             "file_node_id": file_node_id,
+            "inheritances": inheritances,
         },
     }
 

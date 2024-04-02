@@ -91,7 +91,8 @@ class BaseParser(ABC):
             )
             processed_node = format_nodes.format_function_node(node, scope, function_calls, file_node_id)
         elif type_node == "class_definition":
-            processed_node = format_nodes.format_class_node(node, scope, file_node_id)
+            inheritances = tree_parser.get_inheritances(node, self.language)
+            processed_node = format_nodes.format_class_node(node, scope, file_node_id, inheritances)
         else:
             function_calls = tree_parser.get_function_calls(
                 node, asignments_dict, self.parse_function_call, self.language
