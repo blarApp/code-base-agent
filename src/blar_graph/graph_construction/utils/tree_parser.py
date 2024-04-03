@@ -1,6 +1,7 @@
-import tree_sitter_languages
-import os
 import re
+from typing import Callable
+
+import tree_sitter_languages
 
 
 def traverse_tree(tree):
@@ -44,25 +45,10 @@ def get_function_name(call_str):
         return None  # No function name found
 
 
-def parse_function_call(func_call: str, inclusive_scopes) -> tuple[str, int]:
-    func_name = get_function_name(func_call)
-
-    if func_name:
-        if "self." in func_name:
-            for parent in reversed(inclusive_scopes[:-1]):
-                if parent["type"] == "class_definition":
-                    func_name = func_name.replace("self.", parent["name"] + ".")
-                    break
-
-        return func_name
-
-    return None
-
-
-def get_function_calls(node, assigments_dict: dict) -> list[str]:
+def get_function_calls(node, assigments_dict: dict, parse_function_call: Callable, language: str) -> list[str]:
     code_text = node.text
 
-    parser = tree_sitter_languages.get_parser("python")
+    parser = tree_sitter_languages.get_parser(language)
     tree = parser.parse(bytes(code_text, "utf-8"))
     node_names = map(lambda node: node, traverse_tree(tree))
 
@@ -108,47 +94,22 @@ def get_function_calls(node, assigments_dict: dict) -> list[str]:
     return list(filtered_calls)
 
 
-def is_package(directory):
-    return os.path.exists(os.path.join(directory, "__init__.py"))
+def get_inheritances(node, language: str) -> list[str]:
+    code_text = node.text
 
+    parser = tree_sitter_languages.get_parser(language)
+    tree = parser.parse(bytes(code_text, "utf-8"))
+    node_names = map(lambda node: node, traverse_tree(tree))
 
-def find_module_path(module_name, start_dir, project_root):
-    current_dir = start_dir
-    components = module_name.split(".")
+    inheritances = []
 
-    # Try to find the module by traversing up towards the root until the module path is found or root is reached
-    while current_dir.startswith(project_root):
-        possible_path = os.path.join(current_dir, *components)
-        # Check for a direct module or package
-        if os.path.exists(possible_path + ".py") or is_package(possible_path):
-            return possible_path.replace("/", ".")
-        # Move one directory up
-        current_dir = os.path.dirname(current_dir)
-    return None
+    for tree_node in node_names:
+        if tree_node.type == "class_definition":
+            statement_children = tree_node.children
+            for child in statement_children:
+                if child.type == "argument_list":
+                    for argument in child.named_children:
+                        if argument.type == "identifier":
+                            inheritances.append(argument.text.decode("utf-8"))
 
-
-def resolve_import_path(import_statement, current_file_directory, project_root):
-    """
-    Resolve the absolute path of an import statement.
-    import_statement: The imported module as a string (e.g., 'os', 'my_package.my_module').
-    current_file_directory: The directory of the file containing the import statement.
-    project_root: The root directory of the project.
-    """
-    # Handling relative imports
-    if import_statement.startswith("."):
-        parent_levels = import_statement.count(".")
-        relative_path = import_statement[parent_levels:].replace(".", os.sep)
-        base_path = current_file_directory
-        for _ in range(parent_levels - 1):
-            base_path = os.path.dirname(base_path)
-        absolute_path = os.path.join(base_path, relative_path)
-        if os.path.exists(absolute_path + ".py"):
-            return absolute_path + ".py"
-        elif is_package(absolute_path):
-            return absolute_path
-    else:
-        # Handling absolute imports
-        return find_module_path(import_statement, current_file_directory, project_root)
-
-    # If the module wasn't found, it might be a built-in or third-party module not contained within the project
-    return None
+    return inheritances

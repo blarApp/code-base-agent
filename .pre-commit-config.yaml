@@ -26,6 +26,12 @@ repos:
         args: [--fix, --exit-non-zero-on-fix]
         exclude: ".*poetry.lock"
 
+  - repo: https://github.com/pycqa/isort
+    rev: 5.12.0
+    hooks:
+      - id: isort
+        args: ["--profile", "black", "--filter-files"]
+
   - repo: https://github.com/psf/black-pre-commit-mirror
     rev: 23.10.1
     hooks:
@@ -33,6 +39,17 @@ repos:
         name: black-src
         alias: black
         exclude: "^docs|.*poetry.lock|.*_static"
+
+  - repo: https://github.com/adamchainz/blacken-docs
+    rev: 1.16.0
+    hooks:
+      - id: blacken-docs
+        name: black-docs-text
+        alias: black
+        types_or: [rst, markdown, tex]
+        additional_dependencies: [black==23.10.1]
+        # Using PEP 8's line length in docs prevents excess left/right scrolling
+        args: [--line-length=79]
 
   - repo: https://github.com/srstevenson/nb-clean
     rev: 3.1.0

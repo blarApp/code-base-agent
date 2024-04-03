@@ -1,14 +1,16 @@
 import os
 from typing import Any, List
-from blar_graph.db_managers.base_manager import BaseDBManager
+
 from dotenv import load_dotenv
 from neo4j import GraphDatabase
+
+from blar_graph.db_managers.base_manager import BaseDBManager
 
 load_dotenv()
 
 
 class Neo4jManager(BaseDBManager):
-    def __init__(self):
+    def __init__(self, repo_id: str):
         uri = os.getenv("NEO4J_URI")
         user = os.getenv("NEO4J_USERNAME")
         password = os.getenv("NEO4J_PASSWORD")
@@ -16,6 +18,7 @@ class Neo4jManager(BaseDBManager):
         self.driver = GraphDatabase.driver(uri, auth=(user, password))
         self.create_function_name_index()
         self.create_node_id_index()
+        self.repo_id = repo_id
 
     def query(self, query: str, result_format: str = "data"):
         with self.driver.session() as session:
@@ -52,7 +55,7 @@ class Neo4jManager(BaseDBManager):
     def create_nodes(self, nodeList: List[Any]):
         # Function to create nodes in the Neo4j database
         with self.driver.session() as session:
-            session.write_transaction(self._create_nodes_txn, nodeList, 10000)
+            session.write_transaction(self._create_nodes_txn, nodeList, 10000, repo_id=self.repo_id)
 
     def create_edges(self, edgesList: List[Any]):
         # Function to create edges between nodes in the Neo4j database
@@ -111,33 +114,32 @@ class Neo4jManager(BaseDBManager):
             result = session.run(query, {"node_id": node_id})
             return result.data()[0]
 
+    def get_whole_graph(self, result_format: str = "data"):
+        query = "match (n {repo_id: $repo_id})-[r]-(m) return n, m, r"
+        with self.driver.session() as session:
+            result = session.run(query, repo_id=self.repo_id)
+            if result_format == "graph":
+                return result.graph()
+            return result.data()
+
     def get_code(self, query: str):
         # Function to get code from the Neo4j database based on a keyword query
         formatted_query = self.format_query(query)
-        node_query = f"""
-    CALL db.index.fulltext.queryNodes("functionNames", "*{formatted_query}") YIELD node, score
-    RETURN node.text, node.node_id, node.name, score
-        """
-        node_query2 = f"""
-    CALL db.index.fulltext.queryNodes("functionNames", "{formatted_query}") YIELD node, score
+        node_query = """
+    CALL db.index.fulltext.queryNodes("functionNames", $formatted_query) YIELD node, score
+    where node.repo_id = $repo_id
     RETURN node.text, node.node_id, node.name, score
         """
         with self.driver.session() as session:
-            result = session.run(node_query)
+            result = session.run(node_query, formatted_query=f"*{formatted_query}", repo_id=self.repo_id)
             first_result = result.peek()
             if first_result is None:
-                result = session.run(node_query2)
+                result = session.run(node_query, formatted_query=formatted_query, repo_id=self.repo_id)
                 first_result = result.peek()
+            if first_result is None:
+                return None, None
             neighbours = self.get_n_hop_neighbours(first_result["node.node_id"], 1)
             return first_result, neighbours
-
-    def get_graph_by_path(self, path: str):
-        node_query = """
-    MATCH (nodes) WHERE nodes.path CONTAINS $path return nodes
-        """
-        with self.driver.session() as session:
-            result = session.run(node_query, {"path": path})
-            return result.data()
 
     def get_n_hop_neighbours(self, node_id: str, num_hops: int):
         # Function to get code from the Neo4j database based on a keyword query
@@ -166,19 +168,18 @@ class Neo4jManager(BaseDBManager):
             return nodes_info
 
     @staticmethod
-    def _create_nodes_txn(tx, nodeList: List[Any], batch_size: int):
-        # Revised Cypher query using apoc.periodic.iterate for creating nodes
+    def _create_nodes_txn(tx, nodeList: List[Any], batch_size: int, repo_id: str):
         node_creation_query = """
         CALL apoc.periodic.iterate(
             "UNWIND $nodeList AS node RETURN node",
-            "CALL apoc.create.node([node.type], node.attributes) YIELD node as n RETURN count(n) as count",
-            {batchSize:$batchSize, parallel:true, iterateList: true, params:{nodeList:$nodeList}}
+            "CALL apoc.create.node([node.type], apoc.map.merge(node.attributes, {repo_id: $repo_id})) YIELD node as n RETURN count(n) as count",
+            {batchSize: $batchSize, parallel: true, iterateList: true, params: {nodeList: $nodeList, repo_id: $repo_id}}
         )
         YIELD batches, total, errorMessages, updateStatistics
         RETURN batches, total, errorMessages, updateStatistics
         """
 
-        result = tx.run(node_creation_query, nodeList=nodeList, batchSize=batch_size)
+        result = tx.run(node_creation_query, nodeList=nodeList, batchSize=batch_size, repo_id=repo_id)
 
         # Fetch the result
         for record in result:
@@ -202,9 +203,3 @@ class Neo4jManager(BaseDBManager):
         # Fetch the result
         for record in result:
             print(f"Created {record['total']} edges")
-
-
-if __name__ == "__main__":
-    graph = Neo4jManager()
-    result = graph.get_node_by_id("fc33457f-43dd-414c-b074-1142e724ba30")
-    graph.close()
