@@ -1,6 +1,7 @@
-from llama_index.core.schema import BaseNode
 import os
 import uuid
+
+from llama_index.core.schema import BaseNode
 
 
 def format_function_node(node: BaseNode, scope: dict, function_calls: list[str], file_node_id: str) -> dict:
