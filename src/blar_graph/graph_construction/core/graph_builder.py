@@ -156,50 +156,58 @@ class GraphConstructor:
                     )
         return import_edges
 
+    def __get_directory(self, node, function_call: str, imports: dict):
+        if node["type"] == "FILE":
+            file_imports = imports.get(node["attributes"]["node_id"], {})
+        else:
+            file_imports = imports.get(node["attributes"]["file_node_id"], {})
+
+        function_import = file_imports.get(function_call.split(".")[0])
+        root_directory = node["attributes"]["path"].replace("." + node["attributes"]["name"], "")
+        directory = root_directory
+        if function_import:
+            # Change the directory to complete path if it's an alias else it's assumed to be a regular import
+            import_alias = function_import + "." + function_call.split(".")[0]
+            directory = self.import_aliases.get(import_alias, function_import)
+        elif file_imports.get("_*wildcard*_"):
+            # See if the import is present as wildcard import (*)
+            for wildcard_path in file_imports["_*wildcard*_"]:
+                import_alias = wildcard_path + "." + function_call.split(".")[0]
+                if import_alias in self.import_aliases:
+                    directory = self.import_aliases[wildcard_path + "." + function_call.split(".")[0]]
+                    break
+
+        for module in function_call.split("."):
+            final_module = "." + module
+            intermediate_module = "." + module + "."
+            if not (final_module in directory or intermediate_module in directory):
+                directory += f".{module}"
+
+        return directory
+
     def __relate_function_calls(self, node, function_calls, imports):
         relations = []
         for function_call in function_calls:
-            if node["type"] == "FILE":
-                file_imports = imports.get(node["attributes"]["node_id"], {})
-            else:
-                file_imports = imports.get(node["attributes"]["file_node_id"], {})
+            # Get the directory of the function using the import logic of the language
+            directory = self.__get_directory(node, function_call, imports)
+            # Look for the node with the definition of the function
+            target_object = self.global_imports.get(directory)
 
-            function_import = file_imports.get(function_call.split(".")[0])
-            root_directory = node["attributes"]["path"].replace("." + node["attributes"]["name"], "")
-            directory = root_directory
-            if function_import:
-                # Change the directory to complete path if it's an alias else it's assumed to be a regular import
-                import_alias = function_import + "." + function_call.split(".")[0]
-                directory = self.import_aliases.get(import_alias, function_import)
-            elif file_imports.get("_*wildcard*_"):
-                # See if the import is present as wildcard import (*)
-                for wildcard_path in file_imports["_*wildcard*_"]:
-                    import_alias = wildcard_path + "." + function_call.split(".")[0]
-                    if import_alias in self.import_aliases:
-                        directory = self.import_aliases[wildcard_path + "." + function_call.split(".")[0]]
-                        break
-
-            for module in function_call.split("."):
-                final_module = "." + module
-                intermediate_module = "." + module + "."
-                if not (final_module in directory or intermediate_module in directory):
-                    directory += f".{module}"
-            target_node = self.global_imports.get(directory)
-            if target_node:
-                target_node_type = target_node["type"]
-                if target_node_type == "FUNCTION" or target_node_type == "FILE":
+            if target_object:
+                target_object_type = target_object["type"]
+                if target_object_type == "FUNCTION" or target_object_type == "FILE":
                     relations.append(
                         {
                             "sourceId": node["attributes"]["node_id"],
-                            "targetId": target_node["id"],
+                            "targetId": target_object["id"],
                             "type": "CALLS",
                         }
                     )
-                elif target_node_type == "CLASS":
+                elif target_object_type == "CLASS":
                     relations.append(
                         {
                             "sourceId": node["attributes"]["node_id"],
-                            "targetId": target_node["id"],
+                            "targetId": target_object["id"],
                             "type": "INSTANTIATES",
                         }
                     )
@@ -209,20 +217,37 @@ class GraphConstructor:
                         relations.append(
                             {
                                 "sourceId": node["attributes"]["node_id"],
-                                "targetId": target_node["id"],
+                                "targetId": target_object["id"],
                                 "type": "CALLS",
                             }
                         )
         return relations
 
     def __relate_inheritances(self, node, inherits, imports):
-        pass
+        relations = []
+
+        for inherit in inherits:
+            # Get the directory of the function using the import logic of the language
+            directory = self.__get_directory(node, inherit, imports)
+            # Look for the node with the definition of the class
+            target_class = self.global_imports.get(directory)
+
+            if target_class:
+                relations.append(
+                    {
+                        "sourceId": node["attributes"]["node_id"],
+                        "targetId": target_class["id"],
+                        "type": "INHERITS",
+                    }
+                )
+
+        return relations
 
     def _relate_constructor_calls(self, node_list, imports):
         constructors_calls_relations = []
         for node in node_list:
             function_calls = node["attributes"].get("function_calls")
-            inherits = node["attributes"].get("inherits")
+            inherits = node["attributes"].get("inheritances")
             if function_calls:
                 function_calls_relations = self.__relate_function_calls(node, function_calls, imports)
                 constructors_calls_relations.extend(function_calls_relations)
