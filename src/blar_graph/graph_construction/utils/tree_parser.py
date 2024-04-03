@@ -91,3 +91,24 @@ def get_function_calls(node, assigments_dict: dict, parse_function_call: Callabl
 
     filtered_calls = filter(lambda x: x is not None, parsed_function_calls)
     return list(filtered_calls)
+
+
+def get_inheritances(node, language: str) -> list[str]:
+    code_text = node.text
+
+    parser = tree_sitter_languages.get_parser(language)
+    tree = parser.parse(bytes(code_text, "utf-8"))
+    node_names = map(lambda node: node, traverse_tree(tree))
+
+    inheritances = []
+
+    for tree_node in node_names:
+        if tree_node.type == "class_definition":
+            statement_children = tree_node.children
+            for child in statement_children:
+                if child.type == "argument_list":
+                    for argument in child.named_children:
+                        if argument.type == "identifier":
+                            inheritances.append(argument.text.decode("utf-8"))
+
+    return inheritances
