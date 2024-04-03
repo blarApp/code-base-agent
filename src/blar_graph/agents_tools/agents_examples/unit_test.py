@@ -7,7 +7,7 @@ from langchain.agents.output_parsers.openai_tools import OpenAIToolsAgentOutputP
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_openai import ChatOpenAI
 
-from blar_graph.agents.tools.KeywordSearchTool import KeywordSearchTool
+from blar_graph.agents_tools.tools.KeywordSearchTool import KeywordSearchTool
 from blar_graph.db_managers.base_manager import BaseDBManager
 
 load_dotenv()
