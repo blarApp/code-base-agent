@@ -1,7 +1,9 @@
 import os
+
+import tree_sitter_languages
+
 from blar_graph.graph_construction.core.base_parser import BaseParser
 from blar_graph.graph_construction.utils.tree_parser import get_function_name
-import tree_sitter_languages
 
 
 class PythonParser(BaseParser):

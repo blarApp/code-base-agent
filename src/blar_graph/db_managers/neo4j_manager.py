@@ -1,8 +1,10 @@
 import os
 from typing import Any, List
-from blar_graph.db_managers.base_manager import BaseDBManager
+
 from dotenv import load_dotenv
 from neo4j import GraphDatabase
+
+from blar_graph.db_managers.base_manager import BaseDBManager
 
 load_dotenv()
 

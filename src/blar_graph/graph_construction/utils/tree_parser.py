@@ -1,6 +1,7 @@
-from typing import Callable
-import tree_sitter_languages
 import re
+from typing import Callable
+
+import tree_sitter_languages
 
 
 def traverse_tree(tree):

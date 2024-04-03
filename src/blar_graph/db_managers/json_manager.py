@@ -1,7 +1,8 @@
-from typing import Any, List
 import json
+from typing import Any, List
 
 from dotenv import load_dotenv
+
 from blar_graph.db_managers.base_manager import BaseDBManager
 
 load_dotenv()
