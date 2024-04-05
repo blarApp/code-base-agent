@@ -62,15 +62,27 @@ class BaseParser(ABC):
         edges_list.extend(file_relations)
 
         for node in split_nodes:
+            start_line, end_line = self.get_start_and_end_line_from_byte(
+                documents[0].text, node.metadata["start_byte"], node.metadata["end_byte"]
+            )
             processed_node, relationships = self.__process_node__(
                 node, no_extension_path, file_node["attributes"]["node_id"], visited_nodes, global_imports
             )
+            processed_node["attributes"]["start_line"] = start_line
+            processed_node["attributes"]["start_line"] = end_line
+
             node_list.append(processed_node)
             edges_list.extend(relationships)
 
         imports = self._get_imports(str(path), node_list[0]["attributes"]["node_id"], root_path)
 
         return node_list, edges_list, imports
+
+    def get_start_and_end_line_from_byte(self, file_contents, start_byte, end_byte):
+        start_line = file_contents.count("\n", 0, start_byte) + 1
+        end_line = file_contents.count("\n", 0, end_byte) + 1
+
+        return start_line, end_line
 
     def __process_node__(
         self,
