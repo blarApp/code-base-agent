@@ -63,11 +63,10 @@ class GraphConstructor:
                             visited_nodes=self.visited_nodes,
                             global_imports=self.global_imports,
                         )
-                    except Exception as e:
+                    except Exception:
                         print(f"Error {entry.path}")
-                        print(e)
                         continue
-                    print(f"\rProcessed {entry.path}", end="")
+                    print(f"Processed {entry.path}")
                     if not processed_nodes:
                         self.import_aliases.update(file_imports)
                         continue
