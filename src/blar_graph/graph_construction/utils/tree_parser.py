@@ -1,7 +1,7 @@
 import re
-from typing import Callable
 
 import tree_sitter_languages
+from tree_sitter import Language, Node
 
 
 def traverse_tree(tree):
@@ -18,25 +18,6 @@ def traverse_tree(tree):
             break
 
 
-def count_parameters(params_str):
-    # Count parameters considering string literals and ignoring commas within them.
-    # This simplistic approach assumes balanced quotes and no escaped quotes within strings.
-    in_string = False
-    param_count = 0 if not params_str else 1  # Start with 1 parameter if the string is not empty
-
-    for char in params_str:
-        if char == '"':
-            in_string = not in_string  # Toggle state
-        elif char == "," and not in_string:
-            param_count += 1  # Count commas outside of string literals as parameter separators
-
-    # Edge case for empty parameter list or only spaces
-    if param_count == 1 and not params_str.strip():
-        return 0
-
-    return param_count
-
-
 def get_function_name(call_str):
     match = re.match(r"([a-zA-Z_][\w\.]*)\s*\(", call_str)
     if match:
@@ -45,56 +26,107 @@ def get_function_name(call_str):
         return None  # No function name found
 
 
-def get_function_calls(node, assigments_dict: dict, parse_function_call: Callable, language: str) -> list[str]:
+def decompose_function_call(call_node: Node, language: Language, decomposed_calls=[]):
+    calls_query = language.query(
+        """
+        (attribute
+            object: [
+                (identifier) @object
+                ((attribute) @nested_object
+                attribute: _ @nested_method)
+            ]
+            attribute: _ @method)
+        """
+    )
+
+    decompose_call = calls_query.captures(call_node)
+
+    if len(decompose_call) == 0:
+        decomposed_calls.append(call_node.text.decode())
+        return decomposed_calls
+
+    nested_object = False
+    for decompose_node, type in decompose_call:
+        if type == "nested_object":
+            nested_object = True
+            decomposed_calls = decompose_function_call(decompose_node, language, decomposed_calls)
+        elif (type == "object" or type == "method") and nested_object:
+            continue
+        else:
+            decomposed_calls.append(decompose_node.text.decode())
+
+    return decomposed_calls
+
+
+def get_function_calls(node: Node, assigments_dict: dict, language: str) -> list[str]:
     code_text = node.text
+    function_calls = []
 
     parser = tree_sitter_languages.get_parser(language)
     tree = parser.parse(bytes(code_text, "utf-8"))
-    node_names = map(lambda node: node, traverse_tree(tree))
+    language = tree_sitter_languages.get_language(language)
 
-    function_calls = []
+    assignment_query = language.query("""(assignment left: _ @variable right: _ @expression)""")
 
-    for tree_node in node_names:
-        if tree_node.type == "expression_statement":
-            statement_children = tree_node.children
-            if statement_children[0].type == "assignment":
-                assigment = statement_children[0].named_children
+    assigments = assignment_query.captures(tree.root_node)
 
-                variable_identifier = assigment[0]
-                assign_value = assigment[1]
-                if assign_value.type == "call":
-                    expression = assign_value
-                    expression_identifier = expression.named_children[0].text.decode()
+    for assigment_node, assigment_type in assigments:
+        if assigment_type == "variable":
+            variable_identifier_node = assigment_node
+            continue
+        if assigment_type == "expression":
+            assign_value = assigment_node
 
-                    assigments_dict[variable_identifier.text.decode("utf-8")] = expression_identifier
+        if assign_value.type == "call":
+            expression = assign_value
+            expression_identifier = expression.named_children[0].text.decode()
+            variable_identifier = variable_identifier_node.text.decode()
 
-        if tree_node.type == "call":
-            call_children = tree_node.named_children
-            if call_children[0].type == "attribute" and call_children[1].type == "argument_list":
-                attribute_children = call_children[0].named_children
-                root_caller = attribute_children[0]
-                if root_caller.type == "identifier":
-                    root_caller_identifier = root_caller.text.decode("utf-8")
-                    if root_caller_identifier in assigments_dict:
-                        function_calls.append(
-                            assigments_dict[root_caller_identifier]
-                            + "."
-                            + attribute_children[1].text.decode("utf-8")
-                            + "()"
-                        )
-                        continue
-            function_calls.append(tree_node.text.decode("utf-8"))
+            if "self." in variable_identifier:
+                for scope in node.metadata["inclusive_scopes"]:
+                    if scope["type"] == "class_definition":
+                        variable_identifier = scope["name"] + "." + variable_identifier.split("self.")[1]
+                        break
 
-    parsed_function_calls = map(
-        lambda x: parse_function_call(x, node.metadata["inclusive_scopes"]),
-        function_calls,
-    )
+            assigments_dict[variable_identifier] = expression_identifier
 
-    filtered_calls = filter(lambda x: x is not None, parsed_function_calls)
-    return list(filtered_calls)
+    calls_query = language.query("""(call function: _ @function_call)""")
+
+    function_calls_nodes = calls_query.captures(tree.root_node)
+
+    for call_node, _ in function_calls_nodes:
+        decomposed_call = decompose_function_call(call_node, language, [])
+        called_from_assignment = False
+
+        join_call = decomposed_call[0]
+        for index, call in enumerate(decomposed_call):
+            if index != 0:
+                join_call += "." + call
+
+            if "self." in join_call:
+                for scope in node.metadata["inclusive_scopes"]:
+                    if scope["type"] == "class_definition":
+                        join_call = scope["name"] + "." + join_call.split("self.")[1]
+                        break
+
+            if assigments_dict.get(join_call):
+                function_calls.append(assigments_dict[join_call] + "." + ".".join(decomposed_call[index + 1 :]))
+                called_from_assignment = True
+                break
+
+        if not called_from_assignment:
+            node_text = call_node.text.decode()
+            if "self." in node_text:
+                for scope in node.metadata["inclusive_scopes"]:
+                    if scope["type"] == "class_definition":
+                        node_text = scope["name"] + "." + node_text.split("self.")[1]
+                        break
+            function_calls.append(node_text)
+
+    return function_calls
 
 
-def get_inheritances(node, language: str) -> list[str]:
+def get_inheritances(node: Node, language: str) -> list[str]:
     code_text = node.text
 
     parser = tree_sitter_languages.get_parser(language)
