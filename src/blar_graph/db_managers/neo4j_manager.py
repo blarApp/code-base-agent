@@ -158,8 +158,8 @@ class Neo4jManager(BaseDBManager):
             nodes_info = [
                 {
                     "node_id": record["node_id"],
-                    "node_name": record["function_name"],
-                    "node_type": record["labels"],
+                    "node_name": record["node_name"],
+                    "node_type": record["node_type"],
                     "relationship_type": record["relationship_type"],
                 }
                 for record in data
