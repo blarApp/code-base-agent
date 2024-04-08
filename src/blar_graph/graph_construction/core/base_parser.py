@@ -28,7 +28,6 @@ class BaseParser(ABC):
         self,
         file_path: str,
         root_path: str,
-        directory_path: str,
         visited_nodes: dict,
         global_imports: dict,
     ):
@@ -51,10 +50,10 @@ class BaseParser(ABC):
         split_nodes = code.get_nodes_from_documents(documents)
         node_list = []
         edges_list = []
-        assigment_dict = {}
+        assignment_dict = {}
 
         file_node, file_relations = self.__process_node__(
-            split_nodes.pop(0), file_path, "", visited_nodes, global_imports, documents[0]
+            split_nodes.pop(0), file_path, "", visited_nodes, global_imports, assignment_dict, documents[0]
         )
         node_list.append(file_node)
         edges_list.extend(file_relations)
@@ -66,7 +65,7 @@ class BaseParser(ABC):
                 file_node["attributes"]["node_id"],
                 visited_nodes,
                 global_imports,
-                assigment_dict,
+                assignment_dict,
                 documents[0],
             )
 
