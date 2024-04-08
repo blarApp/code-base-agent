@@ -37,6 +37,7 @@ class BaseParser(ABC):
         if not path.exists():
             print(f"File {file_path} does not exist.")
             raise FileNotFoundError
+
         documents = SimpleDirectoryReader(
             input_files=[path],
             file_metadata=lambda x: {"filepath": x},
@@ -52,9 +53,10 @@ class BaseParser(ABC):
         split_nodes = code.get_nodes_from_documents(documents)
         node_list = []
         edges_list = []
+        assigment_dict = {}
 
         file_node, file_relations = self.__process_node__(
-            split_nodes.pop(0), no_extension_path, "", visited_nodes, global_imports
+            split_nodes.pop(0), no_extension_path, "", visited_nodes, global_imports, assigment_dict
         )
         file_node["directory"] = directory_path
         file_node["name"] = os.path.basename(file_path)
@@ -63,7 +65,12 @@ class BaseParser(ABC):
 
         for node in split_nodes:
             processed_node, relationships = self.__process_node__(
-                node, no_extension_path, file_node["attributes"]["node_id"], visited_nodes, global_imports
+                node,
+                no_extension_path,
+                file_node["attributes"]["node_id"],
+                visited_nodes,
+                global_imports,
+                assigment_dict,
             )
             node_list.append(processed_node)
             edges_list.extend(relationships)
@@ -79,26 +86,22 @@ class BaseParser(ABC):
         file_node_id: str,
         visited_nodes: dict,
         global_imports: dict,
+        assignment_dict,
     ):
         relationships = []
-        asignments_dict = {}
         scope = node.metadata["inclusive_scopes"][-1] if node.metadata["inclusive_scopes"] else None
         type_node = "file"
         if scope:
             type_node = scope["type"]
 
         if type_node == "function_definition":
-            function_calls = tree_parser.get_function_calls(
-                node, asignments_dict, self.parse_function_call, self.language
-            )
+            function_calls = tree_parser.get_function_calls(node, assignment_dict, self.language)
             processed_node = format_nodes.format_function_node(node, scope, function_calls, file_node_id)
         elif type_node == "class_definition":
             inheritances = tree_parser.get_inheritances(node, self.language)
             processed_node = format_nodes.format_class_node(node, scope, file_node_id, inheritances)
         else:
-            function_calls = tree_parser.get_function_calls(
-                node, asignments_dict, self.parse_function_call, self.language
-            )
+            function_calls = tree_parser.get_function_calls(node, assignment_dict, self.language)
             processed_node = format_nodes.format_file_node(node, no_extension_path, function_calls)
 
         for relation in node.relationships.items():
@@ -158,10 +161,6 @@ class BaseParser(ABC):
 
     @abstractmethod
     def is_package(self, directory: str) -> bool:
-        pass
-
-    @abstractmethod
-    def parse_function_call(self, func_call: str, inclusive_scopes) -> tuple[str, int]:
         pass
 
     @abstractmethod
