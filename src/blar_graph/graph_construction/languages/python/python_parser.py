@@ -3,7 +3,6 @@ import os
 import tree_sitter_languages
 
 from blar_graph.graph_construction.core.base_parser import BaseParser
-from blar_graph.graph_construction.utils.tree_parser import get_function_name
 
 
 class PythonParser(BaseParser):
@@ -59,20 +58,6 @@ class PythonParser(BaseParser):
         else:
             # Handling absolute imports
             return self.find_module_path(import_statement, current_file_directory, project_root)
-
-    def parse_function_call(self, func_call: str, inclusive_scopes) -> tuple[str, int]:
-        func_name = get_function_name(func_call)
-
-        if func_name:
-            if "self." in func_name:
-                for parent in reversed(inclusive_scopes[:-1]):
-                    if parent["type"] == "class_definition":
-                        func_name = func_name.replace("self.", parent["name"] + ".")
-                        break
-
-            return func_name
-
-        return None
 
     def skip_directory(self, directory: str) -> bool:
         return directory == "__pycache__"
