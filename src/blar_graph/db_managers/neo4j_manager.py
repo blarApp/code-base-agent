@@ -138,8 +138,33 @@ class Neo4jManager(BaseDBManager):
                 first_result = result.peek()
             if first_result is None:
                 return None, None
-            neighbours = self.get_n_hop_neighbours(first_result["node.node_id"], 1)
+            neighbours = self.get_1_hop_neighbours_and_relations(first_result["node.node_id"])
             return first_result, neighbours
+
+    def get_1_hop_neighbours_and_relations(self, node_id: str):
+        with self.driver.session() as session:
+            result = session.run(
+                """
+                MATCH (p {node_id: $node_id})-[r]->(p2)
+                RETURN
+                    type(r) as relationship_type,
+                    p2.node_id AS node_id,
+                    p2.name AS node_name,
+                    labels(p2) AS node_type
+                """,
+                node_id=node_id,
+            )
+            data = result.data()
+            nodes_info = [
+                {
+                    "node_id": record["node_id"],
+                    "node_name": record["function_name"],
+                    "node_type": record["labels"],
+                    "relationship_type": record["relationship_type"],
+                }
+                for record in data
+            ]
+            return nodes_info
 
     def get_n_hop_neighbours(self, node_id: str, num_hops: int):
         # Function to get code from the Neo4j database based on a keyword query
