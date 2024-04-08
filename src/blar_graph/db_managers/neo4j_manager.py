@@ -128,7 +128,7 @@ class Neo4jManager(BaseDBManager):
         node_query = """
     CALL db.index.fulltext.queryNodes("functionNames", $formatted_query) YIELD node, score
     where node.repo_id = $repo_id
-    RETURN node.text, node.node_id, node.name, score
+    RETURN node.text, node.node_id, node.name, node.file_path, node.start_line, node.end_line, score
         """
         with self.driver.session() as session:
             result = session.run(node_query, formatted_query=f"*{formatted_query}", repo_id=self.repo_id)
