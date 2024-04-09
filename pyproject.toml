@@ -23,7 +23,7 @@ exclude = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.8,<3.12"
+python = ">=3.9,<3.12"
 llama-index-packs-code-hierarchy = "^0.1.1"
 llama-index = "^0.10.20"
 python-dotenv = "^1.0.1"
