@@ -10,7 +10,7 @@ profile = "black"
 
 [tool.poetry]
 name = "blar-graph"
-version = "0.0.9-alpha"
+version = "0.0.10-alpha"
 description = "Llm agent to search within a graph"
 authors = ["Benjamín Errazuriz <benjamin@blar.io>", "José Domínguez <jose@blar.io>"]
 readme = "README.md"
@@ -23,7 +23,7 @@ exclude = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.8,<3.12"
+python = ">=3.9,<3.12"
 llama-index-packs-code-hierarchy = "^0.1.1"
 llama-index = "^0.10.20"
 python-dotenv = "^1.0.1"
