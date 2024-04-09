@@ -73,22 +73,24 @@ def get_function_calls(node: Node, assigments_dict: dict, language: str) -> list
     for assigment_node, assigment_type in assigments:
         if assigment_type == "variable":
             variable_identifier_node = assigment_node
+            variable_identifier = variable_identifier_node.text.decode()
+            if "self." in variable_identifier:
+                for scope in node.metadata["inclusive_scopes"]:
+                    if scope["type"] == "class_definition":
+                        variable_identifier = scope["name"] + "." + variable_identifier.split("self.")[1]
+                        break
             continue
+
         if assigment_type == "expression":
             assign_value = assigment_node
 
             if assign_value.type == "call":
                 expression = assign_value
                 expression_identifier = expression.named_children[0].text.decode()
-                variable_identifier = variable_identifier_node.text.decode()
+                assigments_dict[variable_identifier] = expression_identifier
+                continue
 
-                if "self." in variable_identifier:
-                    for scope in node.metadata["inclusive_scopes"]:
-                        if scope["type"] == "class_definition":
-                            variable_identifier = scope["name"] + "." + variable_identifier.split("self.")[1]
-                            break
-
-            assigments_dict[variable_identifier] = expression_identifier
+            assigments_dict[variable_identifier] = assign_value.text.decode()
 
     calls_query = language.query("""(call function: _ @function_call)""")
 
