@@ -86,7 +86,7 @@ class BaseParser(ABC):
         file_node_id: str,
         visited_nodes: dict,
         global_imports: dict,
-        assignment_dict,
+        assignment_dict: dict,
     ):
         relationships = []
         scope = node.metadata["inclusive_scopes"][-1] if node.metadata["inclusive_scopes"] else None
