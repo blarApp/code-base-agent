@@ -77,10 +77,10 @@ def get_function_calls(node: Node, assigments_dict: dict, language: str) -> list
         if assigment_type == "expression":
             assign_value = assigment_node
 
-        if assign_value.type == "call":
-            expression = assign_value
-            expression_identifier = expression.named_children[0].text.decode()
-            variable_identifier = variable_identifier_node.text.decode()
+          if assign_value.type == "call":
+              expression = assign_value
+              expression_identifier = expression.named_children[0].text.decode()
+              variable_identifier = variable_identifier_node.text.decode()
 
             if "self." in variable_identifier:
                 for scope in node.metadata["inclusive_scopes"]:
