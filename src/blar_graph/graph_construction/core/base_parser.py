@@ -53,7 +53,7 @@ class BaseParser(ABC):
         assignment_dict = {}
 
         file_node, file_relations = self.__process_node__(
-            split_nodes.pop(0), file_path, "", visited_nodes, global_imports, assignment_dict, documents[0]\\
+            split_nodes.pop(0), file_path, "", visited_nodes, global_imports, assignment_dict, documents[0]
         )
         node_list.append(file_node)
         edges_list.extend(file_relations)
@@ -90,7 +90,7 @@ class BaseParser(ABC):
         visited_nodes: dict,
         global_imports: dict,
         assignment_dict: dict,
-        document: Document
+        document: Document,
     ):
         no_extension_path = self._remove_extensions(file_path)
         relationships = []
