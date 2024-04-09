@@ -72,7 +72,7 @@ class PythonParser(BaseParser):
     ):
         if file_path.endswith("__init__.py"):
             return [], [], self.parse_init(file_path, root_path)
-        return self.parse(file_path, root_path, directory_path, visited_nodes, global_imports)
+        return self.parse(file_path, root_path, visited_nodes, global_imports)
 
     def parse_init(self, file_path: str, root_path: str):
         parser = tree_sitter_languages.get_parser(self.language)
