@@ -23,6 +23,8 @@ class PythonParser(BaseParser):
         current_dir = start_dir
         components = module_name.split(".")
 
+        # Make sure to find in the same directory as the root
+        project_root = os.sep.join(project_root.split(os.sep)[:-1])
         # Try to find the module by traversing up towards the root until the module path is found or root is reached
         while current_dir.startswith(project_root):
             possible_path = os.path.join(current_dir, *components)
