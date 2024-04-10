@@ -61,7 +61,7 @@ llm = ChatOpenAI(model="gpt-4-turbo-preview", temperature=0)
 system_prompt = """
     You are a code debugger, Given a problem description and an initial function, you need to find the bug in the code.
     You are given a graph of code functions,
-    We purposly omited some code If the code has the comment '# Code replaced for brevity. See node_id ..... '.
+    We purposly omitted some code If the code has the comment '# Code replaced for brevity. See node_id ..... '.
     You can traverse the graph by calling the function keword_search.
     Prefer calling the function keword_search with query = node_id, only call it with starting nodes or neighbours.
     Explain why your solution solves the bug. Extensivley traverse the graph before giving an answer
@@ -95,15 +95,15 @@ agent = (
 )
 ```
 
-Now you can ask yur agent to perform a debugging process.
+Now you can ask your agent to perform a debugging process.
 
 ```python
 list(
     agent.stream(
         {
             "input": """
-            The directory nodes generates multiples conections,
-            it doesn't distinguish betweem different directories, can you fix it?
+            The directory nodes generates multiples connections,
+            it doesn't distinguish between different directories, can you fix it?
             The initial functions is run
             """
         }
@@ -113,4 +113,4 @@ list(
 
 You can find more examples in the folder 'examples'. They are comprehensive jupiter notebooks that guide you from creating the graph to deploying the agent.
 
-*Note: The supported language for now is python, we are going to include Typescript (or other language) if you ask for it enough. So don't hesitate to reach out through the [issues](https://github.com/blarApp/code-base-agent/issues) or directly to benjamin@blar.io or jose@blar.io*
+_Note: The supported language for now is python, we are going to include Typescript (or other language) if you ask for it enough. So don't hesitate to reach out through the [issues](https://github.com/blarApp/code-base-agent/issues) or directly to benjamin@blar.io or jose@blar.io_
