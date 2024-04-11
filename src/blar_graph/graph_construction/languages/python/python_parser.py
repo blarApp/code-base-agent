@@ -26,7 +26,7 @@ class PythonParser(BaseParser):
         # Make sure to find in the same directory as the root
         project_root = os.sep.join(project_root.split(os.sep)[:-1])
         # Try to find the module by traversing up towards the root until the module path is found or root is reached
-        while current_dir.startswith(project_root) and current_dir != "" and project_root != "":
+        while current_dir.startswith(project_root) and (current_dir != "" or project_root != ""):
             possible_path = os.path.join(current_dir, *components)
             # Check for a direct module or package
             if os.path.exists(possible_path + ".py") or self.is_package(possible_path):
@@ -92,6 +92,8 @@ class PythonParser(BaseParser):
                 from_text = from_statement.text.decode()
                 for import_statement in import_statements[1:]:
                     import_path = self.resolve_import_path(from_text, file_path, root_path)
+                    if not import_path:
+                        continue
                     new_import_path = import_path + "." + import_statement.text.decode()
                     import_alias = directory + "." + import_statement.text.decode()
                     imports[import_alias] = new_import_path

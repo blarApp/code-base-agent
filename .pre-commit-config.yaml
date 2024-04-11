@@ -9,7 +9,6 @@ repos:
       - id: check-merge-conflict
       - id: check-symlinks
       - id: check-toml
-        exclude: llama-index-core/llama_index/core/_static
       - id: check-yaml
       - id: detect-private-key
       - id: end-of-file-fixer
@@ -59,8 +58,6 @@ repos:
         exclude: |
           poetry.lock|
           (\/.*?\.[\w:]+)/pyproject.toml|
-          llama-index-core/llama_index/core/_static|
-          llama-index-legacy/llama_index/legacy/_static|
           (\/.*?\.[\w:]+)/poetry.lock
         args: ["--ignore-words-list", ""]
 
