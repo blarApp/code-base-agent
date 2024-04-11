@@ -5,6 +5,11 @@ build-backend = "poetry.core.masonry.api"
 [tool.black]
 line-length = 119
 
+[tool.codespell]
+check-filenames = true
+check-hidden = true
+skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+
 [tool.isort]
 profile = "black"
 

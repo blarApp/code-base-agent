@@ -134,7 +134,7 @@ class GraphConstructor:
                 )
         return import_edges
 
-    # Recurssive funtions to relate imports
+    # Recursive functions to relate imports
     def _relate_imports_and_directory_imports(self, file_node_id: str, path: str, visited_paths=set()):
         import_edges = []
         import_alias = self.import_aliases.get(path)

@@ -58,7 +58,7 @@ def decompose_function_call(call_node: Node, language: Language, decomposed_call
     return decomposed_calls
 
 
-def get_function_calls(node: Node, assigments_dict: dict, language: str) -> list[str]:
+def get_function_calls(node: Node, assignments_dict: dict, language: str) -> list[str]:
     code_text = node.text
     function_calls = []
 
@@ -68,11 +68,11 @@ def get_function_calls(node: Node, assigments_dict: dict, language: str) -> list
 
     assignment_query = language.query("""(assignment left: _ @variable right: _ @expression)""")
 
-    assigments = assignment_query.captures(tree.root_node)
+    assignments = assignment_query.captures(tree.root_node)
 
-    for assigment_node, assigment_type in assigments:
-        if assigment_type == "variable":
-            variable_identifier_node = assigment_node
+    for assignment_node, assignment_type in assignments:
+        if assignment_type == "variable":
+            variable_identifier_node = assignment_node
             variable_identifier = variable_identifier_node.text.decode()
             if "self." in variable_identifier:
                 for scope in node.metadata["inclusive_scopes"]:
@@ -81,16 +81,16 @@ def get_function_calls(node: Node, assigments_dict: dict, language: str) -> list
                         break
             continue
 
-        if assigment_type == "expression":
-            assign_value = assigment_node
+        if assignment_type == "expression":
+            assign_value = assignment_node
 
             if assign_value.type == "call":
                 expression = assign_value
                 expression_identifier = expression.named_children[0].text.decode()
-                assigments_dict[variable_identifier] = expression_identifier
+                assignments_dict[variable_identifier] = expression_identifier
                 continue
 
-            assigments_dict[variable_identifier] = assign_value.text.decode()
+            assignments_dict[variable_identifier] = assign_value.text.decode()
 
     calls_query = language.query("""(call function: _ @function_call)""")
 
@@ -111,8 +111,8 @@ def get_function_calls(node: Node, assigments_dict: dict, language: str) -> list
                         join_call = scope["name"] + "." + join_call.split("self.")[1]
                         break
 
-            if assigments_dict.get(join_call):
-                function_calls.append(assigments_dict[join_call] + "." + ".".join(decomposed_call[index + 1 :]))
+            if assignments_dict.get(join_call):
+                function_calls.append(assignments_dict[join_call] + "." + ".".join(decomposed_call[index + 1 :]))
                 called_from_assignment = True
                 break
 
