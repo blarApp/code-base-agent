@@ -113,4 +113,4 @@ list(
 
 You can find more examples in the folder 'examples'. They are comprehensive jupiter notebooks that guide you from creating the graph to deploying the agent.
 
-_Note: The supported language for now is python, we are going to include Typescript (or other language) if you ask for it enough. So don't hesitate to reach out through the [issues](https://github.com/blarApp/code-base-agent/issues) or directly to benjamin@blar.io or jose@blar.io_
+_*Note: The supported language for now is python, we are going to include Typescript (or other language) if you ask for it enough. So don't hesitate to reach out through the [issues](https://github.com/blarApp/code-base-agent/issues) or directly to benjamin@blar.io or jose@blar.io*_
