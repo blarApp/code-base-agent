@@ -121,17 +121,18 @@ class GraphConstructor:
         import_edges = []
         for import_path in imports_list:
             all_dir_imports = self.import_aliases.get(import_path)
+            if all_dir_imports is None:
+                all_dir_imports = [import_path]
             for dir_import in all_dir_imports:
                 targetId = self.global_imports.get(dir_import)
-                if not targetId:
-                    continue
-                import_edges.append(
-                    {
-                        "sourceId": file_node_id,
-                        "targetId": targetId["id"],
-                        "type": "IMPORTS",
-                    }
-                )
+                if targetId:
+                    import_edges.append(
+                        {
+                            "sourceId": file_node_id,
+                            "targetId": targetId["id"],
+                            "type": "IMPORTS",
+                        }
+                    )
         return import_edges
 
     # Recursive functions to relate imports
