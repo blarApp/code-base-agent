@@ -92,6 +92,8 @@ class PythonParser(BaseParser):
                 from_text = from_statement.text.decode()
                 for import_statement in import_statements[1:]:
                     import_path = self.resolve_import_path(from_text, file_path, root_path)
+                    if not import_path:
+                        continue
                     new_import_path = import_path + "." + import_statement.text.decode()
                     import_alias = directory + "." + import_statement.text.decode()
                     imports[import_alias] = new_import_path
