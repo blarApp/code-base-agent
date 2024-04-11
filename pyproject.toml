@@ -5,12 +5,17 @@ build-backend = "poetry.core.masonry.api"
 [tool.black]
 line-length = 119
 
+[tool.codespell]
+check-filenames = true
+check-hidden = true
+skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+
 [tool.isort]
 profile = "black"
 
 [tool.poetry]
 name = "blar-graph"
-version = "0.0.10"
+version = "0.0.11"
 description = "Llm agent to search within a graph"
 authors = ["Benjamín Errazuriz <benjamin@blar.io>", "José Domínguez <jose@blar.io>"]
 readme = "README.md"

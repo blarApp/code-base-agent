@@ -23,8 +23,10 @@ class PythonParser(BaseParser):
         current_dir = start_dir
         components = module_name.split(".")
 
+        # Make sure to find in the same directory as the root
+        project_root = os.sep.join(project_root.split(os.sep)[:-1])
         # Try to find the module by traversing up towards the root until the module path is found or root is reached
-        while current_dir.startswith(project_root):
+        while current_dir.startswith(project_root) and current_dir != "" and project_root != "":
             possible_path = os.path.join(current_dir, *components)
             # Check for a direct module or package
             if os.path.exists(possible_path + ".py") or self.is_package(possible_path):
@@ -99,10 +101,10 @@ class PythonParser(BaseParser):
             if node.type == "expression_statement":
                 statement_children = node.children
                 if statement_children[0].type == "assignment":
-                    assigment = statement_children[0].named_children
+                    assignment = statement_children[0].named_children
 
-                    variable_identifier = assigment[0]
-                    assign_value = assigment[1]
+                    variable_identifier = assignment[0]
+                    assign_value = assignment[1]
                     if variable_identifier.text.decode() == "__all__":
                         imports[directory] = []
                         if assign_value.type == "list":

@@ -134,6 +134,31 @@ class GraphConstructor:
                 )
         return import_edges
 
+    # Recursive functions to relate imports
+    def _relate_imports_and_directory_imports(self, file_node_id: str, path: str, visited_paths=set()):
+        import_edges = []
+        import_alias = self.import_aliases.get(path)
+        targetId = self.global_imports.get(path)
+        if not targetId and import_alias:
+            if isinstance(import_alias, list):
+                for alias in import_alias:
+                    if alias not in visited_paths:
+                        visited_paths.add(alias)
+                        import_edges.extend(
+                            self._relate_imports_and_directory_imports(file_node_id, alias, visited_paths)
+                        )
+            else:
+                targetId = self.global_imports.get(import_alias)
+        if targetId:
+            import_edges.append(
+                {
+                    "sourceId": file_node_id,
+                    "targetId": targetId["id"],
+                    "type": "IMPORTS",
+                }
+            )
+        return import_edges
+
     def _relate_imports(self, imports: dict):
         import_edges = []
         for file_node_id in imports.keys():
@@ -142,18 +167,8 @@ class GraphConstructor:
                     related_imports = self._relate_wildcard_imports(file_node_id, path)
                     import_edges.extend(related_imports)
                     continue
-                import_alias = self.import_aliases.get(f"{path}.{imp}")
-                targetId = self.global_imports.get(f"{path}.{imp}")
-                if not targetId and import_alias:
-                    targetId = self.global_imports.get(import_alias)
-                if targetId:
-                    import_edges.append(
-                        {
-                            "sourceId": file_node_id,
-                            "targetId": targetId["id"],
-                            "type": "IMPORTS",
-                        }
-                    )
+                import_edges.extend(self._relate_imports_and_directory_imports(file_node_id, f"{path}.{imp}"))
+
         return import_edges
 
     def __get_directory(self, node, function_call: str, imports: dict):
@@ -176,6 +191,13 @@ class GraphConstructor:
                 if import_alias in self.import_aliases:
                     directory = self.import_aliases[wildcard_path + "." + function_call.split(".")[0]]
                     break
+
+        if isinstance(directory, list):
+            candidates = [s for s in directory if s.endswith(function_call.split(".")[-1])]
+            if len(candidates) == 1:
+                directory = candidates[0]
+            else:
+                directory = ""
 
         for module in function_call.split("."):
             final_module = "." + module
