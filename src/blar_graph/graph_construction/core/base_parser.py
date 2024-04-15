@@ -41,6 +41,7 @@ class BaseParser(ABC):
             file_metadata=lambda x: {"filepath": x},
         ).load_data()
 
+        documents[0].text = documents[0].text.replace("\xa0", "")
         code = CodeHierarchyNodeParser(
             language=self.language,
             chunk_min_characters=3,

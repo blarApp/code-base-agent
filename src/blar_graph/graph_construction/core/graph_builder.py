@@ -32,6 +32,8 @@ class GraphConstructor:
             raise FileNotFoundError(f"Directory {path} not found")
         if self.root is None:
             self.root = path
+        if path.endswith("tests") or path.endswith("test"):
+            return nodes, relationships, imports
 
         package = self.parser.is_package(path)
 
