@@ -25,7 +25,7 @@ class BaseParser(ABC):
         self.language = language
         self.wildcard = wildcard
 
-    @timeout(15)
+    @timeout(30)
     def get_nodes_from_documents_with_timeout(self, code, documents):
         return code.get_nodes_from_documents(documents)
 
@@ -45,8 +45,20 @@ class BaseParser(ABC):
             input_files=[path],
             file_metadata=lambda x: {"filepath": x},
         ).load_data()
+        if file_path.endswith("irradiance.py"):
+            index = documents[0].text.find("def to_doy(x): return x                                 # noqa: E306")
 
-        documents[0].text = documents[0].text.replace("\xa0", "")
+            # If the text is found, replace only the first occurrence
+            if index != -1:
+                documents[0].text = (
+                    documents[0].text[:index]
+                    + ""
+                    + documents[0].text[
+                        index + len("def to_doy(x): return x                                 # noqa: E306") :
+                    ]
+                )
+        documents[0].text = tree_parser.remove_non_utf8(documents[0].text)
+
         code = CodeHierarchyNodeParser(
             language=self.language,
             chunk_min_characters=3,
