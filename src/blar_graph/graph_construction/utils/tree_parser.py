@@ -4,10 +4,10 @@ import tree_sitter_languages
 from tree_sitter import Language, Node
 
 
-def remove_non_utf8(text):
-    # Define the regular expression pattern to match non-UTF-8 characters
+def remove_non_ascii(text):
+    # Define the regular expression pattern to match ascii characters
     pattern = re.compile(r"[^\x00-\x7F]+")
-    # Replace non-UTF-8 characters with an empty string
+    # Replace ascii characters with an empty string
     cleaned_text = pattern.sub("", text)
     return cleaned_text
 

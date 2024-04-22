@@ -6,7 +6,7 @@ from llama_index.core import SimpleDirectoryReader
 from llama_index.core.schema import BaseNode, Document, NodeRelationship
 from llama_index.core.text_splitter import CodeSplitter
 from llama_index.packs.code_hierarchy import CodeHierarchyNodeParser
-from timeout_decorator import timeout
+from timeout_decorator import TimeoutError, timeout
 
 from blar_graph.graph_construction.utils import format_nodes, tree_parser
 
@@ -25,7 +25,7 @@ class BaseParser(ABC):
         self.language = language
         self.wildcard = wildcard
 
-    @timeout(30)
+    @timeout(15)
     def get_nodes_from_documents_with_timeout(self, code, documents):
         return code.get_nodes_from_documents(documents)
 
@@ -45,19 +45,9 @@ class BaseParser(ABC):
             input_files=[path],
             file_metadata=lambda x: {"filepath": x},
         ).load_data()
-        if file_path.endswith("irradiance.py"):
-            index = documents[0].text.find("def to_doy(x): return x                                 # noqa: E306")
 
-            # If the text is found, replace only the first occurrence
-            if index != -1:
-                documents[0].text = (
-                    documents[0].text[:index]
-                    + ""
-                    + documents[0].text[
-                        index + len("def to_doy(x): return x                                 # noqa: E306") :
-                    ]
-                )
-        documents[0].text = tree_parser.remove_non_utf8(documents[0].text)
+        # Bug related to llama-index it's safer to remove non-ascii characters. Could be removed in the future
+        documents[0].text = tree_parser.remove_non_ascii(documents[0].text)
 
         code = CodeHierarchyNodeParser(
             language=self.language,
@@ -66,7 +56,7 @@ class BaseParser(ABC):
         )
         try:
             split_nodes = self.get_nodes_from_documents_with_timeout(code, documents)
-        except Exception:
+        except TimeoutError:
             print(f"Timeout error: {file_path}")
             return [], [], {}
 
