@@ -6,6 +6,7 @@ from llama_index.core import SimpleDirectoryReader
 from llama_index.core.schema import BaseNode, Document, NodeRelationship
 from llama_index.core.text_splitter import CodeSplitter
 from llama_index.packs.code_hierarchy import CodeHierarchyNodeParser
+from timeout_decorator import TimeoutError, timeout
 
 from blar_graph.graph_construction.utils import format_nodes, tree_parser
 
@@ -24,6 +25,10 @@ class BaseParser(ABC):
         self.language = language
         self.wildcard = wildcard
 
+    @timeout(15)
+    def get_nodes_from_documents_with_timeout(self, code, documents):
+        return code.get_nodes_from_documents(documents)
+
     def parse(
         self,
         file_path: str,
@@ -41,13 +46,20 @@ class BaseParser(ABC):
             file_metadata=lambda x: {"filepath": x},
         ).load_data()
 
+        # Bug related to llama-index it's safer to remove non-ascii characters. Could be removed in the future
+        documents[0].text = tree_parser.remove_non_ascii(documents[0].text)
+
         code = CodeHierarchyNodeParser(
             language=self.language,
             chunk_min_characters=3,
             code_splitter=CodeSplitter(language=self.language, max_chars=10000, chunk_lines=10),
         )
+        try:
+            split_nodes = self.get_nodes_from_documents_with_timeout(code, documents)
+        except TimeoutError:
+            print(f"Timeout error: {file_path}")
+            return [], [], {}
 
-        split_nodes = code.get_nodes_from_documents(documents)
         node_list = []
         edges_list = []
         assignment_dict = {}

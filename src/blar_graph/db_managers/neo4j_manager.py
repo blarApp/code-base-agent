@@ -93,26 +93,21 @@ class Neo4jManager(BaseDBManager):
         query = """
         MATCH (n)
         WHERE n.node_id = $node_id
-
-        // Collect outgoing relationships
-        OPTIONAL MATCH (n)-[r]->(m)
-        WITH n, collect({relationType: type(r), node_id: m.node_id, nodeType: labels(m)}) as outgoingRelationships
-
-        // Collect incoming relationships
-        OPTIONAL MATCH (n)<-[r]-(m)
-        WITH n, outgoingRelationships, collect({relationType: type(r), node_id: m.node_id, nodeType: labels(m)}) as incomingRelationships
-
-        // Aggregate relationships by type
-        RETURN properties(n) as properties,
-            {
-                outgoing: outgoingRelationships,
-                incoming: incomingRelationships
-            } as relationships
-
+        return n
         """
         with self.driver.session() as session:
             result = session.run(query, {"node_id": node_id})
-            return result.data()[0]
+            node = result.data()[0]["n"]
+            neighbours = self.get_1_hop_neighbours_and_relations(node["node_id"])
+            node_result = {
+                "node_id": node["node_id"],
+                "node_name": node["name"],
+                "file_path": node["file_path"],
+                "start_line": node["start_line"],
+                "end_line": node["end_line"],
+                "text": node["text"],
+            }
+            return node_result, neighbours
 
     def get_whole_graph(self, result_format: str = "data"):
         query = "match (n {repo_id: $repo_id})-[r]-(m) return n, m, r"
@@ -121,6 +116,32 @@ class Neo4jManager(BaseDBManager):
             if result_format == "graph":
                 return result.graph()
             return result.data()
+
+    def search_code(self, query: str):
+        # Function to get code from the Neo4j database based on a keyword query
+        formatted_query = self.format_query(query)
+        node_query = """
+    CALL db.index.fulltext.queryNodes("functionNames", $formatted_query) YIELD node, score
+    where node.repo_id = $repo_id
+    RETURN node.node_id, node.name, node.file_path, score
+        """
+        with self.driver.session() as session:
+            result = session.run(node_query, formatted_query=f"*{formatted_query}", repo_id=self.repo_id)
+            data_result = result.data()
+            if data_result is None:
+                result = session.run(node_query, formatted_query=formatted_query, repo_id=self.repo_id)
+                data_result = result.data()
+            print(data_result)
+            data_result = [
+                {
+                    "node_id": record["node.node_id"],
+                    "node_name": record["node.name"],
+                    "file_path": record["node.file_path"],
+                    "score": record["score"],
+                }
+                for record in data_result
+            ]
+            return data_result
 
     def get_code(self, query: str):
         # Function to get code from the Neo4j database based on a keyword query
