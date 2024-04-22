@@ -36,6 +36,7 @@ tree-sitter-languages = "^1.10.2"
 langchain = "^0.1.13"
 langchain-openai = "^0.1.1"
 neo4j = "^5.18.0"
+timeout-decorator = "^0.5.0"
 
 [tool.poetry.group.dev.dependencies]
 isort = "^5.13.2"
