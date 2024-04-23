@@ -19,6 +19,8 @@ class KeywordSearchTool(BaseCypherDatabaseTool, BaseTool):
     def _run(self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None) -> List[Dict[str, Any]]:
         """Returns a function code given a query that can be function name, path or node_id. returns the node text and the neighbors of the node."""
         code, neighbours = self.db_manager.get_code(query)
+        if not code:
+            return "No code found for the given query"
         res = f"current node code:\n {code['node.text']} \n\n current node neighbours: {neighbours}"
 
         return res
