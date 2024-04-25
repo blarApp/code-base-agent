@@ -7,21 +7,21 @@ from langchain_core.tools import BaseTool
 from blar_graph.agents_tools.tools.BaseCypherModel import BaseCypherDatabaseTool
 
 
-class KeywordInput(BaseModel):
-    query: str = Field(description="Keyword to search for in the Neo4j database")
+class NodeIdInput(BaseModel):
+    query: str = Field(description="node_id to search for in the Neo4j database")
 
 
-class KeywordSearchTool(BaseCypherDatabaseTool, BaseTool):
-    name = "keyword_search"
-    description = "Searches for a keyword in the path, name or node_id of the nodes in the Neo4j database"
-    args_schema: Type[BaseModel] = KeywordInput
+class GetCodeByIdTool(BaseCypherDatabaseTool, BaseTool):
+    name = "get_code_by_id"
+    description = "Searches for node by id in the Neo4j database"
+
+    args_schema: Type[BaseModel] = NodeIdInput
 
     def _run(self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None) -> List[Dict[str, Any]]:
         """Returns a function code given a query that can be function name, path or node_id. returns the node text and the neighbors of the node."""
-        result = self.db_manager.search_code(query)
-
-        if not result:
+        code, neighbours = self.db_manager.get_node_by_id(query)
+        if not code:
             return "No code found for the given query"
-        result = result if result else "No result found"
+        res = f"current node code:\n {code['text']} \n\n current node neighbours: {neighbours}"
 
-        return result
+        return res

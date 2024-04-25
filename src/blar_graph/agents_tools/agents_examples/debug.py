@@ -7,7 +7,7 @@ from langchain.agents.output_parsers.openai_tools import OpenAIToolsAgentOutputP
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_openai import ChatOpenAI
 
-from blar_graph.agents_tools.tools.KeywordSearchTool import KeywordSearchTool
+from blar_graph.agents_tools.tools import GetCodeByIdTool, KeywordSearchTool
 from blar_graph.db_managers.base_manager import BaseDBManager
 
 load_dotenv()
@@ -20,14 +20,14 @@ def get_debug_agent(graph_manager: BaseDBManager):
         [
             (
                 "system",
-                "You are a code debugger, Given a problem description and an initial function, you need to find the bug in the code. You are given a graph of code functions, We purposly omitted some code If the code has the comment '# Code replaced for brevity. See node_id ..... '. You can traverse the graph by calling the function keword_search. Prefer calling the function keword_search with query = node_id, only call it with starting nodes or neighbours. Explain why your solution solves the bug. Extensivley traverse the graph before giving an answer",
+                "You are a code debugger, Given a problem description and an initial function, you need to find the bug in the code. You are given a graph of code functions, We purposly omitted some code If the code has the comment '# Code replaced for brevity. See node_id ..... '. You can traverse the graph by calling the function keyword_search and then get_code_by_id. Prefer calling the function keyword_search with query = node_id, only call it with starting nodes or neighbours. Explain why your solution solves the bug. Extensivley traverse the graph before giving an answer",
             ),
             ("user", "{input}"),
             MessagesPlaceholder(variable_name="agent_scratchpad"),
         ]
     )
 
-    tools = [KeywordSearchTool(db_manager=graph_manager)]
+    tools = [KeywordSearchTool(db_manager=graph_manager), GetCodeByIdTool(db_manager=graph_manager)]
     llm_with_tools = llm.bind_tools(tools)
 
     agent = (

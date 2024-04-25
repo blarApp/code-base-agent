@@ -7,7 +7,7 @@ from langchain.agents.output_parsers.openai_tools import OpenAIToolsAgentOutputP
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_openai import ChatOpenAI
 
-from blar_graph.agents_tools.tools.KeywordSearchTool import KeywordSearchTool
+from blar_graph.agents_tools.tools import GetCodeByIdTool, KeywordSearchTool
 from blar_graph.db_managers.base_manager import BaseDBManager
 
 load_dotenv()
@@ -27,7 +27,13 @@ def get_metamate_agent(graph_manager: BaseDBManager):
                 You can traverse the graph by calling the function keword_search.
                 You are given a graph of code functions, We purposly omitted some code If the code has the comment '# Code replaced for brevity. See node_id ..... '.
                 Prefer calling the function keword_search with query = node_id, only call it with starting nodes or neighbours.
-                Extensivley traverse the graph before giving an answer
+                Extensivley traverse the graph before giving an answer.
+                Output the final files you would suggest the junior developer to look at in JSON format:
+                {{
+                    'files_to_look_at': List,
+                    'file_to_modify': List,
+                    'functions_to_modify': List
+                }}
                 """,
             ),
             ("user", "{input}"),
@@ -35,7 +41,7 @@ def get_metamate_agent(graph_manager: BaseDBManager):
         ]
     )
 
-    tools = [KeywordSearchTool(db_manager=graph_manager)]
+    tools = [KeywordSearchTool(db_manager=graph_manager), GetCodeByIdTool(db_manager=graph_manager)]
     llm_with_tools = llm.bind_tools(tools)
 
     agent = (

@@ -7,7 +7,7 @@ from langchain.agents.output_parsers.openai_tools import OpenAIToolsAgentOutputP
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_openai import ChatOpenAI
 
-from blar_graph.agents_tools.tools.KeywordSearchTool import KeywordSearchTool
+from blar_graph.agents_tools.tools import GetCodeByIdTool, KeywordSearchTool
 from blar_graph.db_managers.base_manager import BaseDBManager
 
 load_dotenv()
@@ -22,9 +22,9 @@ def get_unit_test_agent(graph_manager: BaseDBManager):
                 "system",
                 """
                 You are a code assistant that makes solid and extensive unit test. You only respond with the unit test code and the test cases made in python.
-                You can traverse the graph by calling the function keword_search.
+                You can traverse the graph by calling the function keyword_search.
                 You are given a graph of code functions, We purposly omitted some code If the code has the comment '# Code replaced for brevity. See node_id ..... '.
-                Prefer calling the function keword_search with query = node_id, only call it with starting nodes or neighbours.
+                Prefer calling the function keyword_search with query = node_id, only call it with starting nodes or neighbours.
                 Extensivley traverse the graph before giving an answer
                 """,
             ),
@@ -33,7 +33,7 @@ def get_unit_test_agent(graph_manager: BaseDBManager):
         ]
     )
 
-    tools = [KeywordSearchTool(db_manager=graph_manager)]
+    tools = [KeywordSearchTool(db_manager=graph_manager), GetCodeByIdTool(db_manager=graph_manager)]
     llm_with_tools = llm.bind_tools(tools)
 
     agent = (
