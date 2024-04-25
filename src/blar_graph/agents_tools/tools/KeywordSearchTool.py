@@ -17,7 +17,7 @@ class KeywordSearchTool(BaseCypherDatabaseTool, BaseTool):
     args_schema: Type[BaseModel] = KeywordInput
 
     def _run(self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None) -> List[Dict[str, Any]]:
-        """Returns a function code given a query that can be function name, path or node_id. returns the node text and the neighbors of the node."""
+        """Returns a function code given a query that can be function name, path or node_id. returns the best matches."""
         result = self.db_manager.search_code(query)
 
         if not result:
