@@ -282,6 +282,13 @@ class GraphConstructor:
 
         return constructors_calls_relations
 
+    def _add_node_types_to_relationships(self, nodes, relationships):
+        nodes_dict = {node["attributes"]["node_id"]: node["type"] for node in nodes}
+        for relationship in relationships:
+            relationship["sourceType"] = nodes_dict[relationship["sourceId"]]
+            relationship["targetType"] = nodes_dict[relationship["targetId"]]
+        return relationships
+
     def build_graph(self, path):
         # process every node to create the graph structure
         nodes, relationships, imports = self._scan_directory(path)
@@ -289,5 +296,6 @@ class GraphConstructor:
         relationships.extend(self._relate_imports(imports))
         # relate functions calls
         relationships.extend(self._relate_constructor_calls(nodes, imports))
+        relationships = self._add_node_types_to_relationships(nodes, relationships)
 
         self.graph_manager.save_graph(nodes, relationships)

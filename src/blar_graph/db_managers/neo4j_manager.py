@@ -44,7 +44,7 @@ class Neo4jManager(BaseDBManager):
             node_types = ["CLASS", "FUNCTION", "FILE", "PACKAGE", "FOLDER"]
             for node_type in node_types:
                 node_query = f"""
-                CREATE INDEX node_id IF NOT EXISTS FOR (n:{node_type}) ON (n.node_id)
+                CREATE INDEX node_id_{node_type} IF NOT EXISTS FOR (n:{node_type}) ON (n.node_id)
                 """
                 session.run(node_query)
 
@@ -236,7 +236,7 @@ class Neo4jManager(BaseDBManager):
         edge_creation_query = """
         CALL apoc.periodic.iterate(
             'WITH $edgesList AS edges UNWIND edges AS edgeObject RETURN edgeObject',
-            'MATCH (node1 {node_id: edgeObject.sourceId}) MATCH (node2 {node_id: edgeObject.targetId}) CALL apoc.create.relationship(node1, edgeObject.type, {}, node2) YIELD rel RETURN rel',
+            'MATCH (node1: edgeObject.sourceType {node_id: edgeObject.sourceId}) MATCH (node2: edgeObject.targetType {node_id: edgeObject.targetId}) CALL apoc.create.relationship(node1, edgeObject.type, {}, node2) YIELD rel RETURN rel',
             {batchSize:$batchSize, parallel:true, iterateList: true, params:{edgesList:$edgesList}}
         )
         YIELD batches, total, errorMessages, updateStatistics
