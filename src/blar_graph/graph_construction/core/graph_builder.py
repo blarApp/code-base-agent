@@ -52,7 +52,7 @@ class GraphConstructor:
 
         nodes.append(directory_node)
         for entry in os.scandir(path):
-            if "legacy" in entry.name or entry.name.startswith("."):
+            if entry.name in ["legacy", "test"] or entry.name.startswith("."):
                 continue
             if entry.is_file():
                 if entry.name.endswith(".py"):

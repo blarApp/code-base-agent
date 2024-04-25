@@ -100,12 +100,12 @@ class Neo4jManager(BaseDBManager):
             node = result.data()[0]["n"]
             neighbours = self.get_1_hop_neighbours_and_relations(node["node_id"])
             node_result = {
-                "node_id": node["node_id"],
-                "node_name": node["name"],
-                "file_path": node["file_path"],
-                "start_line": node["start_line"],
-                "end_line": node["end_line"],
-                "text": node["text"],
+                "node_id": node.get("node_id"),
+                "node_name": node.get("name"),
+                "file_path": node.get("file_path"),
+                "start_line": node.get("start_line"),
+                "end_line": node.get("end_line"),
+                "text": node.get("text"),
             }
             return node_result, neighbours
 
@@ -131,7 +131,6 @@ class Neo4jManager(BaseDBManager):
             if data_result is None:
                 result = session.run(node_query, formatted_query=formatted_query, repo_id=self.repo_id)
                 data_result = result.data()
-            print(data_result)
             data_result = [
                 {
                     "node_id": record["node.node_id"],

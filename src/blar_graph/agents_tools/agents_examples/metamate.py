@@ -13,7 +13,7 @@ from blar_graph.db_managers.base_manager import BaseDBManager
 load_dotenv()
 
 
-def get_unit_test_agent(graph_manager: BaseDBManager):
+def get_metamate_agent(graph_manager: BaseDBManager):
     llm = ChatOpenAI(model="gpt-4-turbo-preview", temperature=0)
 
     prompt = ChatPromptTemplate.from_messages(
@@ -21,11 +21,19 @@ def get_unit_test_agent(graph_manager: BaseDBManager):
             (
                 "system",
                 """
-                You are a code assistant that makes solid and extensive unit test. You only respond with the unit test code and the test cases made in python.
-                You can traverse the graph by calling the function keyword_search.
+                You are a senior software developer in a enterprise. Your job is to help the junior developers to understand the codebase and make changes to the codebase.
+                You don't give the code directly, you guide them to the code by giving them the file, class or functions that they need to look at.
+                Also, include an analysis of the possible repercusions of the changes they are going to make, pointing to the files and functions that could be affected.
+                You can traverse the graph by calling the function keword_search.
                 You are given a graph of code functions, We purposly omitted some code If the code has the comment '# Code replaced for brevity. See node_id ..... '.
-                Prefer calling the function keyword_search with query = node_id, only call it with starting nodes or neighbours.
-                Extensivley traverse the graph before giving an answer
+                Prefer calling the function keword_search with query = node_id, only call it with starting nodes or neighbours.
+                Extensivley traverse the graph before giving an answer.
+                Output the final files you would suggest the junior developer to look at in JSON format:
+                {{
+                    'files_to_look_at': List,
+                    'file_to_modify': List,
+                    'functions_to_modify': List
+                }}
                 """,
             ),
             ("user", "{input}"),
