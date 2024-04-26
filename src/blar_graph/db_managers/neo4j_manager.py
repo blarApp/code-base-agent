@@ -41,12 +41,10 @@ class Neo4jManager(BaseDBManager):
 
     def create_node_id_index(self):
         with self.driver.session() as session:
-            node_types = ["CLASS", "FUNCTION", "FILE", "PACKAGE", "FOLDER"]
-            for node_type in node_types:
-                node_query = f"""
-                CREATE INDEX node_id_{node_type} IF NOT EXISTS FOR (n:{node_type}) ON (n.node_id)
-                """
-                session.run(node_query)
+            node_query = """
+            CREATE INDEX node_id_NODE IF NOT EXISTS FOR (n:NODE) ON (n.node_id)
+            """
+            session.run(node_query)
 
     def close(self):
         # Close the connection to the database
@@ -217,7 +215,7 @@ class Neo4jManager(BaseDBManager):
         node_creation_query = """
         CALL apoc.periodic.iterate(
             "UNWIND $nodeList AS node RETURN node",
-            "CALL apoc.create.node([node.type], apoc.map.merge(node.attributes, {repo_id: $repo_id})) YIELD node as n RETURN count(n) as count",
+            "CALL apoc.create.node([node.type, 'NODE'], apoc.map.merge(node.attributes, {repo_id: $repo_id})) YIELD node as n RETURN count(n) as count",
             {batchSize: $batchSize, parallel: true, iterateList: true, params: {nodeList: $nodeList, repo_id: $repo_id}}
         )
         YIELD batches, total, errorMessages, updateStatistics
@@ -236,7 +234,7 @@ class Neo4jManager(BaseDBManager):
         edge_creation_query = """
         CALL apoc.periodic.iterate(
             'WITH $edgesList AS edges UNWIND edges AS edgeObject RETURN edgeObject',
-            'MATCH (node1: edgeObject.sourceType {node_id: edgeObject.sourceId}) MATCH (node2: edgeObject.targetType {node_id: edgeObject.targetId}) CALL apoc.create.relationship(node1, edgeObject.type, {}, node2) YIELD rel RETURN rel',
+            'MATCH (node1:NODE {node_id: edgeObject.sourceId}) MATCH (node2:NODE {node_id: edgeObject.targetId}) CALL apoc.create.relationship(node1, edgeObject.type, {}, node2) YIELD rel RETURN rel',
             {batchSize:$batchSize, parallel:true, iterateList: true, params:{edgesList:$edgesList}}
         )
         YIELD batches, total, errorMessages, updateStatistics
