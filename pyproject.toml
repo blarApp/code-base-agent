@@ -15,7 +15,7 @@ profile = "black"
 
 [tool.poetry]
 name = "blar-graph"
-version = "0.0.13"
+version = "0.0.14"
 description = "Llm agent to search within a graph"
 authors = ["Benjamín Errazuriz <benjamin@blar.io>", "José Domínguez <jose@blar.io>"]
 readme = "README.md"
@@ -23,9 +23,7 @@ homepage = "https://blar.io"
 repository = "https://github.com/blarApp/code-base-agent"
 license = "MIT"
 packages = [{include = "blar_graph", from = "src"}]
-exclude = [
-  {path = "src/blar_graph/examples"}
-]
+exclude = ["src/blar_graph/examples/*"]
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.12"
