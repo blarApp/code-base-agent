@@ -41,12 +41,10 @@ class Neo4jManager(BaseDBManager):
 
     def create_node_id_index(self):
         with self.driver.session() as session:
-            node_types = ["CLASS", "FUNCTION", "FILE", "PACKAGE", "FOLDER"]
-            for node_type in node_types:
-                node_query = f"""
-                CREATE INDEX node_id IF NOT EXISTS FOR (n:{node_type}) ON (n.node_id)
-                """
-                session.run(node_query)
+            node_query = """
+            CREATE INDEX node_id_NODE IF NOT EXISTS FOR (n:NODE) ON (n.node_id)
+            """
+            session.run(node_query)
 
     def close(self):
         # Close the connection to the database
@@ -100,12 +98,12 @@ class Neo4jManager(BaseDBManager):
             node = result.data()[0]["n"]
             neighbours = self.get_1_hop_neighbours_and_relations(node["node_id"])
             node_result = {
-                "node_id": node["node_id"],
-                "node_name": node["name"],
-                "file_path": node["file_path"],
-                "start_line": node["start_line"],
-                "end_line": node["end_line"],
-                "text": node["text"],
+                "node_id": node.get("node_id"),
+                "node_name": node.get("name"),
+                "file_path": node.get("file_path"),
+                "start_line": node.get("start_line"),
+                "end_line": node.get("end_line"),
+                "text": node.get("text"),
             }
             return node_result, neighbours
 
@@ -131,7 +129,6 @@ class Neo4jManager(BaseDBManager):
             if data_result is None:
                 result = session.run(node_query, formatted_query=formatted_query, repo_id=self.repo_id)
                 data_result = result.data()
-            print(data_result)
             data_result = [
                 {
                     "node_id": record["node.node_id"],
@@ -218,7 +215,7 @@ class Neo4jManager(BaseDBManager):
         node_creation_query = """
         CALL apoc.periodic.iterate(
             "UNWIND $nodeList AS node RETURN node",
-            "CALL apoc.create.node([node.type], apoc.map.merge(node.attributes, {repo_id: $repo_id})) YIELD node as n RETURN count(n) as count",
+            "CALL apoc.create.node([node.type, 'NODE'], apoc.map.merge(node.attributes, {repo_id: $repo_id})) YIELD node as n RETURN count(n) as count",
             {batchSize: $batchSize, parallel: true, iterateList: true, params: {nodeList: $nodeList, repo_id: $repo_id}}
         )
         YIELD batches, total, errorMessages, updateStatistics
@@ -237,7 +234,7 @@ class Neo4jManager(BaseDBManager):
         edge_creation_query = """
         CALL apoc.periodic.iterate(
             'WITH $edgesList AS edges UNWIND edges AS edgeObject RETURN edgeObject',
-            'MATCH (node1 {node_id: edgeObject.sourceId}) MATCH (node2 {node_id: edgeObject.targetId}) CALL apoc.create.relationship(node1, edgeObject.type, {}, node2) YIELD rel RETURN rel',
+            'MATCH (node1:NODE {node_id: edgeObject.sourceId}) MATCH (node2:NODE {node_id: edgeObject.targetId}) CALL apoc.create.relationship(node1, edgeObject.type, {}, node2) YIELD rel RETURN rel',
             {batchSize:$batchSize, parallel:true, iterateList: true, params:{edgesList:$edgesList}}
         )
         YIELD batches, total, errorMessages, updateStatistics
