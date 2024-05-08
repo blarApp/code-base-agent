@@ -182,6 +182,10 @@ class GraphConstructor:
 
         function_import = file_imports.get(function_call.split(".")[0])
         root_directory = node["attributes"]["path"].replace("." + node["attributes"]["name"], "")
+        alias = ""
+        if isinstance(function_import, dict):
+            alias = function_import.get("alias", "")
+            function_import = function_import.get("path", "")
         directory = root_directory
         if function_import:
             # Change the directory to complete path if it's an alias else it's assumed to be a regular import
@@ -203,6 +207,8 @@ class GraphConstructor:
                 directory = ""
 
         for module in function_call.split("."):
+            if module == alias:
+                continue
             final_module = "." + module
             intermediate_module = "." + module + "."
             if not (final_module in directory or intermediate_module in directory):

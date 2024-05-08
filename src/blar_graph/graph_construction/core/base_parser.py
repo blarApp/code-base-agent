@@ -161,6 +161,7 @@ class BaseParser(ABC):
 
         imports = {"_*wildcard*_": []}
         for node in tree.root_node.children:
+            # From Statement Case
             if node.type == "import_from_statement":
                 import_statements = node.named_children
 
@@ -170,7 +171,22 @@ class BaseParser(ABC):
                     if import_statement.text.decode() == self.wildcard:
                         imports["_*wildcard*_"].append(self.resolve_import_path(from_text, path, root_path))
                     imports[import_statement.text.decode()] = self.resolve_import_path(from_text, path, root_path)
+            # Direct Import Case
+            elif node.type == "import_statement":
+                import_statement = node.named_children[0]
+                from_text = import_statement.text.decode()
 
+                if import_statement.type == "aliased_import":
+                    # If the import statement is aliased
+                    from_statement, _, alias = import_statement.children
+                    from_text = from_statement.text.decode()
+                    imports[alias.text.decode()] = {
+                        "path": self.resolve_import_path(from_text, path, root_path),
+                        "alias": alias.text.decode(),
+                    }
+                else:
+                    # If it's a simple import statement
+                    imports[import_statement.text.decode()] = self.resolve_import_path(from_text, path, root_path)
         return {file_node_id: imports}
 
     @abstractmethod
