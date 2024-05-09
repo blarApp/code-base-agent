@@ -210,6 +210,47 @@ class Neo4jManager(BaseDBManager):
             ]
             return nodes_info
 
+    def get_incoming_neighbours(
+        self, node_id: str | None = None, path: str | None = None, relationship_types: list | None = None
+    ):
+        with self.driver.session() as session:
+            if path:
+                query = f"""
+                MATCH p1 {{ path:{path} }}<-[r]-(p2)
+                """
+            elif node_id:
+                query = """
+                MATCH (p {node_id: $node_id})<-[r]-(p2)
+                """
+
+            if relationship_types:
+                if len(relationship_types) == 1:
+                    query += f"WHERE type(r) = '{relationship_types[0]}'"
+                else:
+                    relationship_types_str = ", ".join([f"'{r}'" for r in relationship_types])
+                    query += f"WHERE type(r) IN [{relationship_types_str}]"
+
+            query += """
+            RETURN
+                type(r) as relationship_type,
+                p2.node_id AS node_id,
+                p2.name AS node_name,
+                labels(p2) AS node_type
+            """
+
+            result = session.run(query, node_id=node_id)
+            data = result.data()
+            nodes_info = [
+                {
+                    "node_id": record["node_id"],
+                    "node_name": record["node_name"],
+                    "node_type": record["node_type"],
+                    "relationship_type": record["relationship_type"],
+                }
+                for record in data
+            ]
+            return nodes_info
+
     @staticmethod
     def _create_nodes_txn(tx, nodeList: List[Any], batch_size: int, repo_id: str):
         node_creation_query = """
