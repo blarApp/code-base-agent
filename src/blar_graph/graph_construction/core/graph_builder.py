@@ -165,7 +165,8 @@ class GraphConstructor:
     def _relate_imports(self, imports: dict):
         import_edges = []
         for file_node_id in imports.keys():
-            for imp, path in imports[file_node_id].items():
+            for imp, import_object in imports[file_node_id].items():
+                path = import_object["path"]
                 if imp == "_*wildcard*_" and path:
                     related_imports = self._relate_wildcard_imports(file_node_id, path)
                     import_edges.extend(related_imports)
@@ -180,8 +181,10 @@ class GraphConstructor:
         else:
             file_imports = imports.get(node["attributes"]["file_node_id"], {})
 
-        function_import = file_imports.get(function_call.split(".")[0])
+        import_object = file_imports.get(function_call.split(".")[0], {})
         root_directory = node["attributes"]["path"].replace("." + node["attributes"]["name"], "")
+        alias = import_object.get("alias", "")
+        function_import = import_object.get("path", "")
         directory = root_directory
         if function_import:
             # Change the directory to complete path if it's an alias else it's assumed to be a regular import
@@ -203,6 +206,8 @@ class GraphConstructor:
                 directory = ""
 
         for module in function_call.split("."):
+            if module == alias:
+                continue
             final_module = "." + module
             intermediate_module = "." + module + "."
             if not (final_module in directory or intermediate_module in directory):
