@@ -25,7 +25,7 @@ class BaseParser(ABC):
         self.language = language
         self.wildcard = wildcard
 
-    @timeout(15)
+    @timeout(15, use_signals=False)
     def get_nodes_from_documents_with_timeout(self, code, documents):
         return code.get_nodes_from_documents(documents)
 
