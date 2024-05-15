@@ -56,12 +56,13 @@ def format_file_node(node: BaseNode, no_extension_path: str, function_calls: lis
     return processed_node
 
 
-def format_directory_node(path: str, package: bool) -> dict:
+def format_directory_node(path: str, package: bool, level: int) -> dict:
     processed_node = {
         "attributes": {
             "path": path + "/",
             "name": os.path.basename(path),
             "node_id": str(uuid.uuid4()),
+            "level": level,
         },
         "type": "PACKAGE" if package else "FOLDER",
     }
