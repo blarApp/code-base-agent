@@ -68,13 +68,13 @@ class PythonParser(BaseParser):
         self,
         file_path: str,
         root_path: str,
-        directory_path: str,
         visited_nodes: dict,
         global_imports: dict,
+        level: int,
     ):
         if file_path.endswith("__init__.py"):
             return [], [], self.parse_init(file_path, root_path)
-        return self.parse(file_path, root_path, visited_nodes, global_imports)
+        return self.parse(file_path, root_path, visited_nodes, global_imports, level)
 
     def parse_init(self, file_path: str, root_path: str):
         parser = tree_sitter_languages.get_parser(self.language)

@@ -35,6 +35,7 @@ class BaseParser(ABC):
         root_path: str,
         visited_nodes: dict,
         global_imports: dict,
+        level: int,
     ):
         path = Path(file_path)
         if not path.exists():
@@ -65,7 +66,7 @@ class BaseParser(ABC):
         assignment_dict = {}
 
         file_node, file_relations = self.__process_node__(
-            split_nodes.pop(0), file_path, "", visited_nodes, global_imports, assignment_dict, documents[0]
+            split_nodes.pop(0), file_path, "", visited_nodes, global_imports, assignment_dict, documents[0], level
         )
         node_list.append(file_node)
         edges_list.extend(file_relations)
@@ -79,6 +80,7 @@ class BaseParser(ABC):
                 global_imports,
                 assignment_dict,
                 documents[0],
+                level,
             )
 
             node_list.append(processed_node)
@@ -103,13 +105,14 @@ class BaseParser(ABC):
         global_imports: dict,
         assignment_dict: dict,
         document: Document,
+        level: int,
     ):
         no_extension_path = self._remove_extensions(file_path)
         relationships = []
         scope = node.metadata["inclusive_scopes"][-1] if node.metadata["inclusive_scopes"] else None
-        type_node = "file"
-        if scope:
-            type_node = scope["type"]
+        type_node = scope["type"] if scope else "file"
+        parent_level = level
+        leaf = False
 
         if type_node == "function_definition":
             function_calls = tree_parser.get_function_calls(node, assignment_dict, self.language)
@@ -122,6 +125,8 @@ class BaseParser(ABC):
             processed_node = format_nodes.format_file_node(node, file_path, function_calls)
         for relation in node.relationships.items():
             if relation[0] == NodeRelationship.CHILD:
+                if len(relation[1]) == 0:
+                    leaf = True
                 for child in relation[1]:
                     relation_type = (
                         child.metadata["inclusive_scopes"][-1]["type"] if child.metadata["inclusive_scopes"] else ""
@@ -135,7 +140,11 @@ class BaseParser(ABC):
                     )
             elif relation[0] == NodeRelationship.PARENT:
                 if relation[1]:
-                    parent_path = visited_nodes.get(relation[1].node_id, no_extension_path).replace("/", ".")
+                    parent_path = (
+                        visited_nodes.get(relation[1].node_id, {}).get("path", no_extension_path).replace("/", ".")
+                    )
+                    parent_level = visited_nodes.get(relation[1].node_id, {}).get("level", level)
+
                     node_path = f"{parent_path}.{processed_node['attributes']['name']}"
                 else:
                     node_path = no_extension_path.replace("/", ".")
@@ -146,11 +155,13 @@ class BaseParser(ABC):
         processed_node["attributes"]["end_line"] = end_line
         processed_node["attributes"]["path"] = node_path
         processed_node["attributes"]["file_path"] = file_path
+        processed_node["attributes"]["level"] = parent_level + 1
+        processed_node["attributes"]["leaf"] = leaf
         global_imports[node_path] = {
             "id": processed_node["attributes"]["node_id"],
             "type": processed_node["type"],
         }
-        visited_nodes[node.node_id] = node_path
+        visited_nodes[node.node_id] = {"path": node_path, "level": parent_level + 1}
         return processed_node, relationships
 
     def _get_imports(self, path: str, file_node_id: str, root_path: str) -> dict:
