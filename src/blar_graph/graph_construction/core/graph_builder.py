@@ -14,6 +14,7 @@ class GraphConstructor:
         self.global_imports = {}
         self.import_aliases = {}
         self.root = None
+        self.skip_tests = True
         if language == "python":
             self.parser = PythonParser()
         else:
@@ -22,11 +23,12 @@ class GraphConstructor:
 
     def _scan_directory(
         self,
-        path,
-        nodes=[],
-        relationships=[],
-        imports={},
-        parent_id=None,
+        path: str,
+        nodes: list = [],
+        relationships: list = [],
+        imports: dict = {},
+        parent_id: str = None,
+        level: int = 0,
     ):
         if not os.path.exists(path):
             raise FileNotFoundError(f"Directory {path} not found")
@@ -37,7 +39,7 @@ class GraphConstructor:
 
         package = self.parser.is_package(path)
 
-        directory_node = format_nodes.format_directory_node(path, package)
+        directory_node = format_nodes.format_directory_node(path, package, level)
         directory_path = directory_node["attributes"]["path"]
         directory_node_id = directory_node["attributes"]["node_id"]
 
@@ -52,7 +54,7 @@ class GraphConstructor:
 
         nodes.append(directory_node)
         for entry in os.scandir(path):
-            if entry.name in ["legacy", "test"] or entry.name.startswith("."):
+            if (entry.name in ["legacy", "test"] and self.skip_tests) or entry.name.startswith("."):
                 continue
             if entry.is_file():
                 if entry.name.endswith(".py"):
@@ -61,9 +63,9 @@ class GraphConstructor:
                         processed_nodes, relations, file_imports = self.parser.parse_file(
                             entry.path,
                             self.root,
-                            directory_path,
                             visited_nodes=self.visited_nodes,
                             global_imports=self.global_imports,
+                            level=level,
                         )
                     except Exception:
                         print(f"Error {entry.path}")
@@ -111,11 +113,7 @@ class GraphConstructor:
                 if self.parser.skip_directory(entry.name):
                     continue
                 nodes, relationships, imports = self._scan_directory(
-                    entry.path,
-                    nodes,
-                    relationships,
-                    imports,
-                    directory_node_id,
+                    entry.path, nodes, relationships, imports, directory_node_id, level + 1
                 )
         return nodes, relationships, imports
 

@@ -3,7 +3,7 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.black]
-line-length = 119
+line-length = 120
 
 [tool.codespell]
 check-filenames = true
@@ -15,7 +15,7 @@ profile = "black"
 
 [tool.poetry]
 name = "blar-graph"
-version = "0.0.16"
+version = "0.0.17"
 description = "Llm agent to search within a graph"
 authors = ["Benjamín Errazuriz <benjamin@blar.io>", "José Domínguez <jose@blar.io>"]
 readme = "README.md"
@@ -40,3 +40,6 @@ timeout-decorator = "^0.5.0"
 isort = "^5.13.2"
 black = "^24.3.0"
 pre-commit = "^3.7.0"
+
+[tool.ruff]
+line-length = 120
