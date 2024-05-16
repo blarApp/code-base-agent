@@ -20,7 +20,7 @@ class Neo4jManager(BaseDBManager):
         self.create_node_id_index()
         self.repo_id = repo_id
 
-    def query(self, query: str, query_params: dict, result_format: str = "data"):
+    def query(self, query: str, query_params: dict = {}, result_format: str = "data"):
         with self.driver.session() as session:
             result = session.run(query, query_params)
             if result_format == "graph":
