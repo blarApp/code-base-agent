@@ -6,7 +6,6 @@ from llama_index.core import SimpleDirectoryReader
 from llama_index.core.schema import BaseNode, Document, NodeRelationship
 from llama_index.core.text_splitter import CodeSplitter
 from llama_index.packs.code_hierarchy import CodeHierarchyNodeParser
-from timeout_decorator import TimeoutError, timeout
 
 from blar_graph.graph_construction.utils import format_nodes, tree_parser
 
@@ -24,10 +23,6 @@ class BaseParser(ABC):
     ):
         self.language = language
         self.wildcard = wildcard
-
-    @timeout(15, use_signals=False)
-    def get_nodes_from_documents_with_timeout(self, code, documents):
-        return code.get_nodes_from_documents(documents)
 
     def parse(
         self,
@@ -56,7 +51,7 @@ class BaseParser(ABC):
             code_splitter=CodeSplitter(language=self.language, max_chars=10000, chunk_lines=10),
         )
         try:
-            split_nodes = self.get_nodes_from_documents_with_timeout(code, documents)
+            split_nodes = code.get_nodes_from_documents(documents)
         except TimeoutError:
             print(f"Timeout error: {file_path}")
             return [], [], {}
