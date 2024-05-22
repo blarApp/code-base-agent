@@ -24,12 +24,19 @@ class GraphConstructor:
     def _scan_directory(
         self,
         path: str,
-        nodes: list = [],
-        relationships: list = [],
-        imports: dict = {},
+        nodes: list = None,
+        relationships: list = None,
+        imports: dict = None,
         parent_id: str = None,
         level: int = 0,
     ):
+        if nodes is None:
+            nodes = []
+        if relationships is None:
+            relationships = []
+        if imports is None:
+            imports = {}
+
         if not os.path.exists(path):
             raise FileNotFoundError(f"Directory {path} not found")
         if self.root is None:
