@@ -10,20 +10,20 @@ load_dotenv()
 
 
 class Neo4jManager(BaseDBManager):
-    def __init__(self, repo_id: str = None, user_id: str = None):
+    def __init__(self, repoId: str = None, entityId: str = None):
         uri = os.getenv("NEO4J_URI")
         user = os.getenv("NEO4J_USERNAME")
         password = os.getenv("NEO4J_PASSWORD")
 
         self.driver = GraphDatabase.driver(uri, auth=(user, password))
         self.create_indexes_and_constraints()
-        self.repo_id = repo_id if repo_id is not None else "default_repo"
-        self.user_id = user_id if user_id is not None else "default_user"
+        self.repoId = repoId if repoId is not None else "default_repo"
+        self.entityId = entityId if entityId is not None else "default_user"
 
     def create_indexes_and_constraints(self):
         self.create_function_name_index()
         self.create_node_id_index()
-        self.create_user_id_index()
+        self.create_entityId_index()
         self.create_unique_constraint()
 
     def query(self, query: str, query_params: dict = {}, result_format: str = "data"):
@@ -52,10 +52,10 @@ class Neo4jManager(BaseDBManager):
             """
             session.run(node_query)
 
-    def create_user_id_index(self):
+    def create_entityId_index(self):
         with self.driver.session() as session:
             user_query = """
-            CREATE INDEX user_id_INDEX IF NOT EXISTS FOR (n:NODE) ON (n.user_id)
+            CREATE INDEX entityId_INDEX IF NOT EXISTS FOR (n:NODE) ON (n.entityId)
             """
             session.run(user_query)
 
@@ -63,7 +63,7 @@ class Neo4jManager(BaseDBManager):
         with self.driver.session() as session:
             constraint_query = """
             CREATE CONSTRAINT user_node_unique IF NOT EXISTS FOR (n:NODE)
-            REQUIRE (n.user_id, n.node_id) IS UNIQUE
+            REQUIRE (n.entityId, n.node_id) IS UNIQUE
             """
             session.run(constraint_query)
 
@@ -75,13 +75,13 @@ class Neo4jManager(BaseDBManager):
         # Function to create nodes in the Neo4j database
         with self.driver.session() as session:
             session.write_transaction(
-                self._create_nodes_txn, nodeList, 10000, repo_id=self.repo_id, user_id=self.user_id
+                self._create_nodes_txn, nodeList, 10000, repoId=self.repoId, entityId=self.entityId
             )
 
     def create_edges(self, edgesList: List[Any]):
         # Function to create edges between nodes in the Neo4j database
         with self.driver.session() as session:
-            session.write_transaction(self._create_edges_txn, edgesList, 10000, user_id=self.user_id)
+            session.write_transaction(self._create_edges_txn, edgesList, 10000, entityId=self.entityId)
 
     def format_query(self, query: str):
         # Function to format the query to be used in the fulltext index
@@ -131,17 +131,17 @@ class Neo4jManager(BaseDBManager):
             return node_result, neighbours
 
     def get_whole_graph(self, result_format: str = "data"):
-        query = "match (n {repo_id: $repo_id})-[r]-(m) return n, m, r"
+        query = "match (n {repoId: $repoId})-[r]-(m) return n, m, r"
         with self.driver.session() as session:
-            result = session.run(query, repo_id=self.repo_id)
+            result = session.run(query, repoId=self.repoId)
             if result_format == "graph":
                 return result.graph()
             return result.data()
 
     def get_all_user_nodes(self, result_format: str = "data"):
-        query = "match (n {user_id: $user_id})-[r]-(m) return n, m, r"
+        query = "match (n {entityId: $entityId})-[r]-(m) return n, m, r"
         with self.driver.session() as session:
-            result = session.run(query, user_id=self.user_id)
+            result = session.run(query, entityId=self.entityId)
             if result_format == "graph":
                 return result.graph()
             return result.data()
@@ -151,14 +151,14 @@ class Neo4jManager(BaseDBManager):
         formatted_query = self.format_query(query)
         node_query = """
     CALL db.index.fulltext.queryNodes("functionNames", $formatted_query) YIELD node, score
-    where node.repo_id = $repo_id
+    where node.repoId = $repoId
     RETURN node.node_id, node.name, node.file_path, score
         """
         with self.driver.session() as session:
-            result = session.run(node_query, formatted_query=f"*{formatted_query}", repo_id=self.repo_id)
+            result = session.run(node_query, formatted_query=f"*{formatted_query}", repoId=self.repoId)
             data_result = result.data()
             if data_result is None:
-                result = session.run(node_query, formatted_query=formatted_query, repo_id=self.repo_id)
+                result = session.run(node_query, formatted_query=formatted_query, repoId=self.repoId)
                 data_result = result.data()
             data_result = [
                 {
@@ -176,14 +176,14 @@ class Neo4jManager(BaseDBManager):
         formatted_query = self.format_query(query)
         node_query = """
     CALL db.index.fulltext.queryNodes("functionNames", $formatted_query) YIELD node, score
-    where node.repo_id = $repo_id
+    where node.repoId = $repoId
     RETURN node.text, node.node_id, node.name, node.file_path, node.start_line, node.end_line, score
         """
         with self.driver.session() as session:
-            result = session.run(node_query, formatted_query=f"*{formatted_query}", repo_id=self.repo_id)
+            result = session.run(node_query, formatted_query=f"*{formatted_query}", repoId=self.repoId)
             first_result = result.peek()
             if first_result is None:
-                result = session.run(node_query, formatted_query=formatted_query, repo_id=self.repo_id)
+                result = session.run(node_query, formatted_query=formatted_query, repoId=self.repoId)
                 first_result = result.peek()
             if first_result is None:
                 return None, None
@@ -283,37 +283,37 @@ class Neo4jManager(BaseDBManager):
             return nodes_info
 
     @staticmethod
-    def _create_nodes_txn(tx, nodeList: List[Any], batch_size: int, repo_id: str, user_id: str):
+    def _create_nodes_txn(tx, nodeList: List[Any], batch_size: int, repoId: str, entityId: str):
         node_creation_query = """
         CALL apoc.periodic.iterate(
             "UNWIND $nodeList AS node RETURN node",
-            "CALL apoc.create.node([node.type, 'NODE'], apoc.map.merge(node.attributes, {repo_id: $repo_id, user_id: $user_id})) YIELD node as n RETURN count(n) as count",
-            {batchSize: $batchSize, parallel: true, iterateList: true, params: {nodeList: $nodeList, repo_id: $repo_id, user_id: $user_id}}
+            "CALL apoc.create.node([node.type, 'NODE'], apoc.map.merge(node.attributes, {repoId: $repoId, entityId: $entityId})) YIELD node as n RETURN count(n) as count",
+            {batchSize: $batchSize, parallel: true, iterateList: true, params: {nodeList: $nodeList, repoId: $repoId, entityId: $entityId}}
         )
         YIELD batches, total, errorMessages, updateStatistics
         RETURN batches, total, errorMessages, updateStatistics
         """
 
-        result = tx.run(node_creation_query, nodeList=nodeList, batchSize=batch_size, repo_id=repo_id, user_id=user_id)
+        result = tx.run(node_creation_query, nodeList=nodeList, batchSize=batch_size, repoId=repoId, entityId=entityId)
 
         # Fetch the result
         for record in result:
             print(f"Created {record['total']} nodes")
 
     @staticmethod
-    def _create_edges_txn(tx, edgesList: List[Any], batch_size: int, user_id: str):
+    def _create_edges_txn(tx, edgesList: List[Any], batch_size: int, entityId: str):
         # Cypher query using apoc.periodic.iterate for creating edges
         edge_creation_query = """
         CALL apoc.periodic.iterate(
             'WITH $edgesList AS edges UNWIND edges AS edgeObject RETURN edgeObject',
-            'MATCH (node1:NODE {node_id: edgeObject.sourceId, user_id: $user_id}) MATCH (node2:NODE {node_id: edgeObject.targetId, user_id: $user_id}) CALL apoc.create.relationship(node1, edgeObject.type, {}, node2) YIELD rel RETURN rel',
-            {batchSize:$batchSize, parallel:true, iterateList: true, params:{edgesList: $edgesList, user_id: $user_id}}
+            'MATCH (node1:NODE {node_id: edgeObject.sourceId, entityId: $entityId}) MATCH (node2:NODE {node_id: edgeObject.targetId, entityId: $entityId}) CALL apoc.create.relationship(node1, edgeObject.type, {}, node2) YIELD rel RETURN rel',
+            {batchSize:$batchSize, parallel:true, iterateList: true, params:{edgesList: $edgesList, entityId: $entityId}}
         )
         YIELD batches, total, errorMessages, updateStatistics
         RETURN batches, total, errorMessages, updateStatistics
         """
         # Execute the query
-        result = tx.run(edge_creation_query, edgesList=edgesList, batchSize=batch_size, user_id=user_id)
+        result = tx.run(edge_creation_query, edgesList=edgesList, batchSize=batch_size, entityId=entityId)
 
         # Fetch the result
         for record in result:
