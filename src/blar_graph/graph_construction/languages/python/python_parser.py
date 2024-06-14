@@ -3,78 +3,103 @@ import os
 import tree_sitter_languages
 
 from blar_graph.graph_construction.core.base_parser import BaseParser
+from blar_graph.graph_construction.utils.interfaces import GlobalGraphInfo
 
 
 class PythonParser(BaseParser):
     def __init__(self):
-        super().__init__("python", "*")
-        self.extensions = [".py"]
+        super().__init__("python", "*", ".py", ".")
 
-    def _remove_extensions(self, file_path):
-        no_extension_path = str(file_path)
-        for extension in self.extensions:
-            no_extension_path = no_extension_path.replace(extension, "")
-        return no_extension_path
+    @property
+    def self_syntax(self):
+        return "self."
+
+    @property
+    def decompose_call_query(self):
+        return """
+            (attribute
+                object: [
+                    (identifier) @object
+                    ((attribute) @nested_object
+                    attribute: _ @nested_method)
+                ]
+                attribute: _ @method)
+            """
+
+    @property
+    def assignment_query(self):
+        return """(assignment left: _ @variable right: _ @expression)"""
+
+    @property
+    def function_call_query(self):
+        return """(call function: _ @function_call)"""
+
+    @property
+    def scopes_names(self):
+        return {"function": ["function_definition"], "class": ["class_definition"], "plain_code_block": []}
+
+    @property
+    def relation_types_map(self):
+        return {
+            "function_definition": "FUNCTION_DEFINITION",
+            "class_definition": "CLASS_DEFINITION",
+        }
+
+    def _get_imports(self, path: str, file_node_id: str, root_path: str) -> dict:
+        parser = tree_sitter_languages.get_parser(self.language)
+        with open(path, "r") as file:
+            code = file.read()
+        tree = parser.parse(bytes(code, "utf-8"))
+
+        imports = {"_*wildcard*_": {"path": [], "alias": "", "type": "wildcard"}}
+        for node in tree.root_node.children:
+            # From Statement Case
+            if node.type == "import_from_statement":
+                import_statements = node.named_children
+
+                from_statement = import_statements[0]
+                from_text = from_statement.text.decode()
+                for import_statement in import_statements[1:]:
+                    if import_statement.text.decode() == self.wildcard:
+                        imports["_*wildcard*_"]["path"].append(self.resolve_import_path(from_text, path, root_path))
+                    imports[import_statement.text.decode()] = {
+                        "path": self.resolve_import_path(from_text, path, root_path),
+                        "alias": "",
+                        "type": "import_from_statement",
+                    }
+            # Direct Import Case
+            elif node.type == "import_statement":
+                import_statement = node.named_children[0]
+                from_text = import_statement.text.decode()
+
+                if import_statement.type == "aliased_import":
+                    # If the import statement is aliased
+                    from_statement, _, alias = import_statement.children
+                    from_text = from_statement.text.decode()
+                    imports[alias.text.decode()] = {
+                        "path": self.resolve_import_path(from_text, path, root_path),
+                        "alias": alias.text.decode(),
+                        "type": "aliased_import",
+                    }
+                else:
+                    # If it's a simple import statement
+                    imports[import_statement.text.decode()] = {
+                        "path": self.resolve_import_path(from_text, path, root_path),
+                        "alias": "",
+                        "type": "import_statement",
+                    }
+        return {file_node_id: imports}
 
     def is_package(self, directory):
         return os.path.exists(os.path.join(directory, "__init__.py"))
 
-    def find_module_path(self, module_name, start_dir, project_root):
-        current_dir = start_dir
-        components = module_name.split(".")
-
-        # Make sure to find in the same directory as the root
-        project_root = os.sep.join(project_root.split(os.sep)[:-1])
-        # Try to find the module by traversing up towards the root until the module path is found or root is reached
-        while current_dir.startswith(project_root) and (current_dir != "" or project_root != ""):
-            possible_path = os.path.join(current_dir, *components)
-            # Check for a direct module or package
-            if os.path.exists(possible_path + ".py") or self.is_package(possible_path):
-                return possible_path.replace("/", ".")
-            # Move one directory up
-            current_dir = os.path.dirname(current_dir)
-        return None
-
-    def resolve_relative_import_path(self, import_statement, current_file_path, project_root):
-        if import_statement.startswith(".."):
-            import_statement = import_statement[2:]
-            current_file_path = os.sep.join(current_file_path.split(os.sep)[:-1])
-        elif import_statement.startswith("."):
-            import_statement = import_statement[1:]
-        else:
-            return self.find_module_path(import_statement, current_file_path, project_root)
-
-        return self.resolve_relative_import_path(import_statement, current_file_path, project_root)
-
-    def resolve_import_path(self, import_statement, current_file_directory, project_root):
-        """
-        Resolve the absolute path of an import statement.
-        import_statement: The imported module as a string (e.g., 'os', 'my_package.my_module').
-        current_file_directory: The directory of the file containing the import statement.
-        project_root: The root directory of the project.
-        """
-        # Handling relative imports
-        if import_statement.startswith("."):
-            current_file_directory = os.sep.join(current_file_directory.split(os.sep)[:-1])
-            return self.resolve_relative_import_path(import_statement, current_file_directory, project_root)
-        else:
-            # Handling absolute imports
-            return self.find_module_path(import_statement, current_file_directory, project_root)
-
     def skip_directory(self, directory: str) -> bool:
         return directory == "__pycache__"
 
-    def parse_file(
-        self,
-        file_path: str,
-        root_path: str,
-        visited_nodes: dict,
-        global_imports: dict,
-        level: int,
-    ):
+    def parse_file(self, file_path: str, root_path: str, global_graph_info: GlobalGraphInfo, level: int):
         if file_path.endswith("__init__.py"):
             return [], [], self.parse_init(file_path, root_path)
-        return self.parse(file_path, root_path, visited_nodes, global_imports, level)
+        return self.parse(file_path, root_path, global_graph_info, level)
 
     def parse_init(self, file_path: str, root_path: str):
         parser = tree_sitter_languages.get_parser(self.language)
