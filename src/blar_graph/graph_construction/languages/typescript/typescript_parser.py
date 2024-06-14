@@ -53,7 +53,7 @@ class TypescriptParser(BaseParser):
         return directory == "node_modules"
 
     def parse_file(self, file_path: str, root_path: str, global_graph_info: GlobalGraphInfo, level: int):
-        return self.parse(file_path, root_path, global_graph_info)
+        return self.parse(file_path, root_path, global_graph_info, level)
 
     def _get_imports(self, path: str, file_node_id: str, root_path: str) -> dict:
         parser = tree_sitter_languages.get_parser(self.language)
