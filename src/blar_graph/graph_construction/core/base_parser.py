@@ -1,37 +1,38 @@
+import os
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import List
 
 import tree_sitter_languages
 from llama_index.core import SimpleDirectoryReader
 from llama_index.core.schema import BaseNode, Document, NodeRelationship
 from llama_index.core.text_splitter import CodeSplitter
 from llama_index.packs.code_hierarchy import CodeHierarchyNodeParser
+from tree_sitter import Language, Node
 
 from blar_graph.graph_construction.utils import format_nodes, tree_parser
+from blar_graph.graph_construction.utils.interfaces import GlobalGraphInfo
 
 
 class BaseParser(ABC):
-    RELATIONS_TYPES_MAP = {
-        "function_definition": "FUNCTION_DEFINITION",
-        "class_definition": "CLASS_DEFINITION",
-    }
+    language: str
+    wildcard: str
+    extension: str
+    import_path_separator: str
 
     def __init__(
         self,
         language: str,
         wildcard: str,
+        extension: str,
+        import_path_separator: str = ".",
     ):
         self.language = language
         self.wildcard = wildcard
+        self.extension = extension
+        self.import_path_separator = import_path_separator
 
-    def parse(
-        self,
-        file_path: str,
-        root_path: str,
-        visited_nodes: dict,
-        global_imports: dict,
-        level: int,
-    ):
+    def parse(self, file_path: str, root_path: str, global_graph_info: GlobalGraphInfo, level: int):
         path = Path(file_path)
         if not path.exists():
             print(f"File {file_path} does not exist.")
@@ -44,6 +45,9 @@ class BaseParser(ABC):
 
         # Bug related to llama-index it's safer to remove non-ascii characters. Could be removed in the future
         documents[0].text = tree_parser.remove_non_ascii(documents[0].text)
+        # Format methods for typescript, because the parser doesn't recognize the methods by itself
+        if self.language == "typescript":
+            documents[0].text = tree_parser.format_methods(documents[0].text, self.language)
 
         code = CodeHierarchyNodeParser(
             language=self.language,
@@ -61,7 +65,7 @@ class BaseParser(ABC):
         assignment_dict = {}
 
         file_node, file_relations = self.__process_node__(
-            split_nodes.pop(0), file_path, "", visited_nodes, global_imports, assignment_dict, documents[0], level
+            split_nodes.pop(0), file_path, "", global_graph_info, assignment_dict, documents[0], level
         )
         node_list.append(file_node)
         edges_list.extend(file_relations)
@@ -71,8 +75,7 @@ class BaseParser(ABC):
                 node,
                 file_path,
                 file_node["attributes"]["node_id"],
-                visited_nodes,
-                global_imports,
+                global_graph_info,
                 assignment_dict,
                 documents[0],
                 level,
@@ -96,8 +99,7 @@ class BaseParser(ABC):
         node: BaseNode,
         file_path: str,
         file_node_id: str,
-        visited_nodes: dict,
-        global_imports: dict,
+        global_graph_info: GlobalGraphInfo,
         assignment_dict: dict,
         document: Document,
         level: int,
@@ -109,14 +111,18 @@ class BaseParser(ABC):
         parent_level = level
         leaf = False
 
-        if type_node == "function_definition":
-            function_calls = tree_parser.get_function_calls(node, assignment_dict, self.language)
+        if type_node in self.scopes_names["function"]:
+            function_calls = self.get_function_calls(node, assignment_dict, self.language)
             processed_node = format_nodes.format_function_node(node, scope, function_calls, file_node_id)
-        elif type_node == "class_definition":
+        elif type_node in self.scopes_names["class"]:
             inheritances = tree_parser.get_inheritances(node, self.language)
             processed_node = format_nodes.format_class_node(node, scope, file_node_id, inheritances)
+            global_graph_info.inheritances[processed_node["attributes"]["name"]] = inheritances
+        elif type_node in self.scopes_names["plain_code_block"]:
+            function_calls = self.get_function_calls(node, assignment_dict, self.language)
+            processed_node = format_nodes.format_plain_code_block_node(node, scope, function_calls, file_node_id)
         else:
-            function_calls = tree_parser.get_function_calls(node, assignment_dict, self.language)
+            function_calls = self.get_function_calls(node, assignment_dict, self.language)
             processed_node = format_nodes.format_file_node(node, file_path, function_calls)
         for relation in node.relationships.items():
             if relation[0] == NodeRelationship.CHILD:
@@ -130,15 +136,17 @@ class BaseParser(ABC):
                         {
                             "sourceId": node.node_id,
                             "targetId": child.node_id,
-                            "type": self.RELATIONS_TYPES_MAP.get(relation_type, "UNKNOWN"),
+                            "type": self.relation_types_map.get(relation_type, "UNKNOWN"),
                         }
                     )
             elif relation[0] == NodeRelationship.PARENT:
                 if relation[1]:
                     parent_path = (
-                        visited_nodes.get(relation[1].node_id, {}).get("path", no_extension_path).replace("/", ".")
+                        global_graph_info.visited_nodes.get(relation[1].node_id, {})
+                        .get("path", no_extension_path)
+                        .replace("/", ".")
                     )
-                    parent_level = visited_nodes.get(relation[1].node_id, {}).get("level", level)
+                    parent_level = global_graph_info.visited_nodes.get(relation[1].node_id, {}).get("level", level)
 
                     node_path = f"{parent_path}.{processed_node['attributes']['name']}"
                 else:
@@ -152,70 +160,193 @@ class BaseParser(ABC):
         processed_node["attributes"]["file_path"] = file_path
         processed_node["attributes"]["level"] = parent_level + 1
         processed_node["attributes"]["leaf"] = leaf
-        global_imports[node_path] = {
+        global_graph_info.imports[node_path] = {
             "id": processed_node["attributes"]["node_id"],
             "type": processed_node["type"],
         }
-        visited_nodes[node.node_id] = {"path": node_path, "level": parent_level + 1}
+        global_graph_info.visited_nodes[node.node_id] = {"path": node_path, "level": parent_level + 1}
         return processed_node, relationships
 
+    def _remove_extensions(self, file_path):
+        no_extension_path = str(file_path)
+        no_extension_path = no_extension_path.replace(self.extension, "")
+        return no_extension_path
+
+    def _decompose_function_call(self, call_node: Node, language: Language, decomposed_calls=[]):
+        calls_query = language.query(self.decompose_call_query)
+
+        decompose_call = calls_query.captures(call_node)
+
+        if len(decompose_call) == 0:
+            decomposed_calls.append(call_node.text.decode())
+            return decomposed_calls
+
+        nested_object = False
+        for decompose_node, type in decompose_call:
+            if type == "nested_object":
+                nested_object = True
+                decomposed_calls = self._decompose_function_call(decompose_node, language, decomposed_calls)
+            elif (type == "object" or type == "method") and nested_object:
+                continue
+            else:
+                decomposed_calls.append(decompose_node.text.decode())
+
+        return decomposed_calls
+
+    def resolve_relative_import_path(self, import_statement, current_file_path, project_root):
+        if import_statement.startswith(".."):
+            import_statement = import_statement[2:]
+            current_file_path = os.sep.join(current_file_path.split(os.sep)[:-1])
+        elif import_statement.startswith("."):
+            import_statement = import_statement[1:]
+        else:
+            return self.find_module_path(import_statement, current_file_path, project_root)
+
+        return self.resolve_relative_import_path(import_statement, current_file_path, project_root)
+
+    def resolve_import_path(self, import_statement, current_file_directory, project_root):
+        # Handling relative imports
+        if import_statement.startswith("."):
+            current_file_directory = os.sep.join(current_file_directory.split(os.sep)[:-1])
+            return self.resolve_relative_import_path(import_statement, current_file_directory, project_root)
+        else:
+            # Handling absolute imports
+            return self.find_module_path(import_statement, current_file_directory, project_root)
+
+    def find_module_path(self, module_name, start_dir, project_root):
+        current_dir = start_dir
+        components = module_name.split(self.import_path_separator)
+
+        # Make sure to find in the same directory as the root
+        project_root = os.sep.join(project_root.split(os.sep)[:-1])
+        # Try to find the module by traversing up towards the root until the module path is found or root is reached
+        while current_dir.startswith(project_root) and (current_dir != "" or project_root != ""):
+            possible_path = os.path.join(current_dir, *components)
+            # Check for a direct module or package
+            if os.path.exists(possible_path + self.extension) or self.is_package(possible_path):
+                return possible_path.replace("/", ".")
+            # Move one directory up
+            current_dir = os.path.dirname(current_dir)
+        return None
+
+    def get_function_calls(self, node: Node, assignments_dict: dict, language: str) -> list[str]:
+        code_text = node.text
+        function_calls = []
+
+        parser = tree_sitter_languages.get_parser(language)
+        tree = parser.parse(bytes(code_text, "utf-8"))
+        language = tree_sitter_languages.get_language(language)
+
+        assignment_query = language.query(self.assignment_query)
+
+        assignments = assignment_query.captures(tree.root_node)
+
+        for assignment_node, assignment_type in assignments:
+            if assignment_type == "variable":
+                variable_identifier_node = assignment_node
+                variable_identifier = variable_identifier_node.text.decode()
+                if self.self_syntax in variable_identifier:
+                    for scope in node.metadata["inclusive_scopes"]:
+                        if scope["type"] == "class_definition":
+                            variable_identifier = scope["name"] + "." + variable_identifier.split(self.self_syntax)[1]
+                            break
+                continue
+
+            if assignment_type == "expression":
+                assign_value = assignment_node
+
+                if assign_value.type == "call" or assign_value.type == "new_expression":
+                    expression = assign_value
+                    expression_identifier = expression.named_children[0].text.decode()
+                    assignments_dict[variable_identifier] = expression_identifier
+                    continue
+
+                assignments_dict[variable_identifier] = assign_value.text.decode()
+
+        calls_query = language.query(self.function_call_query)
+
+        function_calls_nodes = calls_query.captures(tree.root_node)
+
+        method_name = None
+        for scope in node.metadata["inclusive_scopes"]:
+            if scope["type"] == "method_definition":
+                method_name = scope["name"]
+                break
+
+        for call_node, _ in function_calls_nodes:
+            if method_name and call_node.text.decode() == method_name:
+                continue
+            decomposed_call = self._decompose_function_call(call_node, language, [])
+            called_from_assignment = False
+
+            join_call = decomposed_call[0]
+            for index, call in enumerate(decomposed_call):
+                if index != 0:
+                    join_call += "." + call
+
+                if self.self_syntax in join_call:
+                    for scope in node.metadata["inclusive_scopes"]:
+                        if scope["type"] == "class_definition":
+                            join_call = scope["name"] + "." + join_call.split(self.self_syntax)[1]
+                            break
+
+                if assignments_dict.get(join_call):
+                    function_calls.append(assignments_dict[join_call] + "." + ".".join(decomposed_call[index + 1 :]))
+                    called_from_assignment = True
+                    break
+
+            if not called_from_assignment:
+                node_text = call_node.text.decode()
+                if self.self_syntax in node_text:
+                    for scope in node.metadata["inclusive_scopes"]:
+                        if scope["type"] == "class_definition":
+                            node_text = scope["name"] + "." + node_text.split(self.self_syntax)[1]
+                            break
+                function_calls.append(node_text)
+
+        return function_calls
+
+    def is_package(self, directory):
+        return False
+
+    @abstractmethod
+    def parse_file(self, file_path: str, root_path: str, global_graph_info: GlobalGraphInfo, level: int):
+        pass
+
+    @abstractmethod
     def _get_imports(self, path: str, file_node_id: str, root_path: str) -> dict:
-        parser = tree_sitter_languages.get_parser(self.language)
-        with open(path, "r") as file:
-            code = file.read()
-        tree = parser.parse(bytes(code, "utf-8"))
-
-        imports = {"_*wildcard*_": {"path": [], "alias": "", "type": "wildcard"}}
-        for node in tree.root_node.children:
-            # From Statement Case
-            if node.type == "import_from_statement":
-                import_statements = node.named_children
-
-                from_statement = import_statements[0]
-                from_text = from_statement.text.decode()
-                for import_statement in import_statements[1:]:
-                    if import_statement.text.decode() == self.wildcard:
-                        imports["_*wildcard*_"]["path"].append(self.resolve_import_path(from_text, path, root_path))
-                    imports[import_statement.text.decode()] = {
-                        "path": self.resolve_import_path(from_text, path, root_path),
-                        "alias": "",
-                        "type": "import_from_statement",
-                    }
-            # Direct Import Case
-            elif node.type == "import_statement":
-                import_statement = node.named_children[0]
-                from_text = import_statement.text.decode()
-
-                if import_statement.type == "aliased_import":
-                    # If the import statement is aliased
-                    from_statement, _, alias = import_statement.children
-                    from_text = from_statement.text.decode()
-                    imports[alias.text.decode()] = {
-                        "path": self.resolve_import_path(from_text, path, root_path),
-                        "alias": alias.text.decode(),
-                        "type": "aliased_import",
-                    }
-                else:
-                    # If it's a simple import statement
-                    imports[import_statement.text.decode()] = {
-                        "path": self.resolve_import_path(from_text, path, root_path),
-                        "alias": "",
-                        "type": "import_statement",
-                    }
-        return {file_node_id: imports}
-
-    @abstractmethod
-    def resolve_import_path(self, from_text: str, path: str, root_path: str):
-        pass
-
-    @abstractmethod
-    def _remove_extensions(self, path: str) -> str:
-        pass
-
-    @abstractmethod
-    def is_package(self, directory: str) -> bool:
         pass
 
     @abstractmethod
     def skip_directory(self, directory: str) -> bool:
+        pass
+
+    @property
+    @abstractmethod
+    def decompose_call_query(self) -> str:
+        pass
+
+    @property
+    @abstractmethod
+    def assignment_query(self) -> str:
+        pass
+
+    @property
+    @abstractmethod
+    def function_call_query(self) -> str:
+        pass
+
+    @property
+    @abstractmethod
+    def self_syntax(self) -> str:
+        pass
+
+    @property
+    @abstractmethod
+    def scopes_names(self) -> dict[str, List[str]]:
+        pass
+
+    @property
+    @abstractmethod
+    def relation_types_map(self) -> dict[str, str]:
         pass
