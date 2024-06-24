@@ -2,7 +2,7 @@ import os
 from typing import Any, List
 
 from dotenv import load_dotenv
-from neo4j import GraphDatabase
+from neo4j import Driver, GraphDatabase
 
 from blar_graph.db_managers.base_manager import BaseDBManager
 
@@ -10,6 +10,10 @@ load_dotenv()
 
 
 class Neo4jManager(BaseDBManager):
+    entityId: str
+    repoId: str
+    driver: Driver
+
     def __init__(self, repoId: str = None, entityId: str = None):
         uri = os.getenv("NEO4J_URI")
         user = os.getenv("NEO4J_USERNAME")
