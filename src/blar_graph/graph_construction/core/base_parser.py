@@ -159,12 +159,12 @@ class BaseParser(ABC):
         parent_path, parent_level = self._get_parent_info(node, global_graph_info, no_extension_path, level)
 
         node_path = no_extension_path.replace("/", ".")
-        node_id = self.generate_node_id(node_path, global_graph_info.company_id)
+        node_id = self.generate_node_id(node_path, global_graph_info.entity_id)
         if parent_path:
             node_path = f"{parent_path}.{core_node['attributes']['name']}"
-            node_id = self.generate_node_id(node_path, global_graph_info.company_id)
+            node_id = self.generate_node_id(node_path, global_graph_info.entity_id)
 
-            parent_id = self.generate_node_id(parent_path, global_graph_info.company_id)
+            parent_id = self.generate_node_id(parent_path, global_graph_info.entity_id)
             relation_type = scope["type"] if scope else ""
             relationships.append(
                 {
