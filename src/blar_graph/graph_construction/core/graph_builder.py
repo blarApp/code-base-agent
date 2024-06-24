@@ -23,7 +23,7 @@ class GraphConstructor:
 
     def __init__(self, graph_manager: Neo4jManager, language="python"):
         self.graph_manager = graph_manager
-        self.global_graph_info = GlobalGraphInfo(company_id=graph_manager.entityId)
+        self.global_graph_info = GlobalGraphInfo(entity_id=graph_manager.entityId)
         self.root = None
         self.skip_tests = True
         self.language = language
@@ -61,7 +61,7 @@ class GraphConstructor:
         package = self.parser.is_package(path)
 
         core_directory_node = format_nodes.format_directory_node(path, package, level)
-        directory_node_id = self.parser.generate_node_id(path, self.global_graph_info.company_id)
+        directory_node_id = self.parser.generate_node_id(path, self.global_graph_info.entity_id)
 
         directory_node = {
             **core_directory_node,
