@@ -1,3 +1,4 @@
+import hashlib
 import os
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -5,7 +6,7 @@ from typing import List
 
 import tree_sitter_languages
 from llama_index.core import SimpleDirectoryReader
-from llama_index.core.schema import BaseNode, Document, NodeRelationship
+from llama_index.core.schema import BaseNode, Document
 from llama_index.core.text_splitter import CodeSplitter
 from llama_index.packs.code_hierarchy import CodeHierarchyNodeParser
 from tree_sitter import Language, Node
@@ -88,11 +89,41 @@ class BaseParser(ABC):
 
         return node_list, edges_list, imports
 
-    def get_start_and_end_line_from_byte(self, file_contents, start_byte, end_byte):
+    def _get_lines_range(self, file_contents, start_byte, end_byte):
         start_line = file_contents.count("\n", 0, start_byte) + 1
         end_line = file_contents.count("\n", 0, end_byte) + 1
 
-        return start_line, end_line
+        return (start_line, end_line)
+
+    def generate_node_id(self, path: str, company_id: str):
+        # Concatenate path and signature
+        combined_string = f"{company_id}:{path}"
+
+        # Create a SHA-1 hash of the combined string
+        hash_object = hashlib.md5()
+        hash_object.update(combined_string.encode("utf-8"))
+
+        # Get the hexadecimal representation of the hash
+        node_id = hash_object.hexdigest()
+
+        return node_id
+
+    def _get_parent_info(self, node: BaseNode, global_graph_info: GlobalGraphInfo, no_extension_path: str, level: int):
+        parent_level = level
+        parent_path = None
+
+        try:
+            parent = node.parent_node
+        except Exception:
+            parent = None
+
+        if parent:
+            parent_path = (
+                global_graph_info.visited_nodes.get(parent.node_id, {}).get("path", no_extension_path).replace("/", ".")
+            )
+            parent_level = global_graph_info.visited_nodes.get(parent.node_id, {}).get("level", level)
+
+        return parent_path, parent_level
 
     def __process_node__(
         self,
@@ -113,57 +144,63 @@ class BaseParser(ABC):
 
         if type_node in self.scopes_names["function"]:
             function_calls = self.get_function_calls(node, assignment_dict, self.language)
-            processed_node = format_nodes.format_function_node(node, scope, function_calls, file_node_id)
+            core_node = format_nodes.format_function_node(node, scope, function_calls, file_node_id)
         elif type_node in self.scopes_names["class"]:
             inheritances = tree_parser.get_inheritances(node, self.language)
-            processed_node = format_nodes.format_class_node(node, scope, file_node_id, inheritances)
-            global_graph_info.inheritances[processed_node["attributes"]["name"]] = inheritances
+            core_node = format_nodes.format_class_node(node, scope, file_node_id, inheritances)
+            global_graph_info.inheritances[core_node["attributes"]["name"]] = inheritances
         elif type_node in self.scopes_names["plain_code_block"]:
             function_calls = self.get_function_calls(node, assignment_dict, self.language)
-            processed_node = format_nodes.format_plain_code_block_node(node, scope, function_calls, file_node_id)
+            core_node = format_nodes.format_plain_code_block_node(node, scope, function_calls, file_node_id)
         else:
             function_calls = self.get_function_calls(node, assignment_dict, self.language)
-            processed_node = format_nodes.format_file_node(node, file_path, function_calls)
-        for relation in node.relationships.items():
-            if relation[0] == NodeRelationship.CHILD:
-                if len(relation[1]) == 0:
-                    leaf = True
-                for child in relation[1]:
-                    relation_type = (
-                        child.metadata["inclusive_scopes"][-1]["type"] if child.metadata["inclusive_scopes"] else ""
-                    )
-                    relationships.append(
-                        {
-                            "sourceId": node.node_id,
-                            "targetId": child.node_id,
-                            "type": self.relation_types_map.get(relation_type, "UNKNOWN"),
-                        }
-                    )
-            elif relation[0] == NodeRelationship.PARENT:
-                if relation[1]:
-                    parent_path = (
-                        global_graph_info.visited_nodes.get(relation[1].node_id, {})
-                        .get("path", no_extension_path)
-                        .replace("/", ".")
-                    )
-                    parent_level = global_graph_info.visited_nodes.get(relation[1].node_id, {}).get("level", level)
+            core_node = format_nodes.format_file_node(node, file_path, function_calls)
 
-                    node_path = f"{parent_path}.{processed_node['attributes']['name']}"
-                else:
-                    node_path = no_extension_path.replace("/", ".")
-        start_line, end_line = self.get_start_and_end_line_from_byte(
+        parent_path, parent_level = self._get_parent_info(node, global_graph_info, no_extension_path, level)
+
+        node_path = no_extension_path.replace("/", ".")
+        node_id = self.generate_node_id(node_path, global_graph_info.entity_id)
+        if parent_path:
+            node_path = f"{parent_path}.{core_node['attributes']['name']}"
+            node_id = self.generate_node_id(node_path, global_graph_info.entity_id)
+
+            parent_id = self.generate_node_id(parent_path, global_graph_info.entity_id)
+            relation_type = scope["type"] if scope else ""
+            relationships.append(
+                {
+                    "sourceId": parent_id,
+                    "targetId": node_id,
+                    "type": self.relation_types_map.get(relation_type, "UNKNOWN"),
+                }
+            )
+
+        start_line, end_line = self._get_lines_range(
             document.text, node.metadata["start_byte"], node.metadata["end_byte"]
         )
-        processed_node["attributes"]["start_line"] = start_line
-        processed_node["attributes"]["end_line"] = end_line
-        processed_node["attributes"]["path"] = node_path
-        processed_node["attributes"]["file_path"] = file_path
-        processed_node["attributes"]["level"] = parent_level + 1
-        processed_node["attributes"]["leaf"] = leaf
+
+        horizontal_attributes = {
+            "start_line": start_line,
+            "end_line": end_line,
+            "path": node_path,
+            "file_path": file_path,
+            "level": parent_level + 1,
+            "leaf": leaf,
+        }
+
+        processed_node = {
+            **core_node,
+            "attributes": {
+                **core_node["attributes"],
+                **horizontal_attributes,
+                "node_id": node_id,
+            },
+        }
+
         global_graph_info.imports[node_path] = {
             "id": processed_node["attributes"]["node_id"],
             "type": processed_node["type"],
         }
+
         global_graph_info.visited_nodes[node.node_id] = {"path": node_path, "level": parent_level + 1}
         return processed_node, relationships
 

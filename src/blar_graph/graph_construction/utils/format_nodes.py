@@ -1,5 +1,4 @@
 import os
-import uuid
 from typing import List
 
 from llama_index.core.schema import BaseNode
@@ -15,7 +14,6 @@ def format_plain_code_block_node(node: BaseNode, scope: dict, function_calls: li
             "name": name,
             "signature": signature,
             "text": node.text,
-            "node_id": node.node_id,
             "function_calls": function_calls,
             "file_node_id": file_node_id,
         },
@@ -36,7 +34,6 @@ def format_function_node(node: BaseNode, scope: dict, function_calls: list[str],
             "name": name,
             "signature": signature,
             "text": node.text,
-            "node_id": node.node_id,
             "function_calls": function_calls,
             "file_node_id": file_node_id,
             "owner_class": owner_class[0]["name"] if owner_class else None,
@@ -56,7 +53,6 @@ def format_class_node(node: BaseNode, scope: dict, file_node_id: str, inheritanc
             "name": name,
             "signature": signature,
             "text": node.text,
-            "node_id": node.node_id,
             "file_node_id": file_node_id,
             "inheritances": inheritances,
         },
@@ -70,7 +66,6 @@ def format_file_node(node: BaseNode, no_extension_path: str, function_calls: lis
         "type": "FILE",
         "attributes": {
             "text": node.text,
-            "node_id": node.node_id,
             "function_calls": function_calls,
             "name": os.path.basename(no_extension_path),
         },
@@ -84,7 +79,6 @@ def format_directory_node(path: str, package: bool, level: int) -> dict:
         "attributes": {
             "path": path + "/",
             "name": os.path.basename(path),
-            "node_id": str(uuid.uuid4()),
             "level": level,
         },
         "type": "PACKAGE" if package else "FOLDER",
