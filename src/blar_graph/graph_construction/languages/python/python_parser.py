@@ -40,10 +40,7 @@ class PythonParser(BaseParser):
 
     @property
     def relation_types_map(self):
-        return {
-            "function_definition": "FUNCTION_DEFINITION",
-            "class_definition": "CLASS_DEFINITION",
-        }
+        return {"function_definition": "FUNCTION_DEFINITION", "class_definition": "CLASS_DEFINITION"}
 
     def _get_imports(self, path: str, file_node_id: str, root_path: str) -> dict:
         parser = tree_sitter_languages.get_parser(self.language)

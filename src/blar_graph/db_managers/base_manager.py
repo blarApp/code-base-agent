@@ -1,3 +1,7 @@
-class BaseDBManager:
+from abc import ABC, abstractmethod
+
+
+class BaseDBManager(ABC):
+    @abstractmethod
     def save_graph(self):
-        raise NotImplementedError("Subclasses must implement create_nodes method.")
+        pass
