@@ -19,7 +19,7 @@ class Neo4jManager(BaseDBManager):
         user = os.getenv("NEO4J_USERNAME")
         password = os.getenv("NEO4J_PASSWORD")
 
-        self._driver = GraphDatabase.driver(uri, auth=(user, password), max_connection_pool_size=max_connections)
+        self.driver = GraphDatabase.driver(uri, auth=(user, password), max_connection_pool_size=max_connections)
 
         self.create_indexes_and_constraints()
         self.repoId = repoId if repoId is not None else "default_repo"
