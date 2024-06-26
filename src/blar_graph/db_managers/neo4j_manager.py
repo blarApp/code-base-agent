@@ -14,12 +14,13 @@ class Neo4jManager(BaseDBManager):
     repoId: str
     driver: Driver
 
-    def __init__(self, repoId: str = None, entityId: str = None):
+    def __init__(self, repoId: str = None, entityId: str = None, max_connections=50):
         uri = os.getenv("NEO4J_URI")
         user = os.getenv("NEO4J_USERNAME")
         password = os.getenv("NEO4J_PASSWORD")
 
-        self.driver = GraphDatabase.driver(uri, auth=(user, password))
+        self.driver = GraphDatabase.driver(uri, auth=(user, password), max_connection_pool_size=max_connections)
+
         self.create_indexes_and_constraints()
         self.repoId = repoId if repoId is not None else "default_repo"
         self.entityId = entityId if entityId is not None else "default_user"
