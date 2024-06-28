@@ -1,12 +1,14 @@
 import hashlib
 import os
+import re
 from abc import ABC, abstractmethod
+from functools import reduce
 from pathlib import Path
 from typing import List
 
 import tree_sitter_languages
 from llama_index.core import SimpleDirectoryReader
-from llama_index.core.schema import BaseNode, Document
+from llama_index.core.schema import BaseNode, Document, TextNode
 from llama_index.core.text_splitter import CodeSplitter
 from llama_index.packs.code_hierarchy import CodeHierarchyNodeParser
 from tree_sitter import Language, Node
@@ -33,61 +35,26 @@ class BaseParser(ABC):
         self.extension = extension
         self.import_path_separator = import_path_separator
 
-    def parse(self, file_path: str, root_path: str, global_graph_info: GlobalGraphInfo, level: int):
-        path = Path(file_path)
-        if not path.exists():
-            print(f"File {file_path} does not exist.")
-            raise FileNotFoundError
+    def _post_process_node(self, node: dict, global_graph_info: GlobalGraphInfo):
+        text = node["attributes"]["text"]
 
-        documents = SimpleDirectoryReader(
-            input_files=[path],
-            file_metadata=lambda x: {"filepath": x},
-        ).load_data()
+        # Extract the node_id using re.search
+        match = re.search(r"# Code replaced for brevity\. See node_id ([0-9a-fA-F-]+)", text)
+        if match:
+            extracted_node_id = match.group(1)
+            # Get the mapped_generated_id using the extracted node_id
+            maped_generated_id = global_graph_info.visited_nodes.get(extracted_node_id, {}).get("generated_id")
 
-        # Bug related to llama-index it's safer to remove non-ascii characters. Could be removed in the future
-        documents[0].text = tree_parser.remove_non_ascii(documents[0].text)
-        # Format methods for typescript, because the parser doesn't recognize the methods by itself
-        if self.language == "typescript":
-            documents[0].text = tree_parser.format_methods(documents[0].text, self.language)
+            if maped_generated_id is not None:
+                # Replace the extracted node_id with the mapped_generated_id
+                updated_text = re.sub(
+                    rf"# Code replaced for brevity\. See node_id {extracted_node_id}",
+                    f"# Code replaced for brevity. See node_id {maped_generated_id}",
+                    text,
+                )
+                node["attributes"]["text"] = updated_text
 
-        code = CodeHierarchyNodeParser(
-            language=self.language,
-            chunk_min_characters=3,
-            code_splitter=CodeSplitter(language=self.language, max_chars=10000, chunk_lines=10),
-        )
-        try:
-            split_nodes = code.get_nodes_from_documents(documents)
-        except TimeoutError:
-            print(f"Timeout error: {file_path}")
-            return [], [], {}
-
-        node_list = []
-        edges_list = []
-        assignment_dict = {}
-
-        file_node, file_relations = self.__process_node__(
-            split_nodes.pop(0), file_path, "", global_graph_info, assignment_dict, documents[0], level
-        )
-        node_list.append(file_node)
-        edges_list.extend(file_relations)
-
-        for node in split_nodes:
-            processed_node, relationships = self.__process_node__(
-                node,
-                file_path,
-                file_node["attributes"]["node_id"],
-                global_graph_info,
-                assignment_dict,
-                documents[0],
-                level,
-            )
-
-            node_list.append(processed_node)
-            edges_list.extend(relationships)
-
-        imports = self._get_imports(str(path), node_list[0]["attributes"]["node_id"], root_path)
-
-        return node_list, edges_list, imports
+        return node
 
     def _get_lines_range(self, file_contents, start_byte, end_byte):
         start_line = file_contents.count("\n", 0, start_byte) + 1
@@ -108,9 +75,20 @@ class BaseParser(ABC):
 
         return node_id
 
-    def _get_parent_info(self, node: BaseNode, global_graph_info: GlobalGraphInfo, no_extension_path: str, level: int):
+    def get_node_path(self, node: BaseNode):
+        file_path = node.metadata["filepath"]
+        scopes = node.metadata["inclusive_scopes"]
+        scopes_path = reduce(lambda x, y: x + "." + y["name"], scopes, "")
+
+        no_extension_path = self.remove_extensions(file_path)
+        node_path = no_extension_path.replace("/", ".")
+
+        if len(scopes_path) > 0:
+            return node_path + scopes_path
+        return node_path
+
+    def _get_parent_level(self, node: BaseNode, global_graph_info: GlobalGraphInfo, level: int):
         parent_level = level
-        parent_path = None
 
         try:
             parent = node.parent_node
@@ -118,16 +96,13 @@ class BaseParser(ABC):
             parent = None
 
         if parent:
-            parent_path = (
-                global_graph_info.visited_nodes.get(parent.node_id, {}).get("path", no_extension_path).replace("/", ".")
-            )
             parent_level = global_graph_info.visited_nodes.get(parent.node_id, {}).get("level", level)
 
-        return parent_path, parent_level
+        return parent_level
 
     def __process_node__(
         self,
-        node: BaseNode,
+        node: TextNode,
         file_path: str,
         file_node_id: str,
         global_graph_info: GlobalGraphInfo,
@@ -135,9 +110,9 @@ class BaseParser(ABC):
         document: Document,
         level: int,
     ):
-        no_extension_path = self._remove_extensions(file_path)
         relationships = []
-        scope = node.metadata["inclusive_scopes"][-1] if node.metadata["inclusive_scopes"] else None
+        inclusive_scopes = node.metadata["inclusive_scopes"]
+        scope = inclusive_scopes[-1] if inclusive_scopes else None
         type_node = scope["type"] if scope else "file"
         parent_level = level
         leaf = False
@@ -156,23 +131,22 @@ class BaseParser(ABC):
             function_calls = self.get_function_calls(node, assignment_dict, self.language)
             core_node = format_nodes.format_file_node(node, file_path, function_calls)
 
-        parent_path, parent_level = self._get_parent_info(node, global_graph_info, no_extension_path, level)
+        parent_level = self._get_parent_level(node, global_graph_info, level)
 
-        node_path = no_extension_path.replace("/", ".")
+        node_path = self.get_node_path(node)
+        parent_path = ".".join(node_path.split(".")[:-1])
+
+        parent_id = self.generate_node_id(parent_path, global_graph_info.entity_id)
         node_id = self.generate_node_id(node_path, global_graph_info.entity_id)
-        if parent_path:
-            node_path = f"{parent_path}.{core_node['attributes']['name']}"
-            node_id = self.generate_node_id(node_path, global_graph_info.entity_id)
 
-            parent_id = self.generate_node_id(parent_path, global_graph_info.entity_id)
-            relation_type = scope["type"] if scope else ""
-            relationships.append(
-                {
-                    "sourceId": parent_id,
-                    "targetId": node_id,
-                    "type": self.relation_types_map.get(relation_type, "UNKNOWN"),
-                }
-            )
+        relation_type = scope["type"] if scope else ""
+        relationships.append(
+            {
+                "sourceId": parent_id,
+                "targetId": node_id,
+                "type": self.relation_types_map.get(relation_type, "UNKNOWN"),
+            }
+        )
 
         start_line, end_line = self._get_lines_range(
             document.text, node.metadata["start_byte"], node.metadata["end_byte"]
@@ -185,6 +159,7 @@ class BaseParser(ABC):
             "file_path": file_path,
             "level": parent_level + 1,
             "leaf": leaf,
+            "node_id": node_id,
         }
 
         processed_node = {
@@ -192,7 +167,6 @@ class BaseParser(ABC):
             "attributes": {
                 **core_node["attributes"],
                 **horizontal_attributes,
-                "node_id": node_id,
             },
         }
 
@@ -201,10 +175,10 @@ class BaseParser(ABC):
             "type": processed_node["type"],
         }
 
-        global_graph_info.visited_nodes[node.node_id] = {"path": node_path, "level": parent_level + 1}
+        global_graph_info.visited_nodes[node.node_id] = {"level": parent_level + 1, "generated_id": node_id}
         return processed_node, relationships
 
-    def _remove_extensions(self, file_path):
+    def remove_extensions(self, file_path):
         no_extension_path = str(file_path)
         no_extension_path = no_extension_path.replace(self.extension, "")
         return no_extension_path
@@ -345,6 +319,65 @@ class BaseParser(ABC):
 
     def is_package(self, directory):
         return False
+
+    def parse(self, file_path: str, root_path: str, global_graph_info: GlobalGraphInfo, level: int):
+        path = Path(file_path)
+        if not path.exists():
+            print(f"File {file_path} does not exist.")
+            raise FileNotFoundError
+
+        documents = SimpleDirectoryReader(
+            input_files=[path],
+            file_metadata=lambda x: {"filepath": x},
+        ).load_data()
+
+        # Bug related to llama-index it's safer to remove non-ascii characters. Could be removed in the future
+        documents[0].text = tree_parser.remove_non_ascii(documents[0].text)
+        # Format methods for typescript, because the parser doesn't recognize the methods by itself
+        if self.language == "typescript":
+            documents[0].text = tree_parser.format_methods(documents[0].text, self.language)
+
+        code_splitter = CodeSplitter(language=self.language, max_chars=10000, chunk_lines=10)
+        code = CodeHierarchyNodeParser(language=self.language, chunk_min_characters=3, code_splitter=code_splitter)
+        try:
+            split_nodes = code.get_nodes_from_documents(documents)
+        except TimeoutError:
+            print(f"Timeout error: {file_path}")
+            return [], [], {}
+
+        node_list = []
+        edges_list = []
+        assignment_dict = {}
+
+        file_node, file_relations = self.__process_node__(
+            split_nodes.pop(0), file_path, "", global_graph_info, assignment_dict, documents[0], level
+        )
+
+        node_list.append(file_node)
+        edges_list.extend(file_relations)
+
+        for node in split_nodes:
+            processed_node, relationships = self.__process_node__(
+                node,
+                file_path,
+                file_node["attributes"]["node_id"],
+                global_graph_info,
+                assignment_dict,
+                documents[0],
+                level,
+            )
+
+            node_list.append(processed_node)
+            edges_list.extend(relationships)
+
+        post_processed_node_list = []
+        for node in node_list:
+            node = self._post_process_node(node, global_graph_info)
+            post_processed_node_list.append(node)
+
+        imports = self._get_imports(str(path), node_list[0]["attributes"]["node_id"], root_path)
+
+        return post_processed_node_list, edges_list, imports
 
     @abstractmethod
     def parse_file(self, file_path: str, root_path: str, global_graph_info: GlobalGraphInfo, level: int):
