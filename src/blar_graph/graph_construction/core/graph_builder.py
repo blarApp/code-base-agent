@@ -197,25 +197,18 @@ class GraphConstructor:
                     related_imports = self._relate_wildcard_imports(file_node_id, path)
                     import_edges.extend(related_imports)
                     continue
+                if import_object.get("type") == "package_alias":
+                    import_name = import_object.get("import_name")
+                    import_edges.extend(
+                        self._relate_imports_and_directory_imports(file_node_id, f"{path}.{import_name}")
+                    )
+                    continue
                 import_edges.extend(self._relate_imports_and_directory_imports(file_node_id, f"{path}.{imp}"))
 
         return import_edges
 
     def __get_directory(self, node, function_call: str, imports: dict) -> List[str]:
-        root_directory = node["attributes"]["file_path"].replace(self.parser.extension, "").replace("/", ".")
-        node_directory = node["attributes"]["path"]
-        node_directory_list = node_directory.split(".")
-        node_directory_list.reverse()
-        directories_to_check = [node["attributes"]["path"]]
-        if root_directory != node_directory:
-            for scope in node_directory_list:
-                split_directory: List[str] = node_directory.split("." + scope)
-                scope_directory = ("." + scope).join(split_directory[:-1])
-
-                if scope_directory == root_directory:
-                    directories_to_check.append(scope_directory)
-                    break
-                directories_to_check.append(scope_directory)
+        directories_to_check: List[str] = []
 
         if node["type"] == "FILE":
             file_imports = imports.get(node["attributes"]["node_id"], {})
@@ -230,6 +223,22 @@ class GraphConstructor:
             # Change the directory to complete path if it's an alias else it's assumed to be a regular import
             import_alias = function_import + "." + function_call.split(".")[0]
             directories_to_check.append(self.global_graph_info.import_aliases.get(import_alias, function_import))
+
+        root_directory = node["attributes"]["file_path"].replace(self.parser.extension, "").replace("/", ".")
+        node_directory = node["attributes"]["path"]
+        node_directory_list = node_directory.split(".")
+        node_directory_list.reverse()
+        if not function_import:
+            directories_to_check.append(node["attributes"]["path"])
+            if root_directory != node_directory:
+                for scope in node_directory_list:
+                    split_directory: List[str] = node_directory.split("." + scope)
+                    scope_directory = ("." + scope).join(split_directory[:-1])
+
+                    if scope_directory == root_directory:
+                        directories_to_check.append(scope_directory)
+                        break
+                directories_to_check.append(scope_directory)
         elif file_imports.get("_*wildcard*_"):
             # See if the import is present as wildcard import (*)
             for wildcard_path in file_imports["_*wildcard*_"]:
@@ -248,7 +257,10 @@ class GraphConstructor:
         for directory_index, _ in enumerate(directories_to_check):
             for module in function_call.split("."):
                 if module == alias:
-                    continue
+                    if import_object.get("type") != "package_alias":
+                        continue
+                    module = import_object.get("import_name")
+
                 if self.language == "python":
                     directory_modules = directories_to_check[directory_index].split(".")
                     if module not in directory_modules:
@@ -258,29 +270,36 @@ class GraphConstructor:
 
         return directories_to_check
 
-    def __relate_function_calls(self, node, imports):
-        relations = []
-        function_calls = node["attributes"].get("function_calls")
-
-        owner_class = node["attributes"].get("owner_class")
-        class_function_inherits = []
-        if owner_class:
-            class_function_inherits = self.global_graph_info.inheritances.get(owner_class, [])
-
-        for function_call in function_calls:
-            # Get the directory of the function using the import logic of the language
-            directories_to_check = self.__get_directory(node, function_call, imports)
-            for class_function_inherit in class_function_inherits:
-                inherits_directories_to_check = self.__get_directory(node, class_function_inherit, imports)
-                for directory_index, _ in enumerate(inherits_directories_to_check):
-                    module = function_call.split(".")[-1]
+    def __get_inherits_directory(self, node, function_call: str, imports: dict) -> List[str]:
+        directories_to_check: List[str] = []
+        owner_object = function_call.split(".")[0]
+        class_function_inherits = self.global_graph_info.inheritances.get(owner_object, [])
+        for class_function_inherit in class_function_inherits:
+            inherits_directories_to_check = self.__get_directory(node, class_function_inherit, imports)
+            for directory_index, _ in enumerate(inherits_directories_to_check):
+                for module in function_call.split(".")[1:]:
                     if self.language == "python":
                         directory_modules = inherits_directories_to_check[directory_index].split(".")
                         if module not in directory_modules:
                             inherits_directories_to_check[directory_index] += f".{module}"
                     else:
                         inherits_directories_to_check[directory_index] += f".{module}"
-                directories_to_check.extend(inherits_directories_to_check)
+            directories_to_check.extend(inherits_directories_to_check)
+            new_function_call = class_function_inherit + "." + ".".join(function_call.split(".")[1:])
+            directories_to_check.extend(self.__get_inherits_directory(node, new_function_call, imports))
+        return directories_to_check
+
+    def __relate_function_calls(self, node, imports):
+        if node["attributes"].get("node_id") == "b1a0287040c7e79ea37e7f60d6346cbe":
+            print("here")
+        relations = []
+        function_calls = node["attributes"].get("function_calls")
+
+        for function_call in function_calls:
+            # Get the directory of the function using the import logic of the language
+            directories_to_check = self.__get_directory(node, function_call, imports)
+            inherits_directories_to_check = self.__get_inherits_directory(node, function_call, imports)
+            directories_to_check.extend(inherits_directories_to_check)
             # Look for the node with the definition of the function
             target_object = None
             for directory in directories_to_check:
