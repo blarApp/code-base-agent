@@ -1,4 +1,8 @@
 import tree_sitter_languages
+from llama_index.packs.code_hierarchy.code_hierarchy import (
+    _SignatureCaptureOptions,
+    _SignatureCaptureType,
+)
 
 from blar_graph.graph_construction.core.base_parser import BaseParser
 from blar_graph.graph_construction.utils.interfaces import GlobalGraphInfo
@@ -7,6 +11,27 @@ from blar_graph.graph_construction.utils.interfaces import GlobalGraphInfo
 class TypescriptParser(BaseParser):
     def __init__(self):
         super().__init__("typescript", None, ".ts", "/")
+
+    @property
+    def signature_identifiers(self) -> dict[str, _SignatureCaptureOptions]:
+        return {
+            "interface_declaration": _SignatureCaptureOptions(
+                end_signature_types=[_SignatureCaptureType(type="{", inclusive=False)],
+                name_identifier="type_identifier",
+            ),
+            "function_declaration": _SignatureCaptureOptions(
+                end_signature_types=[_SignatureCaptureType(type="{", inclusive=False)],
+                name_identifier="identifier",
+            ),
+            "class_declaration": _SignatureCaptureOptions(
+                end_signature_types=[_SignatureCaptureType(type="{", inclusive=False)],
+                name_identifier="type_identifier",
+            ),
+            "method_definition": _SignatureCaptureOptions(
+                end_signature_types=[_SignatureCaptureType(type="{", inclusive=False)],
+                name_identifier="property_identifier",
+            ),
+        }
 
     @property
     def self_syntax(self):
@@ -67,6 +92,7 @@ class TypescriptParser(BaseParser):
                   (named_imports
                     (import_specifier
                       name: (identifier) @imported_name
+                      alias: (identifier)? @package_alias
                     )
                   )*
                   (namespace_import (identifier) @alias)
@@ -87,28 +113,52 @@ class TypescriptParser(BaseParser):
 
         imports_name = []
         alias = None
+        packaged_alias = []
         for import_node, import_type in captured_imports:
             # Import specific objects case
             if import_type == "imported_name" or import_type == "single_imported_name":
-                imports_name.append(import_node.text.decode())
-
+                import_text = import_node.text.decode()
+                imports_name.append(import_text)
+            # Aliases import case
+            # import * as aliasToCall from './test'
             elif import_type == "alias":
                 alias = import_node.text.decode()
+            # import { ABR as resd } from './test'
+            elif import_type == "package_alias":
+                packaged_alias.append(import_node.text.decode())
             elif import_type == "source_path":
                 from_text = import_node.text.decode()
-                for import_name in imports_name:
-                    imports[import_name] = {
-                        "path": self.resolve_import_path(from_text, path, root_path),
-                        "alias": "",
-                        "type": "named_import",
-                    }
+
+                # import * as aliasToCall from './test'
                 if alias:
                     imports[alias] = {
                         "path": self.resolve_import_path(from_text, path, root_path),
                         "alias": alias,
                         "type": "alias",
                     }
+                # import { ABR as resd } from './test'
+                elif len(packaged_alias) > 0:
+                    for index, package_alias in enumerate(packaged_alias):
+                        imports[package_alias] = {
+                            "path": self.resolve_import_path(from_text, path, root_path),
+                            "alias": package_alias,
+                            "import_name": imports_name[index],
+                            "type": "package_alias",
+                        }
+                else:
+                    # normal import case
+                    for import_name in imports_name:
+                        if import_text == self.wildcard:
+                            imports["_*wildcard*_"]["path"].append(self.resolve_import_path(from_text, path, root_path))
+                            continue
+                        imports[import_name] = {
+                            "path": self.resolve_import_path(from_text, path, root_path),
+                            "alias": "",
+                            "type": "named_import",
+                        }
+
                 imports_name = []
                 alias = None
+                packaged_alias = []
 
         return {file_node_id: imports}

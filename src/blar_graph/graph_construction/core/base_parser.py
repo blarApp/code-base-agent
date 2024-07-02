@@ -11,6 +11,7 @@ from llama_index.core import SimpleDirectoryReader
 from llama_index.core.schema import BaseNode, Document, TextNode
 from llama_index.core.text_splitter import CodeSplitter
 from llama_index.packs.code_hierarchy import CodeHierarchyNodeParser
+from llama_index.packs.code_hierarchy.code_hierarchy import _SignatureCaptureOptions
 from tree_sitter import Language, Node
 
 from blar_graph.graph_construction.utils import format_nodes, tree_parser
@@ -333,12 +334,14 @@ class BaseParser(ABC):
 
         # Bug related to llama-index it's safer to remove non-ascii characters. Could be removed in the future
         documents[0].text = tree_parser.remove_non_ascii(documents[0].text)
-        # Format methods for typescript, because the parser doesn't recognize the methods by itself
-        if self.language == "typescript":
-            documents[0].text = tree_parser.format_methods(documents[0].text, self.language)
 
         code_splitter = CodeSplitter(language=self.language, max_chars=10000, chunk_lines=10)
-        code = CodeHierarchyNodeParser(language=self.language, chunk_min_characters=3, code_splitter=code_splitter)
+        code = CodeHierarchyNodeParser(
+            language=self.language,
+            chunk_min_characters=3,
+            code_splitter=code_splitter,
+            signature_identifiers=self.signature_identifiers,
+        )
         try:
             split_nodes = code.get_nodes_from_documents(documents)
         except TimeoutError:
@@ -420,3 +423,7 @@ class BaseParser(ABC):
     @abstractmethod
     def relation_types_map(self) -> dict[str, str]:
         pass
+
+    @property
+    def signature_identifiers(self) -> dict[str, _SignatureCaptureOptions]:
+        return None
