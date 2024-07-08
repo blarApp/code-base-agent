@@ -8,7 +8,7 @@ repoId = str(uuid.uuid4())
 graph_manager = Neo4jManager(repoId, "test1")
 
 try:
-    graph_constructor = GraphConstructor(graph_manager, "python")
+    graph_constructor = GraphConstructor(graph_manager)
     graph_constructor.build_graph("src")
     graph_manager.close()
 except Exception as e:
