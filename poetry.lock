@@ -735,13 +735,13 @@ socks = ["socksio (==1.*)"]
 
 [[package]]
 name = "identify"
-version = "2.5.36"
+version = "2.6.0"
 description = "File identification library for Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "identify-2.5.36-py2.py3-none-any.whl", hash = "sha256:37d93f380f4de590500d9dba7db359d0d3da95ffe7f9de1753faa159e71e7dfa"},
-    {file = "identify-2.5.36.tar.gz", hash = "sha256:e5e00f54165f9047fbebeb4a560f9acfb8af4c88232be60a488e9b68d122745d"},
+    {file = "identify-2.6.0-py2.py3-none-any.whl", hash = "sha256:e79ae4406387a9d300332b5fd366d8994f1525e8414984e1a59e058b2eda2dd0"},
+    {file = "identify-2.6.0.tar.gz", hash = "sha256:cb171c685bdc31bcc4c1734698736a7d5b6c8bf2e0c15117f4d469c8640ae5cf"},
 ]
 
 [package.extras]
@@ -931,13 +931,13 @@ extended-testing = ["beautifulsoup4 (>=4.12.3,<5.0.0)", "lxml (>=4.9.3,<6.0)"]
 
 [[package]]
 name = "langsmith"
-version = "0.1.83"
+version = "0.1.84"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "langsmith-0.1.83-py3-none-any.whl", hash = "sha256:f54d8cd8479b648b6339f3f735d19292c3516d080f680933ecdca3eab4b67ed3"},
-    {file = "langsmith-0.1.83.tar.gz", hash = "sha256:5cdd947212c8ad19adb992c06471c860185a777daa6859bb47150f90daf64bf3"},
+    {file = "langsmith-0.1.84-py3-none-any.whl", hash = "sha256:01f3c6390dba26c583bac8dd0e551ce3d0509c7f55cad714db0b5c8d36e4c7ff"},
+    {file = "langsmith-0.1.84.tar.gz", hash = "sha256:5220c0439838b9a5bd320fd3686be505c5083dcee22d2452006c23891153bea1"},
 ]
 
 [package.dependencies]
@@ -986,8 +986,8 @@ llama-index-readers-llama-parse = "^0.1.2"
 [package.source]
 type = "git"
 url = "https://github.com/berrazuriz1/llama_index.git"
-reference = "codeHierarchy-javascript"
-resolved_reference = "52988138521c70400dfc8c802cee8d0afdf52ed5"
+reference = "main"
+resolved_reference = "2f90062596c938e25cb36822e2d53bc9a49fc0dd"
 
 [[package]]
 name = "llama-index-agent-openai"
@@ -1172,8 +1172,8 @@ tree-sitter-languages = "^1.8.0"
 [package.source]
 type = "git"
 url = "https://github.com/berrazuriz1/llama_index.git"
-reference = "codeHierarchy-javascript"
-resolved_reference = "52988138521c70400dfc8c802cee8d0afdf52ed5"
+reference = "main"
+resolved_reference = "2f90062596c938e25cb36822e2d53bc9a49fc0dd"
 subdirectory = "llama-index-packs/llama-index-packs-code-hierarchy"
 
 [[package]]
@@ -1210,13 +1210,13 @@ llama-index-program-openai = ">=0.1.1,<0.2.0"
 
 [[package]]
 name = "llama-index-readers-file"
-version = "0.1.27"
+version = "0.1.29"
 description = "llama-index readers file integration"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_readers_file-0.1.27-py3-none-any.whl", hash = "sha256:8ead32dfbd328642c20ab8bd434a61c616b5a955642583a3bedbe454ed0b0dda"},
-    {file = "llama_index_readers_file-0.1.27.tar.gz", hash = "sha256:04c9bc3063a9409fcd877f77d9b2abfd502e072763aa6dd788e0c637418b8664"},
+    {file = "llama_index_readers_file-0.1.29-py3-none-any.whl", hash = "sha256:b25f3dbf7bf3e0635290e499e808db5ba955eab67f205a3ff1cea6a4eb93556a"},
+    {file = "llama_index_readers_file-0.1.29.tar.gz", hash = "sha256:f9f696e738383e7d14078e75958fba5a7030f7994a20586e3140e1ca41395a54"},
 ]
 
 [package.dependencies]
@@ -1245,13 +1245,13 @@ llama-parse = ">=0.4.0"
 
 [[package]]
 name = "llama-parse"
-version = "0.4.5"
+version = "0.4.6"
 description = "Parse files into RAG-Optimized formats."
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_parse-0.4.5-py3-none-any.whl", hash = "sha256:a68fc91a2b0bce98a4960b8f709ca3c2f90b421da66e0d8522f0ea45b78846b9"},
-    {file = "llama_parse-0.4.5.tar.gz", hash = "sha256:08a48bcf4af5b623bf26fa6266038572b95409f7be64746067db8d38f6927fe5"},
+    {file = "llama_parse-0.4.6-py3-none-any.whl", hash = "sha256:543450fd2b358b5ea2fcdf388613720da07a503e90ea1c3f4cedd66dae35fa41"},
+    {file = "llama_parse-0.4.6.tar.gz", hash = "sha256:9e6a6f80da1185d8b23a96ff3141a154a833003f8ea9c546601c68b2bbe424e6"},
 ]
 
 [package.dependencies]
@@ -2305,13 +2305,13 @@ files = [
 
 [[package]]
 name = "tenacity"
-version = "8.4.2"
+version = "8.5.0"
 description = "Retry code until it succeeds"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "tenacity-8.4.2-py3-none-any.whl", hash = "sha256:9e6f7cf7da729125c7437222f8a522279751cdfbe6b67bfe64f75d3a348661b2"},
-    {file = "tenacity-8.4.2.tar.gz", hash = "sha256:cd80a53a79336edba8489e767f729e4f391c896956b57140b5d7511a64bbd3ef"},
+    {file = "tenacity-8.5.0-py3-none-any.whl", hash = "sha256:b594c2a5945830c267ce6b79a166228323ed52718f30302c1359836112346687"},
+    {file = "tenacity-8.5.0.tar.gz", hash = "sha256:8bc6c0c8a09b31e6cad13c47afbed1a567518250a9a171418582ed8d9c20ca78"},
 ]
 
 [package.extras]
@@ -2826,4 +2826,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.12"
-content-hash = "c830a65f629353e943bddff05ec4e3802e7c3d27da34790d0c8efe79b2183361"
+content-hash = "3f12295c43609990159446d8bc4cbc6e4c1fb82be60705869f039d84936f9b0e"
