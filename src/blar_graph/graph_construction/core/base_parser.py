@@ -9,7 +9,6 @@ from typing import List
 import tree_sitter_languages
 from llama_index.core import SimpleDirectoryReader
 from llama_index.core.schema import BaseNode, Document, TextNode
-from llama_index.core.text_splitter import CodeSplitter
 from llama_index.packs.code_hierarchy import CodeHierarchyNodeParser
 from llama_index.packs.code_hierarchy.code_hierarchy import _SignatureCaptureOptions
 from tree_sitter import Language, Node, Parser
@@ -351,11 +350,9 @@ class BaseParser(ABC):
         # Bug related to llama-index it's safer to remove non-ascii characters. Could be removed in the future
         documents[0].text = self._remove_non_ascii(documents[0].text)
 
-        code_splitter = CodeSplitter(language=self.language, max_chars=10000, chunk_lines=10)
         code = CodeHierarchyNodeParser(
             language=self.language,
             chunk_min_characters=3,
-            code_splitter=code_splitter,
             signature_identifiers=self.signature_identifiers,
         )
         try:
