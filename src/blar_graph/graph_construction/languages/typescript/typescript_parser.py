@@ -13,6 +13,10 @@ class TypescriptParser(BaseParser):
         super().__init__("typescript", None, ".ts", "/")
 
     @property
+    def self_syntax(self):
+        return "this."
+
+    @property
     def signature_identifiers(self) -> dict[str, _SignatureCaptureOptions]:
         return {
             "interface_declaration": _SignatureCaptureOptions(
@@ -34,19 +38,20 @@ class TypescriptParser(BaseParser):
         }
 
     @property
-    def self_syntax(self):
-        return "this."
-
-    @property
     def decompose_call_query(self):
         return """
             (member_expression
                 object: [
-                    (identifier) @object
-                    ((property_identifier) @nested_object
-                    property: _ @nested_method)
+                    (identifier) @_
+                    (this) @_
                 ]
-                property: _ @method)
+            )
+            (member_expression
+                property: (property_identifier) @_
+            )
+            (expression_statement
+                (identifier) @_
+            )
             """
 
     @property
@@ -56,6 +61,19 @@ class TypescriptParser(BaseParser):
     @property
     def function_call_query(self):
         return """(call_expression function: _ @function_call)"""
+
+    @property
+    def inheritances_query(self):
+        return """
+            (class_heritage
+                (extends_clause
+                    [
+                        (identifier) @inheritance
+                        (member_expression) @inheritance
+                    ]
+                )
+            )
+            """
 
     @property
     def scopes_names(self):

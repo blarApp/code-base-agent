@@ -18,12 +18,11 @@ class PythonParser(BaseParser):
     def decompose_call_query(self):
         return """
             (attribute
-                object: [
-                    (identifier) @object
-                    ((attribute) @nested_object
-                    attribute: _ @nested_method)
-                ]
-                attribute: _ @method)
+                (identifier) @_
+            )
+            (expression_statement
+                (identifier) @_
+            )
             """
 
     @property
@@ -33,6 +32,16 @@ class PythonParser(BaseParser):
     @property
     def function_call_query(self):
         return """(call function: _ @function_call)"""
+
+    @property
+    def inheritances_query(self):
+        return """
+            (class_definition
+                superclasses: (argument_list
+                    (identifier) @inheritance
+                )
+            )
+            """
 
     @property
     def scopes_names(self):
