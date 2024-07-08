@@ -1,10 +1,12 @@
 import os
 import traceback
-import uuid
 from typing import List
 
 from blar_graph.db_managers import Neo4jManager
 from blar_graph.graph_construction.core.base_parser import BaseParser
+from blar_graph.graph_construction.languages.javascript.javascript_parser import (
+    JavascriptParser,
+)
 from blar_graph.graph_construction.languages.python.python_parser import PythonParser
 from blar_graph.graph_construction.languages.typescript.typescript_parser import (
     TypescriptParser,
@@ -31,6 +33,8 @@ class GraphConstructor:
             self.parser = PythonParser()
         elif language == "typescript":
             self.parser = TypescriptParser()
+        elif language == "javascript":
+            self.parser = JavascriptParser()
         else:
             raise ValueError(f"Language {language} not supported")
         # TODO: Add more languages
@@ -118,6 +122,7 @@ class GraphConstructor:
                     self.global_graph_info.imports[global_import_key] = {
                         "id": file_root_node_id,
                         "type": "FILE",
+                        "node": processed_nodes[0],
                     }
                 else:
                     file_node = {
@@ -125,7 +130,7 @@ class GraphConstructor:
                         "attributes": {
                             "path": entry.path,
                             "name": entry.name,
-                            "node_id": str(uuid.uuid4()),
+                            "node_id": self.parser.generate_node_id(entry.path, self.global_graph_info.entity_id),
                         },
                     }
                     nodes.append(file_node)
@@ -270,12 +275,72 @@ class GraphConstructor:
 
         return directories_to_check
 
+    def _get_imported_node(self, node, import_name: str, imports: dict) -> dict:
+        if node["type"] == "FILE":
+            file_imports = imports.get(node["attributes"]["node_id"], None)
+        else:
+            file_imports = imports.get(node["attributes"]["file_node_id"], None)
+
+        if not file_imports:
+            return None
+
+        file_import = file_imports.get(import_name, None)
+        if not file_import:
+            return None
+
+        file_import_path = file_import["path"]
+
+        if not file_import_path:
+            return None
+
+        node_path = file_import_path + "." + import_name
+        imported_node = self.global_graph_info.imports.get(node_path, None)
+        if imported_node:
+            return imported_node["node"]
+
+        return None
+
+    def __get_local_node(self, node, object: str) -> dict:
+        root_directory = node["attributes"]["file_path"].replace(self.parser.extension, "").replace("/", ".")
+        node_directory = node["attributes"]["path"]
+        node_directory_list = node_directory.split(".")
+        node_directory_list.reverse()
+
+        if root_directory != node_directory:
+            for scope in node_directory_list:
+                split_directory: List[str] = node_directory.split("." + scope)
+                scope_directory = ("." + scope).join(split_directory[:-1])
+                directory_to_check = scope_directory + "." + object
+
+                search_node = self.global_graph_info.imports.get(directory_to_check, None)
+
+                if search_node:
+                    return search_node["node"]
+
+                if scope_directory == root_directory:
+                    return None
+        return None
+
     def __get_inherits_directory(self, node, function_call: str, imports: dict) -> List[str]:
         directories_to_check: List[str] = []
         owner_object = function_call.split(".")[0]
-        class_function_inherits = self.global_graph_info.inheritances.get(owner_object, [])
+
+        # is defined in the same file
+        inherit_file_node = self.__get_local_node(node, owner_object)
+
+        # is imported from another file
+        if not inherit_file_node:
+            inherit_file_node = self._get_imported_node(node, owner_object, imports)
+
+        # If is not defined or imported, means that is a third-party library
+        if not inherit_file_node:
+            return []
+
+        class_function_inherits = self.global_graph_info.inheritances.get(
+            inherit_file_node["attributes"]["node_id"], []
+        )
         for class_function_inherit in class_function_inherits:
-            inherits_directories_to_check = self.__get_directory(node, class_function_inherit, imports)
+            inherits_directories_to_check = self.__get_directory(inherit_file_node, class_function_inherit, imports)
             for directory_index, _ in enumerate(inherits_directories_to_check):
                 for module in function_call.split(".")[1:]:
                     if self.language == "python":
@@ -290,8 +355,6 @@ class GraphConstructor:
         return directories_to_check
 
     def __relate_function_calls(self, node, imports):
-        if node["attributes"].get("node_id") == "b1a0287040c7e79ea37e7f60d6346cbe":
-            print("here")
         relations = []
         function_calls = node["attributes"].get("function_calls")
 
