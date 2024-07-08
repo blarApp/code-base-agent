@@ -3,6 +3,7 @@ import traceback
 from typing import List
 
 from blar_graph.db_managers import Neo4jManager
+from blar_graph.graph_construction.core.base_parser import BaseParser
 from blar_graph.graph_construction.utils import format_nodes
 from blar_graph.graph_construction.utils.interfaces.GlobalGraphInfo import (
     GlobalGraphInfo,
@@ -20,8 +21,25 @@ class GraphConstructor:
     def __init__(self, graph_manager: Neo4jManager):
         self.graph_manager = graph_manager
         self.global_graph_info = GlobalGraphInfo(entity_id=graph_manager.entityId)
+        self.parsers = Parsers()
         self.root = None
         self.skip_tests = True
+
+    def _skip_file(self, path: str) -> bool:
+        # skip lock files
+        if path.endswith("lock") or path == "package-lock.json" or path == "yarn.lock":
+            return True
+        # skip tests and legacy directories
+        if path in ["legacy", "test"] and self.skip_tests:
+            return True
+        # skip hidden directories
+        if path.startswith("."):
+            return True
+
+        return False
+
+    def _skip_directory(self, directory: str) -> bool:
+        return directory == "__pycache__" or directory == "node_modules"
 
     def _scan_directory(
         self,
@@ -46,10 +64,11 @@ class GraphConstructor:
         if path.endswith("tests") or path.endswith("test"):
             return nodes, relationships, imports
 
-        package = self.parser.is_package(path)
+        # Check if the directory is a package, logic for python
+        package = BaseParser.is_package(path)
 
         core_directory_node = format_nodes.format_directory_node(path, package, level)
-        directory_node_id = self.parser.generate_node_id(path, self.global_graph_info.entity_id)
+        directory_node_id = BaseParser.generate_node_id(path, self.global_graph_info.entity_id)
 
         directory_node = {
             **core_directory_node,
@@ -69,13 +88,15 @@ class GraphConstructor:
 
         nodes.append(directory_node)
         for entry in os.scandir(path):
-            if (entry.name in ["legacy", "test"] and self.skip_tests) or entry.name.startswith("."):
+            if self._skip_file(entry.name):
                 continue
             if entry.is_file():
-                if entry.name.endswith(self.parser.extension):
-                    entry_name = entry.name.split(self.parser.extension)[0]
+                parser: BaseParser = self.parsers.get_parser(entry.name)
+                # If the file is a supported language, parse it
+                if parser:
+                    entry_name = entry.name.split(parser.extension)[0]
                     try:
-                        processed_nodes, relations, file_imports = self.parser.parse_file(
+                        processed_nodes, relations, file_imports = parser.parse_file(
                             entry.path,
                             self.root,
                             global_graph_info=self.global_graph_info,
@@ -108,13 +129,18 @@ class GraphConstructor:
                         "type": "FILE",
                         "node": processed_nodes[0],
                     }
+                # If the file is not a supported language, only make the file node with all the text
                 else:
+                    with open(entry.path, "r") as file:
+                        text = file.read()
+
                     file_node = {
                         "type": "FILE",
                         "attributes": {
                             "path": entry.path,
                             "name": entry.name,
-                            "node_id": self.parser.generate_node_id(entry.path, self.global_graph_info.entity_id),
+                            "node_id": BaseParser.generate_node_id(entry.path, self.global_graph_info.entity_id),
+                            "text": text,
                         },
                     }
                     nodes.append(file_node)
@@ -126,7 +152,7 @@ class GraphConstructor:
                         }
                     )
             if entry.is_dir():
-                if self.parser.skip_directory(entry.name):
+                if self._skip_directory(entry.name):
                     continue
 
                 nodes, relationships, imports = self._scan_directory(
@@ -213,8 +239,10 @@ class GraphConstructor:
             import_alias = function_import + "." + function_call.split(".")[0]
             directories_to_check.append(self.global_graph_info.import_aliases.get(import_alias, function_import))
 
-        root_directory = node["attributes"]["file_path"].replace(self.parser.extension, "").replace("/", ".")
-        node_directory = node["attributes"]["path"]
+        file_path: str = node["attributes"]["file_path"]
+        extension: str = file_path[file_path.rfind(".") :]
+        root_directory: str = file_path.replace(extension, "").replace("/", ".")
+        node_directory: str = node["attributes"]["path"]
         node_directory_list = node_directory.split(".")
         node_directory_list.reverse()
         if not function_import:
@@ -250,7 +278,7 @@ class GraphConstructor:
                         continue
                     module = import_object.get("import_name")
 
-                if self.language == "python":
+                if extension == ".py":
                     directory_modules = directories_to_check[directory_index].split(".")
                     if module not in directory_modules:
                         directories_to_check[directory_index] += f".{module}"
@@ -285,8 +313,10 @@ class GraphConstructor:
         return None
 
     def __get_local_node(self, node, object: str) -> dict:
-        root_directory = node["attributes"]["file_path"].replace(self.parser.extension, "").replace("/", ".")
-        node_directory = node["attributes"]["path"]
+        file_path: str = node["attributes"]["file_path"]
+        extension: str = file_path[file_path.rfind(".") :]
+        root_directory: str = file_path.replace(extension, "").replace("/", ".")
+        node_directory: str = node["attributes"]["path"]
         node_directory_list = node_directory.split(".")
         node_directory_list.reverse()
 
@@ -308,6 +338,8 @@ class GraphConstructor:
     def __get_inherits_directory(self, node, function_call: str, imports: dict) -> List[str]:
         directories_to_check: List[str] = []
         owner_object = function_call.split(".")[0]
+        file_path = node["attributes"]["file_path"]
+        extension = file_path[file_path.rfind(".") :]
 
         # is defined in the same file
         inherit_file_node = self.__get_local_node(node, owner_object)
@@ -327,7 +359,7 @@ class GraphConstructor:
             inherits_directories_to_check = self.__get_directory(inherit_file_node, class_function_inherit, imports)
             for directory_index, _ in enumerate(inherits_directories_to_check):
                 for module in function_call.split(".")[1:]:
-                    if self.language == "python":
+                    if extension == ".py":
                         directory_modules = inherits_directories_to_check[directory_index].split(".")
                         if module not in directory_modules:
                             inherits_directories_to_check[directory_index] += f".{module}"
