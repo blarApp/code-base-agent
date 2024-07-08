@@ -14,7 +14,9 @@ from llama_index.packs.code_hierarchy.code_hierarchy import _SignatureCaptureOpt
 from tree_sitter import Language, Node, Parser
 
 from blar_graph.graph_construction.utils import format_nodes
-from blar_graph.graph_construction.utils.interfaces import GlobalGraphInfo
+from blar_graph.graph_construction.utils.interfaces.GlobalGraphInfo import (
+    GlobalGraphInfo,
+)
 
 
 class BaseParser(ABC):

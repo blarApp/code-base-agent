@@ -3,7 +3,9 @@ import os
 import tree_sitter_languages
 
 from blar_graph.graph_construction.core.base_parser import BaseParser
-from blar_graph.graph_construction.utils.interfaces import GlobalGraphInfo
+from blar_graph.graph_construction.utils.interfaces.GlobalGraphInfo import (
+    GlobalGraphInfo,
+)
 
 
 class PythonParser(BaseParser):
