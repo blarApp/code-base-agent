@@ -3,16 +3,11 @@ import traceback
 from typing import List
 
 from blar_graph.db_managers import Neo4jManager
-from blar_graph.graph_construction.core.base_parser import BaseParser
-from blar_graph.graph_construction.languages.javascript.javascript_parser import (
-    JavascriptParser,
-)
-from blar_graph.graph_construction.languages.python.python_parser import PythonParser
-from blar_graph.graph_construction.languages.typescript.typescript_parser import (
-    TypescriptParser,
-)
 from blar_graph.graph_construction.utils import format_nodes
-from blar_graph.graph_construction.utils.interfaces import GlobalGraphInfo
+from blar_graph.graph_construction.utils.interfaces.GlobalGraphInfo import (
+    GlobalGraphInfo,
+)
+from blar_graph.graph_construction.utils.interfaces.Parsers import Parsers
 
 
 class GraphConstructor:
@@ -20,24 +15,13 @@ class GraphConstructor:
     global_graph_info: GlobalGraphInfo
     root: str
     skip_tests: bool
-    parser: BaseParser
-    language: str
+    parsers: Parsers
 
-    def __init__(self, graph_manager: Neo4jManager, language="python"):
+    def __init__(self, graph_manager: Neo4jManager):
         self.graph_manager = graph_manager
         self.global_graph_info = GlobalGraphInfo(entity_id=graph_manager.entityId)
         self.root = None
         self.skip_tests = True
-        self.language = language
-        if language == "python":
-            self.parser = PythonParser()
-        elif language == "typescript":
-            self.parser = TypescriptParser()
-        elif language == "javascript":
-            self.parser = JavascriptParser()
-        else:
-            raise ValueError(f"Language {language} not supported")
-        # TODO: Add more languages
 
     def _scan_directory(
         self,
