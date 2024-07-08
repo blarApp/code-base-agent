@@ -9,12 +9,11 @@ from typing import List
 import tree_sitter_languages
 from llama_index.core import SimpleDirectoryReader
 from llama_index.core.schema import BaseNode, Document, TextNode
-from llama_index.core.text_splitter import CodeSplitter
 from llama_index.packs.code_hierarchy import CodeHierarchyNodeParser
 from llama_index.packs.code_hierarchy.code_hierarchy import _SignatureCaptureOptions
-from tree_sitter import Language, Node
+from tree_sitter import Language, Node, Parser
 
-from blar_graph.graph_construction.utils import format_nodes, tree_parser
+from blar_graph.graph_construction.utils import format_nodes
 from blar_graph.graph_construction.utils.interfaces import GlobalGraphInfo
 
 
@@ -101,6 +100,101 @@ class BaseParser(ABC):
 
         return parent_level
 
+    def _get_function_calls(self, node: Node, assignments_dict: dict) -> list[str]:
+        code_text = node.text
+        function_calls = []
+
+        parser = tree_sitter_languages.get_parser(self.language)
+        tree = parser.parse(bytes(code_text, "utf-8"))
+        language = tree_sitter_languages.get_language(self.language)
+
+        assignment_query = language.query(self.assignment_query)
+
+        assignments = assignment_query.captures(tree.root_node)
+
+        for assignment_node, assignment_type in assignments:
+            if assignment_type == "variable":
+                variable_identifier_node = assignment_node
+                variable_identifier = variable_identifier_node.text.decode()
+                if self.self_syntax in variable_identifier:
+                    for scope in node.metadata["inclusive_scopes"]:
+                        if scope["type"] == "class_definition":
+                            variable_identifier = scope["name"] + "." + variable_identifier.split(self.self_syntax)[1]
+                            break
+                continue
+
+            if assignment_type == "expression":
+                assign_value = assignment_node
+
+                if assign_value.type == "call" or assign_value.type == "new_expression":
+                    expression = assign_value
+                    expression_identifier = expression.named_children[0].text.decode()
+                    assignments_dict[variable_identifier] = expression_identifier
+                    continue
+
+                assignments_dict[variable_identifier] = assign_value.text.decode()
+
+        calls_query = language.query(self.function_call_query)
+
+        function_calls_nodes = calls_query.captures(tree.root_node)
+
+        method_name = None
+        class_name = None
+        for scope in node.metadata["inclusive_scopes"]:
+            if scope["type"] in self.scopes_names["function"]:
+                method_name = scope["name"]
+            if scope["type"] in self.scopes_names["class"]:
+                class_name = scope["name"]
+
+        for call_node, _ in function_calls_nodes:
+            if method_name and call_node.text.decode() == method_name:
+                continue
+
+            decomposed_call = self._decompose_function_call(call_node, language, parser)
+            if not decomposed_call:
+                continue
+
+            called_from_assignment = False
+            join_call = decomposed_call[0]
+            for index, call in enumerate(decomposed_call):
+                if index != 0:
+                    join_call += "." + call
+
+                if self.self_syntax in join_call:
+                    if class_name:
+                        join_call = class_name + "." + join_call.split(self.self_syntax)[1]
+
+                if assignments_dict.get(join_call):
+                    function_calls.append(assignments_dict[join_call] + "." + ".".join(decomposed_call[index + 1 :]))
+                    called_from_assignment = True
+                    break
+
+            if not called_from_assignment:
+                node_text = call_node.text.decode()
+                if self.self_syntax in node_text:
+                    if class_name:
+                        node_text = class_name + "." + node_text.split(self.self_syntax)[1]
+                function_calls.append(node_text)
+
+        return function_calls
+
+    def _get_inheritances(self, node: Node) -> list[str]:
+        code_text = node.text
+        inheritances: List[str] = []
+
+        parser = tree_sitter_languages.get_parser(self.language)
+        tree = parser.parse(bytes(code_text, "utf-8"))
+        language = tree_sitter_languages.get_language(self.language)
+
+        inheritances_query = language.query(self.inheritances_query)
+
+        inheritances_captures = inheritances_query.captures(tree.root_node)
+
+        for inheritance, _ in inheritances_captures:
+            inheritances.append(inheritance.text.decode())
+
+        return inheritances
+
     def __process_node__(
         self,
         node: TextNode,
@@ -119,17 +213,13 @@ class BaseParser(ABC):
         leaf = False
 
         if type_node in self.scopes_names["function"]:
-            function_calls = self.get_function_calls(node, assignment_dict, self.language)
+            function_calls = self._get_function_calls(node, assignment_dict)
             core_node = format_nodes.format_function_node(node, scope, function_calls, file_node_id)
         elif type_node in self.scopes_names["class"]:
-            inheritances = tree_parser.get_inheritances(node, self.language)
+            inheritances = self._get_inheritances(node)
             core_node = format_nodes.format_class_node(node, scope, file_node_id, inheritances)
-            global_graph_info.inheritances[core_node["attributes"]["name"]] = inheritances
-        elif type_node in self.scopes_names["plain_code_block"]:
-            function_calls = self.get_function_calls(node, assignment_dict, self.language)
-            core_node = format_nodes.format_plain_code_block_node(node, scope, function_calls, file_node_id)
         else:
-            function_calls = self.get_function_calls(node, assignment_dict, self.language)
+            function_calls = self._get_function_calls(node, assignment_dict)
             core_node = format_nodes.format_file_node(node, file_path, function_calls)
 
         parent_level = self._get_parent_level(node, global_graph_info, level)
@@ -139,6 +229,8 @@ class BaseParser(ABC):
 
         parent_id = self.generate_node_id(parent_path, global_graph_info.entity_id)
         node_id = self.generate_node_id(node_path, global_graph_info.entity_id)
+        if type_node in self.scopes_names["class"]:
+            global_graph_info.inheritances[node_id] = inheritances
 
         relation_type = scope["type"] if scope else ""
         relationships.append(
@@ -174,6 +266,7 @@ class BaseParser(ABC):
         global_graph_info.imports[node_path] = {
             "id": processed_node["attributes"]["node_id"],
             "type": processed_node["type"],
+            "node": processed_node,
         }
 
         global_graph_info.visited_nodes[node.node_id] = {"level": parent_level + 1, "generated_id": node_id}
@@ -184,26 +277,18 @@ class BaseParser(ABC):
         no_extension_path = no_extension_path.replace(self.extension, "")
         return no_extension_path
 
-    def _decompose_function_call(self, call_node: Node, language: Language, decomposed_calls=[]):
+    def _decompose_function_call(self, call_node: Node, language: Language, parser: Parser):
         calls_query = language.query(self.decompose_call_query)
 
-        decompose_call = calls_query.captures(call_node)
+        # Need to get the tree to get the query going
+        call_tree = parser.parse(call_node.text)
+        decompose_call = calls_query.captures(call_tree.root_node)
 
-        if len(decompose_call) == 0:
-            decomposed_calls.append(call_node.text.decode())
-            return decomposed_calls
+        list_decomposed_calls: List[str] = []
+        for decompose_node, _ in decompose_call:
+            list_decomposed_calls.append(decompose_node.text.decode())
 
-        nested_object = False
-        for decompose_node, type in decompose_call:
-            if type == "nested_object":
-                nested_object = True
-                decomposed_calls = self._decompose_function_call(decompose_node, language, decomposed_calls)
-            elif (type == "object" or type == "method") and nested_object:
-                continue
-            else:
-                decomposed_calls.append(decompose_node.text.decode())
-
-        return decomposed_calls
+        return list_decomposed_calls
 
     def resolve_relative_import_path(self, import_statement, current_file_path, project_root):
         if import_statement.startswith(".."):
@@ -241,85 +326,15 @@ class BaseParser(ABC):
             current_dir = os.path.dirname(current_dir)
         return None
 
-    def get_function_calls(self, node: Node, assignments_dict: dict, language: str) -> list[str]:
-        code_text = node.text
-        function_calls = []
-
-        parser = tree_sitter_languages.get_parser(language)
-        tree = parser.parse(bytes(code_text, "utf-8"))
-        language = tree_sitter_languages.get_language(language)
-
-        assignment_query = language.query(self.assignment_query)
-
-        assignments = assignment_query.captures(tree.root_node)
-
-        for assignment_node, assignment_type in assignments:
-            if assignment_type == "variable":
-                variable_identifier_node = assignment_node
-                variable_identifier = variable_identifier_node.text.decode()
-                if self.self_syntax in variable_identifier:
-                    for scope in node.metadata["inclusive_scopes"]:
-                        if scope["type"] == "class_definition":
-                            variable_identifier = scope["name"] + "." + variable_identifier.split(self.self_syntax)[1]
-                            break
-                continue
-
-            if assignment_type == "expression":
-                assign_value = assignment_node
-
-                if assign_value.type == "call" or assign_value.type == "new_expression":
-                    expression = assign_value
-                    expression_identifier = expression.named_children[0].text.decode()
-                    assignments_dict[variable_identifier] = expression_identifier
-                    continue
-
-                assignments_dict[variable_identifier] = assign_value.text.decode()
-
-        calls_query = language.query(self.function_call_query)
-
-        function_calls_nodes = calls_query.captures(tree.root_node)
-
-        method_name = None
-        for scope in node.metadata["inclusive_scopes"]:
-            if scope["type"] == "method_definition":
-                method_name = scope["name"]
-                break
-
-        for call_node, _ in function_calls_nodes:
-            if method_name and call_node.text.decode() == method_name:
-                continue
-            decomposed_call = self._decompose_function_call(call_node, language, [])
-            called_from_assignment = False
-
-            join_call = decomposed_call[0]
-            for index, call in enumerate(decomposed_call):
-                if index != 0:
-                    join_call += "." + call
-
-                if self.self_syntax in join_call:
-                    for scope in node.metadata["inclusive_scopes"]:
-                        if scope["type"] == "class_definition":
-                            join_call = scope["name"] + "." + join_call.split(self.self_syntax)[1]
-                            break
-
-                if assignments_dict.get(join_call):
-                    function_calls.append(assignments_dict[join_call] + "." + ".".join(decomposed_call[index + 1 :]))
-                    called_from_assignment = True
-                    break
-
-            if not called_from_assignment:
-                node_text = call_node.text.decode()
-                if self.self_syntax in node_text:
-                    for scope in node.metadata["inclusive_scopes"]:
-                        if scope["type"] == "class_definition":
-                            node_text = scope["name"] + "." + node_text.split(self.self_syntax)[1]
-                            break
-                function_calls.append(node_text)
-
-        return function_calls
-
     def is_package(self, directory):
         return False
+
+    def _remove_non_ascii(self, text):
+        # Define the regular expression pattern to match ascii characters
+        pattern = re.compile(r"[^\x00-\x7F]+")
+        # Replace ascii characters with an empty string
+        cleaned_text = pattern.sub("", text)
+        return cleaned_text
 
     def parse(self, file_path: str, root_path: str, global_graph_info: GlobalGraphInfo, level: int):
         path = Path(file_path)
@@ -333,13 +348,11 @@ class BaseParser(ABC):
         ).load_data()
 
         # Bug related to llama-index it's safer to remove non-ascii characters. Could be removed in the future
-        documents[0].text = tree_parser.remove_non_ascii(documents[0].text)
+        documents[0].text = self._remove_non_ascii(documents[0].text)
 
-        code_splitter = CodeSplitter(language=self.language, max_chars=10000, chunk_lines=10)
         code = CodeHierarchyNodeParser(
             language=self.language,
             chunk_min_characters=3,
-            code_splitter=code_splitter,
             signature_identifiers=self.signature_identifiers,
         )
         try:
@@ -407,6 +420,11 @@ class BaseParser(ABC):
     @property
     @abstractmethod
     def function_call_query(self) -> str:
+        pass
+
+    @property
+    @abstractmethod
+    def inheritances_query(self) -> str:
         pass
 
     @property
