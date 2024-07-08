@@ -26,8 +26,8 @@ packages = [{include = "blar_graph", from = "src"}]
 exclude = ["src/blar_graph/examples/*"]
 
 [tool.poetry.dependencies]
-llama-index = {git = "https://github.com/berrazuriz1/llama_index.git", branch = "codeHierarchy-javascript"}
-llama-index-packs-code-hierarchy = {git = "https://github.com/berrazuriz1/llama_index.git", branch = "codeHierarchy-javascript", subdirectory = "llama-index-packs/llama-index-packs-code-hierarchy"}
+llama-index = {git = "https://github.com/berrazuriz1/llama_index.git", branch = "main"}
+llama-index-packs-code-hierarchy = {git = "https://github.com/berrazuriz1/llama_index.git", branch = "main", subdirectory = "llama-index-packs/llama-index-packs-code-hierarchy"}
 python = ">=3.9,<3.12"
 python-dotenv = "^1.0.1"
 tree-sitter-languages = "^1.10.2"
