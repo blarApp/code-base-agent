@@ -106,9 +106,6 @@ class JavascriptParser(BaseParser):
             "class_declaration": "CLASS_DEFINITION",
         }
 
-    def skip_directory(self, directory: str) -> bool:
-        return directory == "node_modules"
-
     def parse_file(self, file_path: str, root_path: str, global_graph_info: GlobalGraphInfo, level: int):
         return self.parse(file_path, root_path, global_graph_info, level)
 

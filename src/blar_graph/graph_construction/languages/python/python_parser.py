@@ -98,12 +98,6 @@ class PythonParser(BaseParser):
                     }
         return {file_node_id: imports}
 
-    def is_package(self, directory):
-        return os.path.exists(os.path.join(directory, "__init__.py"))
-
-    def skip_directory(self, directory: str) -> bool:
-        return directory == "__pycache__"
-
     def parse_file(self, file_path: str, root_path: str, global_graph_info: GlobalGraphInfo, level: int):
         if file_path.endswith("__init__.py"):
             return [], [], self.parse_init(file_path, root_path)

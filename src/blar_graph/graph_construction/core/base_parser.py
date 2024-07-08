@@ -37,6 +37,24 @@ class BaseParser(ABC):
         self.extension = extension
         self.import_path_separator = import_path_separator
 
+    @staticmethod
+    def generate_node_id(path: str, company_id: str):
+        # Concatenate path and signature
+        combined_string = f"{company_id}:{path}"
+
+        # Create a SHA-1 hash of the combined string
+        hash_object = hashlib.md5()
+        hash_object.update(combined_string.encode("utf-8"))
+
+        # Get the hexadecimal representation of the hash
+        node_id = hash_object.hexdigest()
+
+        return node_id
+
+    @staticmethod
+    def is_package(path: str) -> bool:
+        return os.path.exists(os.path.join(path, "__init__.py"))
+
     def _post_process_node(self, node: dict, global_graph_info: GlobalGraphInfo):
         text = node["attributes"]["text"]
 
@@ -63,19 +81,6 @@ class BaseParser(ABC):
         end_line = file_contents.count("\n", 0, end_byte) + 1
 
         return (start_line, end_line)
-
-    def generate_node_id(self, path: str, company_id: str):
-        # Concatenate path and signature
-        combined_string = f"{company_id}:{path}"
-
-        # Create a SHA-1 hash of the combined string
-        hash_object = hashlib.md5()
-        hash_object.update(combined_string.encode("utf-8"))
-
-        # Get the hexadecimal representation of the hash
-        node_id = hash_object.hexdigest()
-
-        return node_id
 
     def get_node_path(self, node: BaseNode):
         file_path = node.metadata["filepath"]
@@ -229,8 +234,8 @@ class BaseParser(ABC):
         node_path = self.get_node_path(node)
         parent_path = ".".join(node_path.split(".")[:-1])
 
-        parent_id = self.generate_node_id(parent_path, global_graph_info.entity_id)
-        node_id = self.generate_node_id(node_path, global_graph_info.entity_id)
+        parent_id = BaseParser.generate_node_id(parent_path, global_graph_info.entity_id)
+        node_id = BaseParser.generate_node_id(node_path, global_graph_info.entity_id)
         if type_node in self.scopes_names["class"]:
             global_graph_info.inheritances[node_id] = inheritances
 
@@ -322,14 +327,11 @@ class BaseParser(ABC):
         while current_dir.startswith(project_root) and (current_dir != "" or project_root != ""):
             possible_path = os.path.join(current_dir, *components)
             # Check for a direct module or package
-            if os.path.exists(possible_path + self.extension) or self.is_package(possible_path):
+            if os.path.exists(possible_path + self.extension) or BaseParser.is_package(possible_path):
                 return possible_path.replace("/", ".")
             # Move one directory up
             current_dir = os.path.dirname(current_dir)
         return None
-
-    def is_package(self, directory):
-        return False
 
     def _remove_non_ascii(self, text):
         # Define the regular expression pattern to match ascii characters
@@ -403,10 +405,6 @@ class BaseParser(ABC):
 
     @abstractmethod
     def _get_imports(self, path: str, file_node_id: str, root_path: str) -> dict:
-        pass
-
-    @abstractmethod
-    def skip_directory(self, directory: str) -> bool:
         pass
 
     @property
