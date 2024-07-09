@@ -15,7 +15,7 @@ profile = "black"
 
 [tool.poetry]
 name = "blar-graph"
-version = "0.1.4"
+version = "1.0.0"
 description = "Llm agent to search within a graph"
 authors = ["Benjamín Errazuriz <benjamin@blar.io>", "José Domínguez <jose@blar.io>"]
 readme = "README.md"
@@ -26,9 +26,9 @@ packages = [{include = "blar_graph", from = "src"}]
 exclude = ["src/blar_graph/examples/*"]
 
 [tool.poetry.dependencies]
+llama-index = {git = "https://github.com/berrazuriz1/llama_index.git", branch = "main"}
+llama-index-packs-code-hierarchy = {git = "https://github.com/berrazuriz1/llama_index.git", branch = "main", subdirectory = "llama-index-packs/llama-index-packs-code-hierarchy"}
 python = ">=3.9,<3.12"
-llama-index-packs-code-hierarchy = "^0.1.1"
-llama-index = "^0.10.20"
 python-dotenv = "^1.0.1"
 tree-sitter-languages = "^1.10.2"
 langchain = "^0.1.13"

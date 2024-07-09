@@ -1,8 +1,4 @@
 import tree_sitter_languages
-from llama_index.packs.code_hierarchy.code_hierarchy import (
-    _SignatureCaptureOptions,
-    _SignatureCaptureType,
-)
 
 from blar_graph.graph_construction.core.base_parser import BaseParser
 from blar_graph.graph_construction.utils.interfaces.GlobalGraphInfo import (
@@ -10,34 +6,13 @@ from blar_graph.graph_construction.utils.interfaces.GlobalGraphInfo import (
 )
 
 
-class TypescriptParser(BaseParser):
+class JavascriptParser(BaseParser):
     def __init__(self):
-        super().__init__("typescript", None, ".ts", "/")
+        super().__init__("javascript", None, ".js", "/")
 
     @property
     def self_syntax(self):
         return "this."
-
-    @property
-    def signature_identifiers(self) -> dict[str, _SignatureCaptureOptions]:
-        return {
-            "interface_declaration": _SignatureCaptureOptions(
-                end_signature_types=[_SignatureCaptureType(type="{", inclusive=False)],
-                name_identifier="type_identifier",
-            ),
-            "function_declaration": _SignatureCaptureOptions(
-                end_signature_types=[_SignatureCaptureType(type="{", inclusive=False)],
-                name_identifier="identifier",
-            ),
-            "class_declaration": _SignatureCaptureOptions(
-                end_signature_types=[_SignatureCaptureType(type="{", inclusive=False)],
-                name_identifier="type_identifier",
-            ),
-            "method_definition": _SignatureCaptureOptions(
-                end_signature_types=[_SignatureCaptureType(type="{", inclusive=False)],
-                name_identifier="property_identifier",
-            ),
-        }
 
     @property
     def decompose_call_query(self):
@@ -66,16 +41,54 @@ class TypescriptParser(BaseParser):
 
     @property
     def inheritances_query(self):
+        # ugly ass query because tree_sitter doesn't have a recursive or dynamic approach.
+        # So, to retrieve several nested inheritances I did it explicitly.
+        # It supports 5 levels
         return """
             (class_heritage
-                (extends_clause
-                    [
-                        (identifier) @inheritance
-                        (member_expression) @inheritance
-                    ]
-                )
+                [
+                    (identifier) @inheritance
+                    (call_expression
+                        function: (identifier) @inheritance
+                        arguments: (arguments
+                        [
+                            (identifier) @inheritance
+                            (call_expression
+                            function: (identifier) @inheritance
+                            arguments: (arguments
+                                [
+                                (identifier) @inheritance
+                                (call_expression
+                                    function: (identifier) @inheritance
+                                    arguments: (arguments
+                                    [
+                                        (identifier) @inheritance
+                                        (call_expression
+                                        function: (identifier) @inheritance
+                                        arguments: (arguments
+                                            [
+                                            (identifier) @inheritance
+                                            (call_expression
+                                                function: (identifier) @inheritance
+                                                arguments: (arguments
+                                                (identifier) @inheritance
+                                                )*
+                                            )
+                                            ]*
+                                        )
+                                        )
+                                    ]*
+                                    )
+                                )
+                                ]*
+                            )
+                            )
+                        ]*
+                        )
+                    )
+                ]
             )
-            """
+        """
 
     @property
     def scopes_names(self):
@@ -91,7 +104,6 @@ class TypescriptParser(BaseParser):
             "function_declaration": "FUNCTION_DEFINITION",
             "method_definition": "FUNCTION_DEFINITION",
             "class_declaration": "CLASS_DEFINITION",
-            "lexical_declaration": "CODE_BLOCK",
         }
 
     def parse_file(self, file_path: str, root_path: str, global_graph_info: GlobalGraphInfo, level: int):
@@ -102,23 +114,43 @@ class TypescriptParser(BaseParser):
         language = tree_sitter_languages.get_language(self.language)
         imports_query = language.query(
             """
-          (import_statement
-            (import_clause
-                [
-                  (identifier) @single_imported_name
-                  (named_imports
-                    (import_specifier
-                      name: (identifier) @imported_name
-                      alias: (identifier)? @package_alias
+            (variable_declarator
+                name:
+                    [
+                        (identifier) @imported_name
+                        (object_pattern
+                            (pair_pattern
+                                key: (property_identifier) @imported_name
+                                value: (identifier) @package_alias
+                            )
+                        )
+                    ]
+                value: (call_expression
+                    function: (identifier) @function_name
+                    arguments: (arguments
+                        (string (string_fragment) @source_path)
+                        )
                     )
-                  )*
-                  (namespace_import (identifier) @alias)
-                ]
-              )
-            source: (string
-              (string_fragment) @source_path
+                (#eq? @function_name "require")
             )
-          )"""
+            (import_statement
+                (import_clause
+                    [
+                        (identifier) @single_imported_name
+                        (named_imports
+                        (import_specifier
+                            name: (identifier) @imported_name
+                            alias: (identifier)? @package_alias
+                        )
+                        )*
+                        (namespace_import (identifier) @alias)
+                    ]
+                    )
+                source: (string
+                    (string_fragment) @source_path
+                    )
+            )
+            """
         )
 
         with open(path, "r") as file:
@@ -134,6 +166,9 @@ class TypescriptParser(BaseParser):
         for import_node, import_type in captured_imports:
             # Import specific objects case
             if import_type == "imported_name" or import_type == "single_imported_name":
+                import_text = import_node.text.decode()
+                imports_name.append(import_text)
+            elif import_type == "require":
                 import_text = import_node.text.decode()
                 imports_name.append(import_text)
             # Aliases import case

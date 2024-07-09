@@ -3,7 +3,9 @@ import os
 import tree_sitter_languages
 
 from blar_graph.graph_construction.core.base_parser import BaseParser
-from blar_graph.graph_construction.utils.interfaces import GlobalGraphInfo
+from blar_graph.graph_construction.utils.interfaces.GlobalGraphInfo import (
+    GlobalGraphInfo,
+)
 
 
 class PythonParser(BaseParser):
@@ -18,12 +20,11 @@ class PythonParser(BaseParser):
     def decompose_call_query(self):
         return """
             (attribute
-                object: [
-                    (identifier) @object
-                    ((attribute) @nested_object
-                    attribute: _ @nested_method)
-                ]
-                attribute: _ @method)
+                (identifier) @_
+            )
+            (expression_statement
+                (identifier) @_
+            )
             """
 
     @property
@@ -33,6 +34,16 @@ class PythonParser(BaseParser):
     @property
     def function_call_query(self):
         return """(call function: _ @function_call)"""
+
+    @property
+    def inheritances_query(self):
+        return """
+            (class_definition
+                superclasses: (argument_list
+                    (identifier) @inheritance
+                )
+            )
+            """
 
     @property
     def scopes_names(self):
@@ -86,12 +97,6 @@ class PythonParser(BaseParser):
                         "type": "import_statement",
                     }
         return {file_node_id: imports}
-
-    def is_package(self, directory):
-        return os.path.exists(os.path.join(directory, "__init__.py"))
-
-    def skip_directory(self, directory: str) -> bool:
-        return directory == "__pycache__"
 
     def parse_file(self, file_path: str, root_path: str, global_graph_info: GlobalGraphInfo, level: int):
         if file_path.endswith("__init__.py"):
