@@ -5,7 +5,9 @@ from llama_index.packs.code_hierarchy.code_hierarchy import (
 )
 
 from blar_graph.graph_construction.core.base_parser import BaseParser
-from blar_graph.graph_construction.utils.interfaces import GlobalGraphInfo
+from blar_graph.graph_construction.utils.interfaces.GlobalGraphInfo import (
+    GlobalGraphInfo,
+)
 
 
 class TypescriptParser(BaseParser):
@@ -91,9 +93,6 @@ class TypescriptParser(BaseParser):
             "class_declaration": "CLASS_DEFINITION",
             "lexical_declaration": "CODE_BLOCK",
         }
-
-    def skip_directory(self, directory: str) -> bool:
-        return directory == "node_modules"
 
     def parse_file(self, file_path: str, root_path: str, global_graph_info: GlobalGraphInfo, level: int):
         return self.parse(file_path, root_path, global_graph_info, level)

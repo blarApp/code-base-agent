@@ -3,7 +3,9 @@ import os
 import tree_sitter_languages
 
 from blar_graph.graph_construction.core.base_parser import BaseParser
-from blar_graph.graph_construction.utils.interfaces import GlobalGraphInfo
+from blar_graph.graph_construction.utils.interfaces.GlobalGraphInfo import (
+    GlobalGraphInfo,
+)
 
 
 class PythonParser(BaseParser):
@@ -95,12 +97,6 @@ class PythonParser(BaseParser):
                         "type": "import_statement",
                     }
         return {file_node_id: imports}
-
-    def is_package(self, directory):
-        return os.path.exists(os.path.join(directory, "__init__.py"))
-
-    def skip_directory(self, directory: str) -> bool:
-        return directory == "__pycache__"
 
     def parse_file(self, file_path: str, root_path: str, global_graph_info: GlobalGraphInfo, level: int):
         if file_path.endswith("__init__.py"):
