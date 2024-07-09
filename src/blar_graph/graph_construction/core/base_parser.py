@@ -59,20 +59,23 @@ class BaseParser(ABC):
         text = node["attributes"]["text"]
 
         # Extract the node_id using re.search
-        match = re.search(r"# Code replaced for brevity\. See node_id ([0-9a-fA-F-]+)", text)
-        if match:
-            extracted_node_id = match.group(1)
+        matches = re.findall(r"Code replaced for brevity\. See node_id ([0-9a-fA-F-]+)", text)
+        for match in matches:
+            extracted_node_id = match
             # Get the mapped_generated_id using the extracted node_id
-            maped_generated_id = global_graph_info.visited_nodes.get(extracted_node_id, {}).get("generated_id")
-
-            if maped_generated_id is not None:
+            mapped_generated_id = global_graph_info.visited_nodes.get(extracted_node_id, {}).get("generated_id")
+            if extracted_node_id == "27168f8c-69b6-4797-a29c-3dc859662b0e":
+                print("test")
+            if mapped_generated_id is not None:
                 # Replace the extracted node_id with the mapped_generated_id
                 updated_text = re.sub(
-                    rf"# Code replaced for brevity\. See node_id {extracted_node_id}",
-                    f"# Code replaced for brevity. See node_id {maped_generated_id}",
+                    rf"Code replaced for brevity\. See node_id {extracted_node_id}",
+                    f"Code replaced for brevity. See node_id {mapped_generated_id}",
                     text,
                 )
-                node["attributes"]["text"] = updated_text
+                text = updated_text
+
+        node["attributes"]["text"] = text
 
         return node
 
