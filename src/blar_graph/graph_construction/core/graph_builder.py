@@ -88,6 +88,7 @@ class GraphConstructor:
 
         nodes.append(directory_node)
         for entry in os.scandir(path):
+            print(f"Processing {entry.path}")
             if self._skip_file(entry.name):
                 continue
             if entry.is_file():
@@ -131,8 +132,11 @@ class GraphConstructor:
                     }
                 # If the file is not a supported language, only make the file node with all the text
                 else:
-                    with open(entry.path, "r") as file:
-                        text = file.read()
+                    try:
+                        with open(entry.path, "r", encoding="utf-8") as file:
+                            text = file.read()
+                    except UnicodeDecodeError:
+                        continue
 
                     file_node = {
                         "type": "FILE",
