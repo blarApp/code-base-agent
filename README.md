@@ -32,13 +32,24 @@ If you are new to Neo4j you can deploy a free instance of neo4j with [Aura](http
 To build the graph, you have to instantiate the graph manager and constructor. The graph manager handles the connection with Neo4j, and the graph constructor processes the directory input to create the graph.
 
 ```python
-from blar_graph.graph_construction.graph_builder import GraphConstructor
-from blar_graph.graph_construction.neo4j_manager import Neo4jManager
+import traceback
+import uuid
 
-graph_manager = Neo4jManager()
-graph_constructor = GraphConstructor(graph_manager)
-graph_constructor.build_graph("YOUR_LOCAL_DIRECTORY", "python")
-graph_manager.close()
+from blar_graph.db_managers import Neo4jManager
+from blar_graph.graph_construction.core.graph_builder import GraphConstructor
+
+repoId = str(uuid.uuid4())
+entityId = str(uuid.uuid4())
+graph_manager = Neo4jManager(repoId, entityId)
+
+try:
+    graph_constructor = GraphConstructor(graph_manager)
+    graph_constructor.build_graph("YOUR_LOCAL_DIRECTORY")
+    graph_manager.close()
+except Exception as e:
+    print(e)
+    print(traceback.format_exc())
+    graph_manager.close()
 ```
 
 Now you can use our agent tools, or build your own, to create agents that resolves specific tasks. In the folder 'agents_tools' you will find all our tools (for now is just the Keyword search) and examples of agent implementations. For example, for a debugger agent you could do:
@@ -113,4 +124,4 @@ list(
 
 You can find more examples in the folder 'examples'. They are comprehensive jupiter notebooks that guide you from creating the graph to deploying the agent.
 
-_*Note: The supported language for now is python, we are going to include Typescript (or other language) if you ask for it enough. So don't hesitate to reach out through the [issues](https://github.com/blarApp/code-base-agent/issues) or directly to benjamin@blar.io or jose@blar.io*_
+_*Note: The supported languages for now are python, javascript and typescript. We are going to include C and C++ (or other language) if you ask for it enough. So don't hesitate to reach out through the [issues](https://github.com/blarApp/code-base-agent/issues) or directly to benjamin@blar.io or jose@blar.io*_
