@@ -20,11 +20,8 @@ class TypescriptParser(BaseParser):
 
     @property
     def signature_identifiers(self) -> dict[str, _SignatureCaptureOptions]:
+        # TODO: Include interface_declaration to link variables with its type
         return {
-            "interface_declaration": _SignatureCaptureOptions(
-                end_signature_types=[_SignatureCaptureType(type="{", inclusive=False)],
-                name_identifier="type_identifier",
-            ),
             "function_declaration": _SignatureCaptureOptions(
                 end_signature_types=[_SignatureCaptureType(type="{", inclusive=False)],
                 name_identifier="identifier",
