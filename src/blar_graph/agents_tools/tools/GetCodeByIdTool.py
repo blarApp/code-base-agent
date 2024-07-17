@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional, Type
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.pydantic_v1 import BaseModel, Field
+from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
 
 from blar_graph.agents_tools.tools.BaseCypherModel import BaseCypherDatabaseTool
