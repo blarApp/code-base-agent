@@ -1,4 +1,5 @@
 import os
+import time
 import traceback
 from typing import List
 
@@ -88,7 +89,6 @@ class GraphConstructor:
 
         nodes.append(directory_node)
         for entry in os.scandir(path):
-            print(f"Processing {entry.path}")
             if self._skip_file(entry.name):
                 continue
             if entry.is_file():
@@ -107,7 +107,6 @@ class GraphConstructor:
                         print(f"Error {entry.path}")
                         print(traceback.format_exc())
                         continue
-                    print(f"Processed {entry.path}")
                     if not processed_nodes:
                         self.global_graph_info.import_aliases.update(file_imports)
                         continue
@@ -136,6 +135,8 @@ class GraphConstructor:
                         with open(entry.path, "r", encoding="utf-8") as file:
                             text = file.read()
                     except UnicodeDecodeError:
+                        print(f"Error reading file {entry.path}")
+                        print(traceback.format_exc())
                         continue
 
                     file_node = {
@@ -459,10 +460,16 @@ class GraphConstructor:
 
     def build_graph(self, path):
         # process every node to create the graph structure
+        print("Building graph...")
+        start_time = time.time()
         nodes, relationships, imports = self._scan_directory(path)
+
         # relate imports between file nodes
         relationships.extend(self._relate_imports(imports))
         # relate functions calls
         relationships.extend(self._relate_constructor_calls(nodes, imports))
+        end_time = time.time()
+        execution_time = end_time - start_time
+        print(f"Execution time: {execution_time} seconds")
 
         self.graph_manager.save_graph(nodes, relationships)

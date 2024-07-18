@@ -1,8 +1,9 @@
 import os
+import time
 from typing import Any, List
 
 from dotenv import load_dotenv
-from neo4j import Driver, GraphDatabase
+from neo4j import Driver, GraphDatabase, exceptions
 
 from blar_graph.db_managers.base_manager import BaseDBManager
 
@@ -19,7 +20,17 @@ class Neo4jManager(BaseDBManager):
         user = os.getenv("NEO4J_USERNAME")
         password = os.getenv("NEO4J_PASSWORD")
 
-        self.driver = GraphDatabase.driver(uri, auth=(user, password), max_connection_pool_size=max_connections)
+        retries = 3
+        for attempt in range(retries):
+            try:
+                self.driver = GraphDatabase.driver(uri, auth=(user, password), max_connection_pool_size=max_connections)
+                break
+            except exceptions.ServiceUnavailable as e:
+                if attempt < retries - 1:
+                    time.sleep(2**attempt)  # Exponential backoff
+                else:
+                    raise e
+
         if create_index:
             self.create_indexes_and_constraints()
         self.repoId = repoId if repoId is not None else "default_repo"
