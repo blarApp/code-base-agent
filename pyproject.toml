@@ -15,7 +15,7 @@ profile = "black"
 
 [tool.poetry]
 name = "blar-graph"
-version = "1.0.4"
+version = "1.0.5"
 description = "Llm agent to search within a graph"
 authors = ["Benjamín Errazuriz <benjamin@blar.io>", "José Domínguez <jose@blar.io>"]
 readme = "README.md"
