@@ -201,7 +201,10 @@ class JavascriptParser(BaseParser):
                     # normal import case
                     for import_name in imports_name:
                         if import_text == self.wildcard:
-                            imports["_*wildcard*_"]["path"].append(self.resolve_import_path(from_text, path, root_path))
+                            wildcard_paths = self.resolve_import_path(from_text, path, root_path)
+                            imports["_*wildcard*_"]["path"].extend(
+                                wildcard_paths if isinstance(wildcard_paths, list) else [wildcard_paths]
+                            )
                             continue
                         imports[import_name] = {
                             "path": self.resolve_import_path(from_text, path, root_path),

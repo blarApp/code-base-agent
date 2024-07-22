@@ -69,7 +69,10 @@ class PythonParser(BaseParser):
                 from_text = from_statement.text.decode()
                 for import_statement in import_statements[1:]:
                     if import_statement.text.decode() == self.wildcard:
-                        imports["_*wildcard*_"]["path"].append(self.resolve_import_path(from_text, path, root_path))
+                        wildcard_paths = self.resolve_import_path(from_text, path, root_path)
+                        imports["_*wildcard*_"]["path"].extend(
+                            wildcard_paths if isinstance(wildcard_paths, list) else [wildcard_paths]
+                        )
                     imports[import_statement.text.decode()] = {
                         "path": self.resolve_import_path(from_text, path, root_path),
                         "alias": "",

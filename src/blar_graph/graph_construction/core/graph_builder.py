@@ -136,7 +136,6 @@ class GraphConstructor:
                             text = file.read()
                     except UnicodeDecodeError:
                         print(f"Error reading file {entry.path}")
-                        print(traceback.format_exc())
                         continue
 
                     file_node = {
@@ -242,7 +241,11 @@ class GraphConstructor:
         if function_import:
             # Change the directory to complete path if it's an alias else it's assumed to be a regular import
             import_alias = function_import + "." + function_call.split(".")[0]
-            directories_to_check.append(self.global_graph_info.import_aliases.get(import_alias, function_import))
+            # Sometimes the alias import returns a list
+            if isinstance(self.global_graph_info.import_aliases.get(import_alias, function_import), list):
+                directories_to_check.extend(self.global_graph_info.import_aliases.get(import_alias, function_import))
+            else:
+                directories_to_check.append(self.global_graph_info.import_aliases.get(import_alias, function_import))
 
         file_path: str = node["attributes"]["file_path"]
         extension: str = file_path[file_path.rfind(".") :]
@@ -275,7 +278,6 @@ class GraphConstructor:
             candidates = [s for s in root_directory if s.endswith(function_call.split(".")[-1])]
             if len(candidates) == 1:
                 directories_to_check.append(candidates[0])
-
         for directory_index, _ in enumerate(directories_to_check):
             for module in function_call.split("."):
                 if module == alias:

@@ -91,13 +91,13 @@ class Neo4jManager(BaseDBManager):
         # Function to create nodes in the Neo4j database
         with self.driver.session() as session:
             session.write_transaction(
-                self._create_nodes_txn, nodeList, 10000, repoId=self.repoId, entityId=self.entityId
+                self._create_nodes_txn, nodeList, 3000, repoId=self.repoId, entityId=self.entityId
             )
 
     def create_edges(self, edgesList: List[Any]):
         # Function to create edges between nodes in the Neo4j database
         with self.driver.session() as session:
-            session.write_transaction(self._create_edges_txn, edgesList, 10000, entityId=self.entityId)
+            session.write_transaction(self._create_edges_txn, edgesList, 3000, entityId=self.entityId)
 
     def format_query(self, query: str):
         # Function to format the query to be used in the fulltext index
@@ -304,7 +304,7 @@ class Neo4jManager(BaseDBManager):
         CALL apoc.periodic.iterate(
             "UNWIND $nodeList AS node RETURN node",
             "CALL apoc.create.node([node.type, 'NODE'], apoc.map.merge(node.attributes, {repoId: $repoId, entityId: $entityId})) YIELD node as n RETURN count(n) as count",
-            {batchSize: $batchSize, parallel: true, iterateList: true, params: {nodeList: $nodeList, repoId: $repoId, entityId: $entityId}}
+            {batchSize: $batchSize, parallel: false, iterateList: true, params: {nodeList: $nodeList, repoId: $repoId, entityId: $entityId}}
         )
         YIELD batches, total, errorMessages, updateStatistics
         RETURN batches, total, errorMessages, updateStatistics
@@ -323,7 +323,7 @@ class Neo4jManager(BaseDBManager):
         CALL apoc.periodic.iterate(
             'WITH $edgesList AS edges UNWIND edges AS edgeObject RETURN edgeObject',
             'MATCH (node1:NODE {node_id: edgeObject.sourceId, entityId: $entityId}) MATCH (node2:NODE {node_id: edgeObject.targetId, entityId: $entityId}) CALL apoc.create.relationship(node1, edgeObject.type, {}, node2) YIELD rel RETURN rel',
-            {batchSize:$batchSize, parallel:true, iterateList: true, params:{edgesList: $edgesList, entityId: $entityId}}
+            {batchSize:$batchSize, parallel:false, iterateList: true, params:{edgesList: $edgesList, entityId: $entityId}}
         )
         YIELD batches, total, errorMessages, updateStatistics
         RETURN batches, total, errorMessages, updateStatistics
