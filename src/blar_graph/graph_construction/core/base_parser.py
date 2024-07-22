@@ -64,8 +64,6 @@ class BaseParser(ABC):
             extracted_node_id = match
             # Get the mapped_generated_id using the extracted node_id
             mapped_generated_id = global_graph_info.visited_nodes.get(extracted_node_id, {}).get("generated_id")
-            if extracted_node_id == "27168f8c-69b6-4797-a29c-3dc859662b0e":
-                print("test")
             if mapped_generated_id is not None:
                 # Replace the extracted node_id with the mapped_generated_id
                 updated_text = re.sub(
