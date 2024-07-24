@@ -19,9 +19,9 @@ class GraphConstructor:
     skip_tests: bool
     parsers: Parsers
 
-    def __init__(self, graph_manager: Neo4jManager):
+    def __init__(self, graph_manager: Neo4jManager, entity_id: str):
         self.graph_manager = graph_manager
-        self.global_graph_info = GlobalGraphInfo(entity_id=graph_manager.entityId)
+        self.global_graph_info = GlobalGraphInfo(entity_id=entity_id)
         self.parsers = Parsers()
         self.root = None
         self.skip_tests = True
@@ -474,4 +474,4 @@ class GraphConstructor:
         execution_time = end_time - start_time
         print(f"Execution time: {execution_time} seconds")
 
-        self.graph_manager.save_graph(nodes, relationships)
+        return nodes, relationships
