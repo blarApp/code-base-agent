@@ -10,7 +10,7 @@ graph_manager = Neo4jManager(repoId, entity_id)
 
 try:
     graph_constructor = GraphConstructor(graph_manager, entity_id)
-    nodes, relationships = graph_constructor.build_graph("src")
+    nodes, relationships = graph_constructor.build_graph("src/blar_graph/examples/repos/javascript")
     graph_manager.save_graph(nodes, relationships)
     graph_manager.close()
 except Exception as e:
