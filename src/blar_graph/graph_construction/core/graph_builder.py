@@ -92,7 +92,7 @@ class GraphConstructor:
             if self._skip_file(entry.name):
                 continue
             if entry.is_file():
-                parser: BaseParser = self.parsers.get_parser(entry.name)
+                parser: BaseParser | None = self.parsers.get_parser(entry.name)
                 # If the file is a supported language, parse it
                 if parser:
                     entry_name = entry.name.split(parser.extension)[0]

@@ -18,7 +18,7 @@ class Parsers(object):
         self.javascript = JavascriptParser()
         self.typescript = TypescriptParser()
 
-    def get_parser(self, path: str) -> BaseParser:
+    def get_parser(self, path: str) -> BaseParser | None:
         extension = path[path.rfind(".") :]
         if extension == ".py":
             return self.python
