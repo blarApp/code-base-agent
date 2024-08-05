@@ -4,6 +4,7 @@ class GlobalGraphInfo:
     import_aliases: dict
     inheritances: dict
     entity_id: str
+    aliases: dict
 
     def __init__(self, entity_id: str):
         self.visited_nodes = {}
@@ -11,3 +12,4 @@ class GlobalGraphInfo:
         self.import_aliases = {}
         self.inheritances = {}
         self.entity_id = entity_id
+        self.aliases = {}

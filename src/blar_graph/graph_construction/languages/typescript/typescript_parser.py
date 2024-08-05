@@ -11,8 +11,8 @@ from blar_graph.graph_construction.utils.interfaces.GlobalGraphInfo import (
 
 
 class TypescriptParser(BaseParser):
-    def __init__(self):
-        super().__init__("typescript", None, ".ts", "/")
+    def __init__(self, global_graph_info: GlobalGraphInfo):
+        super().__init__("typescript", None, ".ts", "/", global_graph_info)
 
     @property
     def self_syntax(self):
@@ -33,6 +33,10 @@ class TypescriptParser(BaseParser):
             "method_definition": _SignatureCaptureOptions(
                 end_signature_types=[_SignatureCaptureType(type="{", inclusive=False)],
                 name_identifier="property_identifier",
+            ),
+            "lexical_declaration": _SignatureCaptureOptions(
+                end_signature_types=[_SignatureCaptureType(type="{", inclusive=False)],
+                name_identifier="identifier",
             ),
         }
 
@@ -77,9 +81,8 @@ class TypescriptParser(BaseParser):
     @property
     def scopes_names(self):
         return {
-            "function": ["function_declaration", "method_definition"],
+            "function": ["function_declaration", "method_definition", "lexical_declaration"],
             "class": ["class_declaration"],
-            "plain_code_block": ["lexical_declaration"],
         }
 
     @property
@@ -88,7 +91,7 @@ class TypescriptParser(BaseParser):
             "function_declaration": "FUNCTION_DEFINITION",
             "method_definition": "FUNCTION_DEFINITION",
             "class_declaration": "CLASS_DEFINITION",
-            "lexical_declaration": "CODE_BLOCK",
+            "lexical_declaration": "FUNCTION_DEFINITION",
         }
 
     def parse_file(self, file_path: str, root_path: str, global_graph_info: GlobalGraphInfo, level: int):

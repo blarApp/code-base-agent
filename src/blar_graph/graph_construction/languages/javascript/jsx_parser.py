@@ -7,8 +7,8 @@ from blar_graph.graph_construction.utils.interfaces.GlobalGraphInfo import (
 
 
 class JsxParser(BaseParser):
-    def __init__(self):
-        super().__init__("jsx", None, ".jsx", "/")
+    def __init__(self, global_graph_info: GlobalGraphInfo):
+        super().__init__("jsx", None, ".jsx", "/", global_graph_info)
 
     @property
     def self_syntax(self):

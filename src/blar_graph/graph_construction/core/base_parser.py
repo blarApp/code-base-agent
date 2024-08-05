@@ -24,6 +24,7 @@ class BaseParser(ABC):
     wildcard: str
     extension: str
     import_path_separator: str
+    global_graph_info: GlobalGraphInfo
 
     def __init__(
         self,
@@ -31,11 +32,13 @@ class BaseParser(ABC):
         wildcard: str,
         extension: str,
         import_path_separator: str = ".",
+        global_graph_info: GlobalGraphInfo = {"alias": {}},
     ):
         self.language = language
         self.wildcard = wildcard
         self.extension = extension
         self.import_path_separator = import_path_separator
+        self.global_graph_info = global_graph_info
 
     @staticmethod
     def generate_node_id(path: str, company_id: str):
@@ -241,13 +244,14 @@ class BaseParser(ABC):
             global_graph_info.inheritances[node_id] = inheritances
 
         relation_type = scope["type"] if scope else ""
-        relationships.append(
-            {
-                "sourceId": parent_id,
-                "targetId": node_id,
-                "type": self.relation_types_map.get(relation_type, "UNKNOWN"),
-            }
-        )
+        if self.relation_types_map.get(relation_type) is not None:
+            relationships.append(
+                {
+                    "sourceId": parent_id,
+                    "targetId": node_id,
+                    "type": self.relation_types_map.get(relation_type, "UNKNOWN"),
+                }
+            )
 
         start_line, end_line = self._get_lines_range(
             document.text, node.metadata["start_byte"], node.metadata["end_byte"]
@@ -301,16 +305,38 @@ class BaseParser(ABC):
     def resolve_relative_import_path(self, import_statement, current_file_path, project_root):
         if import_statement.startswith(".."):
             import_statement = import_statement[2:]
+            if import_statement.startswith("/"):
+                import_statement = import_statement[1:]
             current_file_path = os.sep.join(current_file_path.split(os.sep)[:-1])
         elif import_statement.startswith("."):
             import_statement = import_statement[1:]
+            if import_statement.startswith("/"):
+                import_statement = import_statement[1:]
         else:
             return self.find_module_path(import_statement, current_file_path, project_root)
 
         return self.resolve_relative_import_path(import_statement, current_file_path, project_root)
 
+    def replace_alias_in_import(self, import_statement, project_root):
+        # Extract the alias (part before the first path separator)
+        alias = import_statement.split(self.import_path_separator)[0]
+
+        # Check if the alias is in the dictionary
+        if alias in self.global_graph_info.aliases:
+            actual_path = self.global_graph_info.aliases[alias]
+            # Replace the alias with the actual path
+            new_path = import_statement.replace(alias, actual_path, 1)
+            new_import_statement = import_statement.replace(import_statement, new_path)
+            # ./ imports are treated differently so we need to make it an absolute import
+            new_import_statement = new_import_statement.replace("./", "/")
+            return new_import_statement
+
+        return import_statement
+
     def resolve_import_path(self, import_statement, current_file_directory, project_root):
         # Handling relative imports
+        if import_statement.startswith("@"):
+            import_statement = self.replace_alias_in_import(import_statement, project_root)
         if import_statement.startswith("."):
             current_file_directory = os.sep.join(current_file_directory.split(os.sep)[:-1])
             return self.resolve_relative_import_path(import_statement, current_file_directory, project_root)
@@ -328,11 +354,16 @@ class BaseParser(ABC):
         while current_dir.startswith(project_root) and (current_dir != "" or project_root != ""):
             possible_path = os.path.join(current_dir, *components)
             # Check for a direct module or package
-            if os.path.exists(possible_path + self.extension) or BaseParser.is_package(possible_path):
+            if self.check_path_exists(possible_path) or BaseParser.is_package(possible_path):
                 return possible_path.replace("/", ".")
             # Move one directory up
             current_dir = os.path.dirname(current_dir)
         return None
+
+    def check_path_exists(self, path):
+        if self.language in ["typescript", "tsx", "javascript", "jsx"]:
+            return any(os.path.exists(path + extension) for extension in ["", ".ts", ".tsx", ".js", ".jsx"])
+        return os.path.exists(path + self.extension)
 
     def _remove_non_ascii(self, text):
         # Define the regular expression pattern to match ascii characters

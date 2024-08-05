@@ -9,8 +9,8 @@ from blar_graph.graph_construction.utils.interfaces.GlobalGraphInfo import (
 
 
 class PythonParser(BaseParser):
-    def __init__(self):
-        super().__init__("python", "*", ".py", ".")
+    def __init__(self, global_graph_info: GlobalGraphInfo):
+        super().__init__("python", "*", ".py", ".", global_graph_info)
 
     @property
     def self_syntax(self):
