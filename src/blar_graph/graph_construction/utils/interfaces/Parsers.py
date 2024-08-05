@@ -8,6 +8,9 @@ from blar_graph.graph_construction.languages.typescript.tsx_parser import TsxPar
 from blar_graph.graph_construction.languages.typescript.typescript_parser import (
     TypescriptParser,
 )
+from blar_graph.graph_construction.utils.interfaces.GlobalGraphInfo import (
+    GlobalGraphInfo,
+)
 
 
 class Parsers(object):
@@ -17,12 +20,12 @@ class Parsers(object):
     tsx: TsxParser
     jsx: JsxParser
 
-    def __init__(self):
-        self.python = PythonParser()
-        self.javascript = JavascriptParser()
-        self.typescript = TypescriptParser()
-        self.tsx = TsxParser()
-        self.jsx = JsxParser()
+    def __init__(self, global_graph_info: GlobalGraphInfo):
+        self.python = PythonParser(global_graph_info)
+        self.javascript = JavascriptParser(global_graph_info)
+        self.typescript = TypescriptParser(global_graph_info)
+        self.tsx = TsxParser(global_graph_info)
+        self.jsx = JsxParser(global_graph_info)
 
     def get_parser(self, path: str) -> BaseParser | None:
         extension = path[path.rfind(".") :]
