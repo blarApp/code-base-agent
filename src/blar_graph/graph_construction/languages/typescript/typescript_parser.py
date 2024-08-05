@@ -11,8 +11,8 @@ from blar_graph.graph_construction.utils.interfaces.GlobalGraphInfo import (
 
 
 class TypescriptParser(BaseParser):
-    def __init__(self):
-        super().__init__("typescript", None, ".ts", "/")
+    def __init__(self, global_graph_info: GlobalGraphInfo):
+        super().__init__("typescript", None, ".ts", "/", global_graph_info)
 
     @property
     def self_syntax(self):

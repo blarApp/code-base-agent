@@ -4,6 +4,7 @@ import traceback
 from typing import List
 
 from blar_graph.db_managers import Neo4jManager
+from blar_graph.graph_construction.core.base_alias_extractor import BaseAliasExtractor
 from blar_graph.graph_construction.core.base_parser import BaseParser
 from blar_graph.graph_construction.utils import format_nodes
 from blar_graph.graph_construction.utils.interfaces.GlobalGraphInfo import (
@@ -18,13 +19,15 @@ class GraphConstructor:
     root: str
     skip_tests: bool
     parsers: Parsers
+    alias_extractor: BaseAliasExtractor
 
     def __init__(self, graph_manager: Neo4jManager, entity_id: str):
         self.graph_manager = graph_manager
         self.global_graph_info = GlobalGraphInfo(entity_id=entity_id)
-        self.parsers = Parsers()
+        self.parsers = Parsers(self.global_graph_info)
         self.root = None
         self.skip_tests = True
+        self.alias_extractor = BaseAliasExtractor()
 
     def _skip_file(self, path: str) -> bool:
         # skip lock files
@@ -41,6 +44,13 @@ class GraphConstructor:
 
     def _skip_directory(self, directory: str) -> bool:
         return directory == "__pycache__" or directory == "node_modules"
+
+    def parse_alias_files(self, root_path: str):
+        for root, _, files in os.walk(root_path):
+            for file in files:
+                if file in self.alias_extractor.alias_extractors:
+                    aliases = self.alias_extractor.extract_aliases(os.path.join(root, file))
+                    self.global_graph_info.aliases.update(aliases)
 
     def _scan_directory(
         self,
@@ -187,6 +197,11 @@ class GraphConstructor:
         import_edges = []
         import_alias = self.global_graph_info.import_aliases.get(path)
         targetId = self.global_graph_info.imports.get(path)
+        # If the child is not found try to link the parent
+        if not targetId:
+            new_path = path[: path.rfind(".")] if "." in path else path
+            targetId = self.global_graph_info.imports.get(new_path)
+
         if not targetId and import_alias:
             if isinstance(import_alias, list):
                 for alias in import_alias:
@@ -209,20 +224,29 @@ class GraphConstructor:
 
     def _relate_imports(self, imports: dict):
         import_edges = []
+        relations_set = set()
+
+        def add_unique_edges(edges):
+            for edge in edges:
+                relation = (edge["sourceId"], edge["targetId"], edge["type"])
+                if relation not in relations_set:
+                    import_edges.append(edge)
+                    relations_set.add(relation)
+
         for file_node_id in imports.keys():
             for imp, import_object in imports[file_node_id].items():
                 path = import_object["path"]
                 if imp == "_*wildcard*_" and path:
                     related_imports = self._relate_wildcard_imports(file_node_id, path)
-                    import_edges.extend(related_imports)
+                    add_unique_edges(related_imports)
                     continue
                 if import_object.get("type") == "package_alias":
                     import_name = import_object.get("import_name")
-                    import_edges.extend(
-                        self._relate_imports_and_directory_imports(file_node_id, f"{path}.{import_name}")
-                    )
+                    related_imports = self._relate_imports_and_directory_imports(file_node_id, f"{path}.{import_name}")
+                    add_unique_edges(related_imports)
                     continue
-                import_edges.extend(self._relate_imports_and_directory_imports(file_node_id, f"{path}.{imp}"))
+                related_imports = self._relate_imports_and_directory_imports(file_node_id, f"{path}.{imp}")
+                add_unique_edges(related_imports)
 
         return import_edges
 
@@ -464,6 +488,8 @@ class GraphConstructor:
         # process every node to create the graph structure
         print("Building graph...")
         start_time = time.time()
+        self.parse_alias_files(path)
+
         nodes, relationships, imports = self._scan_directory(path)
 
         # relate imports between file nodes
