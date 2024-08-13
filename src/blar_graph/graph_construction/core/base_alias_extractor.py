@@ -34,5 +34,10 @@ class BaseAliasExtractor:
         if os.path.exists(file_path):
             extractor = self.alias_extractors.get(os.path.basename(file_path))
             if extractor:
-                return extractor(file_path)
+                try:
+                    result = extractor(file_path)
+                    return result
+                except Exception as e:
+                    print(f"Error extracting aliases from {file_path}: {e}")
+                    return {}
         return {}
