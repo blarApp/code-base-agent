@@ -152,6 +152,7 @@ class GraphConstructor:
                         "type": "FILE",
                         "attributes": {
                             "path": entry.path,
+                            "file_path": entry.path,
                             "name": entry.name,
                             "node_id": BaseParser.generate_node_id(entry.path, self.global_graph_info.entity_id),
                             "text": text,
@@ -366,7 +367,11 @@ class GraphConstructor:
                     return None
         return None
 
-    def __get_inherits_directory(self, node, function_call: str, imports: dict) -> List[str]:
+    def __get_inherits_directory(self, node, function_call: str, imports: dict, processed_calls=set()) -> List[str]:
+        if function_call in processed_calls:
+            return []  # Prevent infinite recursion by returning early if already processed
+        processed_calls.add(function_call)
+
         directories_to_check: List[str] = []
         owner_object = function_call.split(".")[0]
         file_path = node["attributes"]["file_path"]
@@ -398,7 +403,9 @@ class GraphConstructor:
                         inherits_directories_to_check[directory_index] += f".{module}"
             directories_to_check.extend(inherits_directories_to_check)
             new_function_call = class_function_inherit + "." + ".".join(function_call.split(".")[1:])
-            directories_to_check.extend(self.__get_inherits_directory(node, new_function_call, imports))
+            directories_to_check.extend(
+                self.__get_inherits_directory(node, new_function_call, imports, processed_calls)
+            )
         return directories_to_check
 
     def __relate_function_calls(self, node, imports):
