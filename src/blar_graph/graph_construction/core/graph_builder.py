@@ -152,6 +152,7 @@ class GraphConstructor:
                         "type": "FILE",
                         "attributes": {
                             "path": entry.path,
+                            "file_path": entry.path,
                             "name": entry.name,
                             "node_id": BaseParser.generate_node_id(entry.path, self.global_graph_info.entity_id),
                             "text": text,
