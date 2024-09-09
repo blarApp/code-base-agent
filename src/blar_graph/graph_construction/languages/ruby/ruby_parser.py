@@ -2,7 +2,7 @@ import os
 
 import tree_sitter_languages
 
-from blar_graph.graph_construction.core.base_parser import BaseParser
+from blar_graph.graph_construction.languages.base_parser import BaseParser
 from blar_graph.graph_construction.utils.interfaces.GlobalGraphInfo import (
     GlobalGraphInfo,
 )
@@ -10,6 +10,7 @@ from blar_graph.graph_construction.utils.interfaces.GlobalGraphInfo import (
 
 class RubyParser(BaseParser):
     def __init__(self, global_graph_info: GlobalGraphInfo):
+        self.global_graph_info.autoloaded_modules = self._precompute_autoloaded_modules(global_graph_info.root_path)
         super().__init__("ruby", None, ".rb", "/", global_graph_info)
 
     @property
@@ -138,3 +139,24 @@ class RubyParser(BaseParser):
         else:
             # Handling absolute imports
             return self.find_module_path(import_path, current_file_directory, project_root)
+
+    def _precompute_autoloaded_modules(self, root_path: str) -> dict:
+        autoload_base_path = os.path.join(root_path, "app")
+        autoloaded_modules = {}
+        for root, dirs, files in os.walk(autoload_base_path):
+            for file in files:
+                if file.endswith(".rb"):
+                    file_path = os.path.join(root, file)
+                    relative_path = os.path.relpath(file_path, root_path)
+                    module_name = self._get_module_name_from_path(relative_path)
+                    autoloaded_modules[module_name] = {
+                        "path": relative_path,
+                        "type": "import_name",
+                    }
+        return autoloaded_modules
+
+    def _get_module_name_from_path(self, path: str) -> str:
+        # Convert file path to module name
+        parts = path.split(os.sep)
+        parts = [part.replace(".rb", "").capitalize() for part in parts if part != "app"]
+        return "::".join(parts)

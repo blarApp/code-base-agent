@@ -5,12 +5,12 @@ from typing import List
 
 from blar_graph.db_managers import Neo4jManager
 from blar_graph.graph_construction.core.base_alias_extractor import BaseAliasExtractor
-from blar_graph.graph_construction.core.base_parser import BaseParser
+from blar_graph.graph_construction.languages.base_parser import BaseParser
+from blar_graph.graph_construction.languages.Parsers import Parsers
 from blar_graph.graph_construction.utils import format_nodes
 from blar_graph.graph_construction.utils.interfaces.GlobalGraphInfo import (
     GlobalGraphInfo,
 )
-from blar_graph.graph_construction.utils.interfaces.Parsers import Parsers
 
 
 class GraphConstructor:
