@@ -4,6 +4,7 @@ from blar_graph.graph_construction.languages.javascript.javascript_parser import
 )
 from blar_graph.graph_construction.languages.javascript.jsx_parser import JsxParser
 from blar_graph.graph_construction.languages.python.python_parser import PythonParser
+from blar_graph.graph_construction.languages.ruby.ruby_parser import RubyParser
 from blar_graph.graph_construction.languages.typescript.tsx_parser import TsxParser
 from blar_graph.graph_construction.languages.typescript.typescript_parser import (
     TypescriptParser,
@@ -19,6 +20,7 @@ class Parsers(object):
     typescript: TypescriptParser
     tsx: TsxParser
     jsx: JsxParser
+    ruby: RubyParser
 
     def __init__(self, global_graph_info: GlobalGraphInfo):
         self.python = PythonParser(global_graph_info)
@@ -26,18 +28,21 @@ class Parsers(object):
         self.typescript = TypescriptParser(global_graph_info)
         self.tsx = TsxParser(global_graph_info)
         self.jsx = JsxParser(global_graph_info)
+        self.ruby = RubyParser(global_graph_info)
 
     def get_parser(self, path: str) -> BaseParser | None:
         extension = path[path.rfind(".") :]
         if extension == ".py":
             return self.python
-        elif extension == ".js" or extension == ".jsx":
+        elif extension == ".js":
             return self.javascript
+        elif extension == ".jsx":
+            return self.jsx
         elif extension == ".ts":
             return self.typescript
         elif extension == ".tsx":
             return self.tsx
-        elif extension == ".jsx":
-            return self.jsx
+        elif extension == ".rb" or extension == ".erb":
+            return self.ruby
         else:
             return None
