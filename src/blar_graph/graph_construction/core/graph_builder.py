@@ -4,7 +4,6 @@ import traceback
 from typing import List
 
 from blar_graph.db_managers import Neo4jManager
-from blar_graph.graph_construction.core.base_alias_extractor import BaseAliasExtractor
 from blar_graph.graph_construction.languages.base_parser import BaseParser
 from blar_graph.graph_construction.languages.Parsers import Parsers
 from blar_graph.graph_construction.utils import format_nodes
@@ -19,15 +18,13 @@ class GraphConstructor:
     root: str
     skip_tests: bool
     parsers: Parsers
-    alias_extractor: BaseAliasExtractor
 
-    def __init__(self, graph_manager: Neo4jManager, entity_id: str):
+    def __init__(self, graph_manager: Neo4jManager, entity_id: str, root: str):
         self.graph_manager = graph_manager
         self.global_graph_info = GlobalGraphInfo(entity_id=entity_id)
-        self.parsers = Parsers(self.global_graph_info)
-        self.root = None
+        self.parsers = Parsers(self.global_graph_info, root)
+        self.root = root
         self.skip_tests = True
-        self.alias_extractor = BaseAliasExtractor()
 
     def _skip_file(self, path: str) -> bool:
         # skip lock files
@@ -44,13 +41,6 @@ class GraphConstructor:
 
     def _skip_directory(self, directory: str) -> bool:
         return directory == "__pycache__" or directory == "node_modules"
-
-    def parse_alias_files(self, root_path: str):
-        for root, _, files in os.walk(root_path):
-            for file in files:
-                if file in self.alias_extractor.alias_extractors:
-                    aliases = self.alias_extractor.extract_aliases(os.path.join(root, file))
-                    self.global_graph_info.aliases.update(aliases)
 
     def _scan_directory(
         self,
@@ -70,8 +60,6 @@ class GraphConstructor:
 
         if not os.path.exists(path):
             raise FileNotFoundError(f"Directory {path} not found")
-        if self.root is None:
-            self.root = path
         if path.endswith("tests") or path.endswith("test"):
             return nodes, relationships, imports
 
@@ -491,13 +479,12 @@ class GraphConstructor:
 
         return constructors_calls_relations
 
-    def build_graph(self, path):
+    def build_graph(self):
         # process every node to create the graph structure
         print("Building graph...")
         start_time = time.time()
-        self.parse_alias_files(path)
 
-        nodes, relationships, imports = self._scan_directory(path)
+        nodes, relationships, imports = self._scan_directory(self.root)
 
         # relate imports between file nodes
         relationships.extend(self._relate_imports(imports))
