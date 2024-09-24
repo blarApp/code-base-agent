@@ -25,6 +25,7 @@ class BaseParser(ABC):
     extension: str
     import_path_separator: str
     global_graph_info: GlobalGraphInfo
+    arguments_in_function_call: bool = False
 
     def __init__(
         self,
@@ -181,7 +182,9 @@ class BaseParser(ABC):
                     break
 
             if not called_from_assignment:
-                node_text = call_node.text.decode()
+                node_text = (
+                    call_node.text.decode() if not self.arguments_in_function_call else ".".join(decomposed_call)
+                )
                 if self.self_syntax in node_text:
                     if class_name:
                         node_text = class_name + "." + node_text.split(self.self_syntax)[1]
@@ -201,8 +204,9 @@ class BaseParser(ABC):
 
         inheritances_captures = inheritances_query.captures(tree.root_node)
 
-        for inheritance, _ in inheritances_captures:
-            inheritances.append(inheritance.text.decode())
+        for inheritance, inheritance_type in inheritances_captures:
+            if inheritance_type == "inheritance":
+                inheritances.append(inheritance.text.decode())
 
         return inheritances
 
@@ -223,14 +227,13 @@ class BaseParser(ABC):
         parent_level = level
         leaf = False
 
+        function_calls = self._get_function_calls(node, assignment_dict)
         if type_node in self.scopes_names["function"]:
-            function_calls = self._get_function_calls(node, assignment_dict)
             core_node = format_nodes.format_function_node(node, scope, function_calls, file_node_id)
         elif type_node in self.scopes_names["class"]:
             inheritances = self._get_inheritances(node)
-            core_node = format_nodes.format_class_node(node, scope, file_node_id, inheritances)
+            core_node = format_nodes.format_class_node(node, scope, file_node_id, inheritances, function_calls)
         else:
-            function_calls = self._get_function_calls(node, assignment_dict)
             core_node = format_nodes.format_file_node(node, file_path, function_calls)
 
         parent_level = self._get_parent_level(node, global_graph_info, level)

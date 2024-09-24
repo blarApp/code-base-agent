@@ -36,7 +36,6 @@ class GraphConstructor:
         # skip hidden directories
         if path.startswith("."):
             return True
-
         return False
 
     def _skip_directory(self, directory: str) -> bool:
@@ -269,14 +268,17 @@ class GraphConstructor:
         if not function_import:
             directories_to_check.append(node["attributes"]["path"])
             if root_directory != node_directory:
+                scope_directory_added = False
                 for scope in node_directory_list:
                     split_directory: List[str] = node_directory.split("." + scope)
                     scope_directory = ("." + scope).join(split_directory[:-1])
 
                     if scope_directory == root_directory:
                         directories_to_check.append(scope_directory)
+                        scope_directory_added = True
                         break
-                directories_to_check.append(scope_directory)
+                if not scope_directory_added:
+                    directories_to_check.append(scope_directory)
         elif file_imports.get("_*wildcard*_"):
             # See if the import is present as wildcard import (*)
             for wildcard_path in file_imports["_*wildcard*_"]:
@@ -355,7 +357,7 @@ class GraphConstructor:
                     return None
         return None
 
-    def __get_inherits_directory(self, node, function_call: str, imports: dict, processed_calls=set()) -> List[str]:
+    def __get_inherits_directory(self, node, function_call: str, imports: dict, processed_calls: set) -> List[str]:
         if function_call in processed_calls:
             return []  # Prevent infinite recursion by returning early if already processed
         processed_calls.add(function_call)
@@ -403,7 +405,7 @@ class GraphConstructor:
         for function_call in function_calls:
             # Get the directory of the function using the import logic of the language
             directories_to_check = self.__get_directory(node, function_call, imports)
-            inherits_directories_to_check = self.__get_inherits_directory(node, function_call, imports)
+            inherits_directories_to_check = self.__get_inherits_directory(node, function_call, imports, set())
             directories_to_check.extend(inherits_directories_to_check)
             # Look for the node with the definition of the function
             target_object = None
