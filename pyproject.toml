@@ -34,6 +34,7 @@ langchain-openai = "^0.1.1"
 neo4j = "^5.18.0"
 timeout-decorator = "^0.5.0"
 llama-index-packs-code-hierarchy-blar = "^0.1.10"
+json5 = "^0.9.25"
 
 [tool.poetry.group.dev.dependencies]
 isort = "^5.13.2"
