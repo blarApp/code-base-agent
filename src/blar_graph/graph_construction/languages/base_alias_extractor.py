@@ -1,5 +1,6 @@
-import json
 import os
+
+import json5 as json
 
 
 # usual case is {'@': './src'}

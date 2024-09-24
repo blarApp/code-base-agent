@@ -900,6 +900,17 @@ files = [
 ]
 
 [[package]]
+name = "json5"
+version = "0.9.25"
+description = "A Python implementation of the JSON5 data format."
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "json5-0.9.25-py3-none-any.whl", hash = "sha256:34ed7d834b1341a86987ed52f3f76cd8ee184394906b6e22a1e0deb9ab294e8f"},
+    {file = "json5-0.9.25.tar.gz", hash = "sha256:548e41b9be043f9426776f05df8635a00fe06104ea51ed24b67f908856e151ae"},
+]
+
+[[package]]
 name = "jsonpatch"
 version = "1.33"
 description = "Apply JSON-Patches (RFC 6902)"
@@ -1000,13 +1011,13 @@ langchain-core = ">=0.2.38,<0.3.0"
 
 [[package]]
 name = "langsmith"
-version = "0.1.126"
+version = "0.1.127"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "langsmith-0.1.126-py3-none-any.whl", hash = "sha256:16c38ba5dae37a3cc715b6bc5d87d9579228433c2f34d6fa328345ee2b2bcc2a"},
-    {file = "langsmith-0.1.126.tar.gz", hash = "sha256:40f72e2d1d975473dd69269996053122941c1252915bcea55787607e2a7f949a"},
+    {file = "langsmith-0.1.127-py3-none-any.whl", hash = "sha256:b4e8058d16ee0c814b16fae135c1e8817d1f43a38462d7f55e0eb1f87b9526aa"},
+    {file = "langsmith-0.1.127.tar.gz", hash = "sha256:19c6f95d5558180c600455781e6faacc7798d0e1c54d6eb50ffb744d56f02bc9"},
 ]
 
 [package.dependencies]
@@ -2733,4 +2744,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.12"
-content-hash = "f758d121adab88195b918a60b8ab16c8019765e181efdffd8ed4119c728ae8b5"
+content-hash = "bc3c649b646468a9097c1b55ae221f640bc7672ac7d6f672304a6af557ed0122"
