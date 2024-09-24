@@ -9,8 +9,12 @@ graph_manager = Neo4jManager(repoId, entity_id)
 
 
 try:
-    graph_constructor = GraphConstructor(graph_manager, entity_id)
-    nodes, relationships = graph_constructor.build_graph("src")
+    graph_constructor = GraphConstructor(
+        root="src",
+        graph_manager=graph_manager,
+        entity_id=entity_id,
+    )
+    nodes, relationships = graph_constructor.build_graph()
     graph_manager.save_graph(nodes, relationships)
     graph_manager.close()
 except Exception as e:

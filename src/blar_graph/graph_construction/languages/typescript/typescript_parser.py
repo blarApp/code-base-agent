@@ -4,7 +4,7 @@ from llama_index.packs.code_hierarchy.code_hierarchy import (
     _SignatureCaptureType,
 )
 
-from blar_graph.graph_construction.core.base_parser import BaseParser
+from blar_graph.graph_construction.languages.base_parser import BaseParser
 from blar_graph.graph_construction.utils.interfaces.GlobalGraphInfo import (
     GlobalGraphInfo,
 )

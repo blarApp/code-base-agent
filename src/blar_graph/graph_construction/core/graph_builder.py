@@ -4,13 +4,12 @@ import traceback
 from typing import List
 
 from blar_graph.db_managers import Neo4jManager
-from blar_graph.graph_construction.core.base_alias_extractor import BaseAliasExtractor
-from blar_graph.graph_construction.core.base_parser import BaseParser
+from blar_graph.graph_construction.languages.base_parser import BaseParser
+from blar_graph.graph_construction.languages.Parsers import Parsers
 from blar_graph.graph_construction.utils import format_nodes
 from blar_graph.graph_construction.utils.interfaces.GlobalGraphInfo import (
     GlobalGraphInfo,
 )
-from blar_graph.graph_construction.utils.interfaces.Parsers import Parsers
 
 
 class GraphConstructor:
@@ -19,15 +18,13 @@ class GraphConstructor:
     root: str
     skip_tests: bool
     parsers: Parsers
-    alias_extractor: BaseAliasExtractor
 
-    def __init__(self, graph_manager: Neo4jManager, entity_id: str):
+    def __init__(self, graph_manager: Neo4jManager, entity_id: str, root: str):
         self.graph_manager = graph_manager
         self.global_graph_info = GlobalGraphInfo(entity_id=entity_id)
-        self.parsers = Parsers(self.global_graph_info)
-        self.root = None
+        self.parsers = Parsers(self.global_graph_info, root)
+        self.root = root
         self.skip_tests = True
-        self.alias_extractor = BaseAliasExtractor()
 
     def _skip_file(self, path: str) -> bool:
         # skip lock files
@@ -39,18 +36,10 @@ class GraphConstructor:
         # skip hidden directories
         if path.startswith("."):
             return True
-
         return False
 
     def _skip_directory(self, directory: str) -> bool:
         return directory == "__pycache__" or directory == "node_modules"
-
-    def parse_alias_files(self, root_path: str):
-        for root, _, files in os.walk(root_path):
-            for file in files:
-                if file in self.alias_extractor.alias_extractors:
-                    aliases = self.alias_extractor.extract_aliases(os.path.join(root, file))
-                    self.global_graph_info.aliases.update(aliases)
 
     def _scan_directory(
         self,
@@ -70,8 +59,6 @@ class GraphConstructor:
 
         if not os.path.exists(path):
             raise FileNotFoundError(f"Directory {path} not found")
-        if self.root is None:
-            self.root = path
         if path.endswith("tests") or path.endswith("test"):
             return nodes, relationships, imports
 
@@ -281,14 +268,17 @@ class GraphConstructor:
         if not function_import:
             directories_to_check.append(node["attributes"]["path"])
             if root_directory != node_directory:
+                scope_directory_added = False
                 for scope in node_directory_list:
                     split_directory: List[str] = node_directory.split("." + scope)
                     scope_directory = ("." + scope).join(split_directory[:-1])
 
                     if scope_directory == root_directory:
                         directories_to_check.append(scope_directory)
+                        scope_directory_added = True
                         break
-                directories_to_check.append(scope_directory)
+                if not scope_directory_added:
+                    directories_to_check.append(scope_directory)
         elif file_imports.get("_*wildcard*_"):
             # See if the import is present as wildcard import (*)
             for wildcard_path in file_imports["_*wildcard*_"]:
@@ -367,7 +357,7 @@ class GraphConstructor:
                     return None
         return None
 
-    def __get_inherits_directory(self, node, function_call: str, imports: dict, processed_calls=set()) -> List[str]:
+    def __get_inherits_directory(self, node, function_call: str, imports: dict, processed_calls: set) -> List[str]:
         if function_call in processed_calls:
             return []  # Prevent infinite recursion by returning early if already processed
         processed_calls.add(function_call)
@@ -415,7 +405,7 @@ class GraphConstructor:
         for function_call in function_calls:
             # Get the directory of the function using the import logic of the language
             directories_to_check = self.__get_directory(node, function_call, imports)
-            inherits_directories_to_check = self.__get_inherits_directory(node, function_call, imports)
+            inherits_directories_to_check = self.__get_inherits_directory(node, function_call, imports, set())
             directories_to_check.extend(inherits_directories_to_check)
             # Look for the node with the definition of the function
             target_object = None
@@ -491,13 +481,12 @@ class GraphConstructor:
 
         return constructors_calls_relations
 
-    def build_graph(self, path):
+    def build_graph(self):
         # process every node to create the graph structure
         print("Building graph...")
         start_time = time.time()
-        self.parse_alias_files(path)
 
-        nodes, relationships, imports = self._scan_directory(path)
+        nodes, relationships, imports = self._scan_directory(self.root)
 
         # relate imports between file nodes
         relationships.extend(self._relate_imports(imports))

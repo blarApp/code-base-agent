@@ -33,7 +33,7 @@ langchain = "^0.2.0"
 langchain-openai = "^0.1.1"
 neo4j = "^5.18.0"
 timeout-decorator = "^0.5.0"
-llama-index-packs-code-hierarchy-blar = "^0.1.7"
+llama-index-packs-code-hierarchy-blar = "^0.1.10"
 
 [tool.poetry.group.dev.dependencies]
 isort = "^5.13.2"
