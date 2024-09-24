@@ -2,7 +2,7 @@ class GlobalGraphInfo:
     visited_nodes: dict
     imports: dict
     import_aliases: dict
-    auto_loaded_imports: dict
+    autoloaded_modules: dict
     inheritances: dict
     entity_id: str
     aliases: dict
