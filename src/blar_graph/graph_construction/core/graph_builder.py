@@ -1,9 +1,9 @@
 import os
 import time
 import traceback
-from typing import List
+from concurrent.futures import ThreadPoolExecutor
+from typing import List, Optional
 
-from blar_graph.db_managers import Neo4jManager
 from blar_graph.graph_construction.languages.base_parser import BaseParser
 from blar_graph.graph_construction.languages.Parsers import Parsers
 from blar_graph.graph_construction.utils import format_nodes
@@ -13,18 +13,19 @@ from blar_graph.graph_construction.utils.interfaces.GlobalGraphInfo import (
 
 
 class GraphConstructor:
-    graph_manager: Neo4jManager
     global_graph_info: GlobalGraphInfo
     root: str
     skip_tests: bool
     parsers: Parsers
+    max_workers: int = 50
 
-    def __init__(self, graph_manager: Neo4jManager, entity_id: str, root: str):
-        self.graph_manager = graph_manager
+    def __init__(self, entity_id: str, root: str, max_workers: Optional[int] = None):
         self.global_graph_info = GlobalGraphInfo(entity_id=entity_id)
         self.parsers = Parsers(self.global_graph_info, root)
         self.root = root
         self.skip_tests = True
+        if max_workers is not None:
+            self.max_workers = max_workers
 
     def _skip_file(self, path: str) -> bool:
         # skip lock files
@@ -33,12 +34,18 @@ class GraphConstructor:
         # skip tests and legacy directories
         if path in ["legacy", "test"] and self.skip_tests:
             return True
-        # skip hidden directories
+        # skip hidden files
         if path.startswith("."):
+            return True
+        # skip images
+        if path.endswith(".png") or path.endswith(".jpg"):
             return True
         return False
 
     def _skip_directory(self, directory: str) -> bool:
+        # skip hidden directories
+        if directory.startswith("."):
+            return True
         return directory == "__pycache__" or directory == "node_modules"
 
     def _scan_directory(
@@ -49,6 +56,7 @@ class GraphConstructor:
         imports: dict = None,
         parent_id: str = None,
         level: int = 0,
+        visited=set(),
     ):
         if nodes is None:
             nodes = []
@@ -56,11 +64,17 @@ class GraphConstructor:
             relationships = []
         if imports is None:
             imports = {}
+        if visited is None:
+            visited = set()
 
         if not os.path.exists(path):
             raise FileNotFoundError(f"Directory {path} not found")
         if path.endswith("tests") or path.endswith("test"):
             return nodes, relationships, imports
+
+        if path in visited:
+            return nodes, relationships, imports
+        visited.add(path)
 
         # Check if the directory is a package, logic for python
         package = BaseParser.is_package(path)
@@ -85,9 +99,11 @@ class GraphConstructor:
             )
 
         nodes.append(directory_node)
-        for entry in os.scandir(path):
+        entries = list(os.scandir(path))
+
+        def process_entry(entry):
             if self._skip_file(entry.name):
-                continue
+                return
             if entry.is_file():
                 parser: BaseParser | None = self.parsers.get_parser(entry.name)
                 # If the file is a supported language, parse it
@@ -103,10 +119,10 @@ class GraphConstructor:
                     except Exception:
                         print(f"Error {entry.path}")
                         print(traceback.format_exc())
-                        continue
+                        return
                     if not processed_nodes:
                         self.global_graph_info.import_aliases.update(file_imports)
-                        continue
+                        return
                     file_root_node_id = processed_nodes[0]["attributes"]["node_id"]
 
                     nodes.extend(processed_nodes)
@@ -133,7 +149,7 @@ class GraphConstructor:
                             text = file.read()
                     except UnicodeDecodeError:
                         print(f"Error reading file {entry.path}")
-                        continue
+                        return
 
                     file_node = {
                         "type": "FILE",
@@ -155,11 +171,18 @@ class GraphConstructor:
                     )
             if entry.is_dir():
                 if self._skip_directory(entry.name):
-                    continue
+                    return
 
-                nodes, relationships, imports = self._scan_directory(
-                    entry.path, nodes, relationships, imports, directory_node_id, level + 1
+                sub_nodes, sub_relationships, sub_imports = self._scan_directory(
+                    entry.path, [], [], {}, directory_node_id, level + 1, visited
                 )
+                nodes.extend(sub_nodes)
+                relationships.extend(sub_relationships)
+                imports.update(sub_imports)
+
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            executor.map(process_entry, entries)
+
         return nodes, relationships, imports
 
     def _relate_wildcard_imports(self, file_node_id: str, imports_list: list):
