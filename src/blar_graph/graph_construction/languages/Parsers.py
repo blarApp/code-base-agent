@@ -18,6 +18,7 @@ from blar_graph.graph_construction.utils.interfaces.GlobalGraphInfo import (
     GlobalGraphInfo,
 )
 
+from functools import lru_cache
 
 class Parsers(object):
     python: PythonParser
@@ -37,6 +38,7 @@ class Parsers(object):
         self.ruby = RubyParser(global_graph_info)
         self._run_precompute_tasks(root_path, global_graph_info)
 
+    @lru_cache(maxsize=7)
     def get_parser(self, path: str) -> BaseParser | None:
         extension = path[path.rfind(".") :]
         if extension == ".py":

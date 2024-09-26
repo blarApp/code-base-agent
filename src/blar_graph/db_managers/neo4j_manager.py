@@ -23,7 +23,7 @@ class Neo4jManager(BaseDBManager):
         retries = 3
         for attempt in range(retries):
             try:
-                self.driver = GraphDatabase.driver(uri, auth=(user, password), max_connection_pool_size=max_connections)
+                self.driver = GraphDatabase.driver(uri, auth=(user, password), max_connection_pool_size=max_connections,  connection_timeout=120, max_transaction_retry_time=30)
                 break
             except exceptions.ServiceUnavailable as e:
                 if attempt < retries - 1:
@@ -91,7 +91,7 @@ class Neo4jManager(BaseDBManager):
         # Function to create nodes in the Neo4j database
         with self.driver.session() as session:
             session.write_transaction(
-                self._create_nodes_txn, nodeList, 3000, repoId=self.repoId, entityId=self.entityId
+                self._create_nodes_txn, nodeList, 4000, repoId=self.repoId, entityId=self.entityId
             )
 
     def create_edges(self, edgesList: List[Any]):
