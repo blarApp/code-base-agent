@@ -1,52 +1,52 @@
 import os
 import time
 import traceback
-from concurrent.futures import ThreadPoolExecutor
-from typing import List, Optional
+from typing import List
+from functools import lru_cache
 
+from blar_graph.db_managers import Neo4jManager
 from blar_graph.graph_construction.languages.base_parser import BaseParser
 from blar_graph.graph_construction.languages.Parsers import Parsers
 from blar_graph.graph_construction.utils import format_nodes
-from blar_graph.graph_construction.utils.interfaces.GlobalGraphInfo import (
-    GlobalGraphInfo,
-)
+from blar_graph.graph_construction.utils.interfaces.GlobalGraphInfo import GlobalGraphInfo
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from queue import Queue
+import threading
 
 class GraphConstructor:
+    graph_manager: Neo4jManager
     global_graph_info: GlobalGraphInfo
     root: str
     skip_tests: bool
     parsers: Parsers
-    max_workers: int = 50
 
-    def __init__(self, entity_id: str, root: str, max_workers: Optional[int] = None):
+    def __init__(self, graph_manager: Neo4jManager, entity_id: str, root: str):
+        self.graph_manager = graph_manager
         self.global_graph_info = GlobalGraphInfo(entity_id=entity_id)
         self.parsers = Parsers(self.global_graph_info, root)
         self.root = root
         self.skip_tests = True
-        if max_workers is not None:
-            self.max_workers = max_workers
 
+    #@lru_cache(maxsize=None)
     def _skip_file(self, path: str) -> bool:
-        # skip lock files
-        if path.endswith("lock") or path == "package-lock.json" or path == "yarn.lock":
+        skipped_extensions = {".png", ".bmp", ".jpeg", ".sqlite3", ".gif", ".pkl", ".msg", ".jpg", ".pdf", ".PNG" , ".bin", ".index"}
+        skipped_filenames = {"package-lock.json", "yarn.lock"}
+        
+        if path.startswith(".") or path.endswith("lock") or any(path.endswith(ext) for ext in skipped_extensions):
             return True
-        # skip tests and legacy directories
-        if path in ["legacy", "test"] and self.skip_tests:
-            return True
-        # skip hidden files
-        if path.startswith("."):
-            return True
-        # skip images
-        if path.endswith(".png") or path.endswith(".jpg"):
+        if path in skipped_filenames or (self.skip_tests and ("test" in path or "legacy" in path)):
             return True
         return False
 
+    #@lru_cache(maxsize=None)
     def _skip_directory(self, directory: str) -> bool:
-        # skip hidden directories
-        if directory.startswith("."):
-            return True
         return directory == "__pycache__" or directory == "node_modules"
+
+    @lru_cache(maxsize=None)
+    def _is_package(self, path: str) -> bool:
+        return BaseParser.is_package(path)
+
 
     def _scan_directory(
         self,
@@ -56,7 +56,6 @@ class GraphConstructor:
         imports: dict = None,
         parent_id: str = None,
         level: int = 0,
-        visited=set(),
     ):
         if nodes is None:
             nodes = []
@@ -64,21 +63,14 @@ class GraphConstructor:
             relationships = []
         if imports is None:
             imports = {}
-        if visited is None:
-            visited = set()
 
         if not os.path.exists(path):
             raise FileNotFoundError(f"Directory {path} not found")
         if path.endswith("tests") or path.endswith("test"):
             return nodes, relationships, imports
 
-        if path in visited:
-            return nodes, relationships, imports
-        visited.add(path)
-
-        # Check if the directory is a package, logic for python
+        # Check if the directory is a package
         package = BaseParser.is_package(path)
-
         core_directory_node = format_nodes.format_directory_node(path, package, level)
         directory_node_id = BaseParser.generate_node_id(path, self.global_graph_info.entity_id)
 
@@ -86,7 +78,6 @@ class GraphConstructor:
             **core_directory_node,
             "attributes": {**core_directory_node["attributes"], "node_id": directory_node_id},
         }
-
         directory_path = core_directory_node["attributes"]["path"]
 
         if parent_id is not None:
@@ -97,17 +88,17 @@ class GraphConstructor:
                     "type": "CONTAINS",
                 }
             )
-
+        
         nodes.append(directory_node)
-        entries = list(os.scandir(path))
 
-        def process_entry(entry):
-            if self._skip_file(entry.name):
-                return
+        # Use a generator to efficiently scan and process directory entries
+        entries = (entry for entry in os.scandir(path) if not self._skip_file(entry.name) and not self._skip_directory(entry.name))
+        
+        for entry in entries:
             if entry.is_file():
-                parser: BaseParser | None = self.parsers.get_parser(entry.name)
-                # If the file is a supported language, parse it
+                parser = self.parsers.get_parser(entry.name)
                 if parser:
+                    # Process supported files
                     entry_name = entry.name.split(parser.extension)[0]
                     try:
                         processed_nodes, relations, file_imports = parser.parse_file(
@@ -117,39 +108,37 @@ class GraphConstructor:
                             level=level,
                         )
                     except Exception:
-                        print(f"Error {entry.path}")
-                        print(traceback.format_exc())
-                        return
-                    if not processed_nodes:
-                        self.global_graph_info.import_aliases.update(file_imports)
-                        return
-                    file_root_node_id = processed_nodes[0]["attributes"]["node_id"]
+                        print(f"Error processing file: {entry.path}")
+                        continue
 
-                    nodes.extend(processed_nodes)
-                    relationships.extend(relations)
-                    relationships.append(
-                        {
-                            "sourceId": directory_node_id,
-                            "targetId": file_root_node_id,
-                            "type": "CONTAINS",
+                    if processed_nodes:
+                        file_root_node_id = processed_nodes[0]["attributes"]["node_id"]
+                        nodes.extend(processed_nodes)
+                        relationships.extend(relations)
+                        relationships.append(
+                            {
+                                "sourceId": directory_node_id,
+                                "targetId": file_root_node_id,
+                                "type": "CONTAINS",
+                            }
+                        )
+                        global_import_key = (directory_path + entry_name).replace("/", ".")
+                        self.global_graph_info.imports[global_import_key] = {
+                            "id": file_root_node_id,
+                            "type": "FILE",
+                            "node": processed_nodes[0],
                         }
-                    )
-                    imports.update(file_imports)
-
-                    global_import_key = (directory_path + entry_name).replace("/", ".")
-                    self.global_graph_info.imports[global_import_key] = {
-                        "id": file_root_node_id,
-                        "type": "FILE",
-                        "node": processed_nodes[0],
-                    }
-                # If the file is not a supported language, only make the file node with all the text
+                        imports.update(file_imports)
+                    else:
+                        self.global_graph_info.import_aliases.update(file_imports)
                 else:
+                    # Process unsupported files (avoid reading whole file unless necessary)
                     try:
                         with open(entry.path, "r", encoding="utf-8") as file:
-                            text = file.read()
+                            text = file.read()  
                     except UnicodeDecodeError:
-                        print(f"Error reading file {entry.path}")
-                        return
+                        print(f"Error reading file: {entry.path}")
+                        continue
 
                     file_node = {
                         "type": "FILE",
@@ -169,19 +158,14 @@ class GraphConstructor:
                             "type": "CONTAINS",
                         }
                     )
-            if entry.is_dir():
-                if self._skip_directory(entry.name):
-                    return
-
+            elif entry.is_dir():
+                # Recursively scan subdirectories
                 sub_nodes, sub_relationships, sub_imports = self._scan_directory(
-                    entry.path, [], [], {}, directory_node_id, level + 1, visited
+                    entry.path, [], [], {}, directory_node_id, level + 1
                 )
                 nodes.extend(sub_nodes)
                 relationships.extend(sub_relationships)
                 imports.update(sub_imports)
-
-        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-            executor.map(process_entry, entries)
 
         return nodes, relationships, imports
 
