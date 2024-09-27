@@ -1,7 +1,7 @@
 import os
 import time
 import traceback
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Optional
 
 from blar_graph.graph_construction.languages.base_parser import BaseParser
@@ -181,7 +181,12 @@ class GraphConstructor:
                 imports.update(sub_imports)
 
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-            executor.map(process_entry, entries)
+            futures = [executor.submit(process_entry, entry) for entry in entries]
+            for future in as_completed(futures):
+                try:
+                    future.result()
+                except Exception as e:
+                    print(f"Error processing entry: {e}")
 
         return nodes, relationships, imports
 
