@@ -2,7 +2,7 @@ import os
 import time
 import traceback
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import List, Optional
+from typing import Dict, List, Optional, Set, Tuple
 
 from blar_graph.graph_construction.languages.base_parser import BaseParser
 from blar_graph.graph_construction.languages.Parsers import Parsers
@@ -51,21 +51,16 @@ class GraphConstructor:
     def _scan_directory(
         self,
         path: str,
-        nodes: list = None,
-        relationships: list = None,
-        imports: dict = None,
-        parent_id: str = None,
+        parent_id: Optional[str] = None,
         level: int = 0,
-        visited=set(),
-    ):
-        if nodes is None:
-            nodes = []
-        if relationships is None:
-            relationships = []
-        if imports is None:
-            imports = {}
+        visited: Optional[Set[str]] = None,
+    ) -> Tuple[List[Dict], List[Dict], Dict]:
         if visited is None:
             visited = set()
+
+        nodes: List[Dict] = []
+        relationships: List[Dict] = []
+        imports: Dict = {}
 
         if not os.path.exists(path):
             raise FileNotFoundError(f"Directory {path} not found")
@@ -99,11 +94,21 @@ class GraphConstructor:
             )
 
         nodes.append(directory_node)
-        entries = list(os.scandir(path))
+        try:
+            entries = list(os.scandir(path))
+        except PermissionError:
+            print(f"Permission denied: {path}")
+            return nodes, relationships, imports
 
-        def process_entry(entry):
+        def process_entry(entry) -> Tuple[List[Dict], List[Dict], Dict, Set[str]]:
+            local_nodes: List[Dict] = []
+            local_relationships: List[Dict] = []
+            local_imports: Dict = {}
+            local_visited: Set[str] = set()
+
             if self._skip_file(entry.name):
-                return
+                return local_nodes, local_relationships, local_imports, local_visited
+
             if entry.is_file():
                 parser: BaseParser | None = self.parsers.get_parser(entry.name)
                 # If the file is a supported language, parse it
@@ -117,39 +122,38 @@ class GraphConstructor:
                             level=level,
                         )
                     except Exception:
-                        print(f"Error {entry.path}")
+                        print(f"Error parsing file {entry.path}")
                         print(traceback.format_exc())
-                        return
-                    if not processed_nodes:
-                        self.global_graph_info.import_aliases.update(file_imports)
-                        return
-                    file_root_node_id = processed_nodes[0]["attributes"]["node_id"]
+                        return local_nodes, local_relationships, local_imports, local_visited
 
-                    nodes.extend(processed_nodes)
-                    relationships.extend(relations)
-                    relationships.append(
-                        {
-                            "sourceId": directory_node_id,
-                            "targetId": file_root_node_id,
-                            "type": "CONTAINS",
+                    if processed_nodes:
+                        file_root_node_id = processed_nodes[0]["attributes"]["node_id"]
+                        local_nodes.extend(processed_nodes)
+                        local_relationships.extend(relations)
+                        local_relationships.append(
+                            {
+                                "sourceId": directory_node_id,
+                                "targetId": file_root_node_id,
+                                "type": "CONTAINS",
+                            }
+                        )
+                        local_imports.update(file_imports)
+
+                        global_import_key = (directory_path + entry_name).replace("/", ".")
+                        self.global_graph_info.imports[global_import_key] = {
+                            "id": file_root_node_id,
+                            "type": "FILE",
+                            "node": processed_nodes[0],
                         }
-                    )
-                    imports.update(file_imports)
-
-                    global_import_key = (directory_path + entry_name).replace("/", ".")
-                    self.global_graph_info.imports[global_import_key] = {
-                        "id": file_root_node_id,
-                        "type": "FILE",
-                        "node": processed_nodes[0],
-                    }
-                # If the file is not a supported language, only make the file node with all the text
+                    else:
+                        self.global_graph_info.import_aliases.update(file_imports)
                 else:
                     try:
                         with open(entry.path, "r", encoding="utf-8") as file:
                             text = file.read()
                     except UnicodeDecodeError:
                         print(f"Error reading file {entry.path}")
-                        return
+                        return local_nodes, local_relationships, local_imports, local_visited
 
                     file_node = {
                         "type": "FILE",
@@ -161,32 +165,42 @@ class GraphConstructor:
                             "text": text,
                         },
                     }
-                    nodes.append(file_node)
-                    relationships.append(
+                    local_nodes.append(file_node)
+                    local_relationships.append(
                         {
                             "sourceId": directory_node_id,
                             "targetId": file_node["attributes"]["node_id"],
                             "type": "CONTAINS",
                         }
                     )
-            if entry.is_dir():
+            elif entry.is_dir():
                 if self._skip_directory(entry.name):
-                    return
+                    return local_nodes, local_relationships, local_imports, local_visited
 
                 sub_nodes, sub_relationships, sub_imports = self._scan_directory(
-                    entry.path, [], [], {}, directory_node_id, level + 1, visited
+                    entry.path, directory_node_id, level + 1, visited
                 )
-                nodes.extend(sub_nodes)
-                relationships.extend(sub_relationships)
-                imports.update(sub_imports)
+                local_nodes.extend(sub_nodes)
+                local_relationships.extend(sub_relationships)
+                local_imports.update(sub_imports)
 
-        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-            futures = [executor.submit(process_entry, entry) for entry in entries]
-            for future in as_completed(futures):
+            return local_nodes, local_relationships, local_imports, local_visited
+
+        with ThreadPoolExecutor(max_workers=min(self.max_workers, os.cpu_count() or 1)) as executor:
+            # Submit all entries to the executor
+            future_to_entry = {executor.submit(process_entry, entry): entry for entry in entries}
+
+            for future in as_completed(future_to_entry):
                 try:
-                    future.result()
-                except Exception as e:
-                    print(f"Error processing entry: {e}")
+                    entry_nodes, entry_relationships, entry_imports, entry_visited = future.result()
+                    nodes.extend(entry_nodes)
+                    relationships.extend(entry_relationships)
+                    imports.update(entry_imports)
+                    visited.update(entry_visited)
+                except Exception as exc:
+                    entry = future_to_entry[future]
+                    print(f"Generated an exception: {entry.path} -> {exc}")
+                    traceback.print_exc()
 
         return nodes, relationships, imports
 
