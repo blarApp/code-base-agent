@@ -167,3 +167,5 @@ cython_debug/
 blar-example-repos/
 src/blar_graph/examples/*
 !src/blar_graph/examples/*.ipynb
+
+.python-version
