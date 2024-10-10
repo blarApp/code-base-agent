@@ -43,14 +43,10 @@ class Parsers(object):
             return self.python
         elif extension == ".js":
             return self.javascript
-        elif extension == ".jsx":
-            return self.jsx
         elif extension == ".ts":
             return self.typescript
-        elif extension == ".tsx":
+        elif extension == ".tsx" or extension == ".jsx":  # Treat .jsx as .tsx
             return self.tsx
-        elif extension == ".rb":
-            return self.ruby
         else:
             return None
 
