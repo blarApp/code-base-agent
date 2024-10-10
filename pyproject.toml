@@ -15,7 +15,7 @@ profile = "black"
 
 [tool.poetry]
 name = "blar-graph"
-version = "1.1.4"
+version = "1.1.5"
 description = "Llm agent to search within a graph"
 authors = ["Benjamín Errazuriz <benjamin@blar.io>", "José Domínguez <jose@blar.io>"]
 readme = "README.md"
@@ -29,8 +29,6 @@ exclude = ["src/blar_graph/examples/*"]
 python = ">=3.9,<3.12"
 python-dotenv = "^1.0.1"
 tree-sitter-languages = "^1.10.2"
-langchain = "^0.2.0"
-langchain-openai = "^0.1.1"
 neo4j = "^5.18.0"
 timeout-decorator = "^0.5.0"
 llama-index-packs-code-hierarchy-blar = "^0.1.10"
@@ -40,6 +38,8 @@ json5 = "^0.9.25"
 isort = "^5.13.2"
 black = "^24.3.0"
 pre-commit = "^3.7.0"
+langchain = "^0.3.3"
+langchain-openai = "^0.2.2"
 
 [tool.ruff]
 line-length = 120
