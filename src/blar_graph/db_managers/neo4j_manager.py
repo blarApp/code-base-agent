@@ -126,6 +126,7 @@ class Neo4jManager(BaseDBManager):
             query = query.replace(character, f"\\{character}")
         return query
 
+    # TODO: This method may need to be removed
     def get_node_by_id(self, node_id: str):
         query = """
         MATCH (n)
@@ -145,6 +146,35 @@ class Neo4jManager(BaseDBManager):
                 "text": node.get("text"),
             }
             return node_result, neighbours
+
+    def get_node_by_path(self, path: str):
+        query = """
+        MATCH (n)
+        WHERE n.path = $path
+        RETURN n, labels(n) AS labels
+        """
+        with self.driver.session() as session:
+            result = session.run(query, {"path": path})
+
+            # Check if result is empty
+            if result.peek() is None:
+                print(f"No node found for path: {path}")
+                return None, None
+
+            record = result.single()
+
+            node = record["n"]
+            labels = record["labels"]
+            node_result = {
+                "node_id": node.get("node_id"),
+                "node_name": node.get("name"),
+                "file_path": node.get("file_path"),
+                "start_line": node.get("start_line"),
+                "end_line": node.get("end_line"),
+                "text": node.get("text"),
+                "labels": labels,
+            }
+            return node_result
 
     def get_whole_graph(self, result_format: str = "data"):
         query = "match (n {repoId: $repoId})-[r]-(m) return n, m, r"

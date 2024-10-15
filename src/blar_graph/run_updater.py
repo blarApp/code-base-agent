@@ -14,12 +14,13 @@ def main():
         graph_constructor = GraphUpdater(
             root="/home/juan/devel/blar/git-webhook-tester",
             entity_id=entity_id,
-            max_workers=100,
+            max_workers=1,
             whitelisted_files=["main.py"],
+            graph_manager=graph_manager,
         )
         nodes, relationships = graph_constructor.build_graph()
-        # graph_manager.save_graph(nodes, relationships)
-        # graph_manager.close()
+        graph_manager.save_graph(nodes, relationships)
+        graph_manager.close()
     except Exception as e:
         print(e)
         print(traceback.format_exc())

@@ -11,7 +11,7 @@ def main():
 
     try:
         graph_constructor = GraphConstructor(
-            root="src/blar_graph/examples/repos/ruby",
+            root="/home/juan/devel/blar/git-webhook-tester",
             entity_id=entity_id,
             max_workers=100,
         )

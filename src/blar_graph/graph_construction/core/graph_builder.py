@@ -225,14 +225,16 @@ class GraphConstructor:
     # Recursive functions to relate imports
     def _relate_imports_and_directory_imports(self, file_node_id: str, path: str, visited_paths=set()):
         import_edges = []
-        import_alias = self.global_graph_info.import_aliases.get(path)
-        targetId = self.global_graph_info.imports.get(path)
+        import_alias = self._get_import_alias_from_global_graph_info(path)
+        targetNode = self._get_import_from_global_graph_info(path)
         # If the child is not found try to link the parent
-        if not targetId:
-            new_path = path[: path.rfind(".")] if "." in path else path
-            targetId = self.global_graph_info.imports.get(new_path)
 
-        if not targetId and import_alias:
+        if not targetNode:
+            # Remove last part of the path to get the parent
+            new_path = path[: path.rfind(".")] if "." in path else path
+            targetNode = self._get_import_from_global_graph_info(new_path)
+
+        if not targetNode and import_alias:
             if isinstance(import_alias, list):
                 for alias in import_alias:
                     if alias not in visited_paths:
@@ -241,16 +243,22 @@ class GraphConstructor:
                             self._relate_imports_and_directory_imports(file_node_id, alias, visited_paths)
                         )
             else:
-                targetId = self.global_graph_info.imports.get(import_alias)
-        if targetId:
+                targetNode = self._get_import_from_global_graph_info(import_alias)
+        if targetNode:
             import_edges.append(
                 {
                     "sourceId": file_node_id,
-                    "targetId": targetId["id"],
+                    "targetId": targetNode["id"],
                     "type": "IMPORTS",
                 }
             )
         return import_edges
+
+    def _get_import_alias_from_global_graph_info(self, path):
+        return self.global_graph_info.import_aliases.get(path)
+
+    def _get_import_from_global_graph_info(self, path):
+        return self.global_graph_info.imports.get(path)
 
     def _relate_imports(self, imports: dict):
         import_edges = []
@@ -452,8 +460,9 @@ class GraphConstructor:
             # Look for the node with the definition of the function
             target_object = None
             for directory in directories_to_check:
-                if self.global_graph_info.imports.get(directory):
-                    target_object = self.global_graph_info.imports.get(directory)
+                new_target_object = self._get_import_from_global_graph_info(directory)
+                if new_target_object:
+                    target_object = new_target_object
                     break
 
             if target_object:
@@ -537,5 +546,9 @@ class GraphConstructor:
         end_time = time.time()
         execution_time = end_time - start_time
         print(f"Execution time: {execution_time} seconds")
+
+        print("Nodes", nodes)
+        print("Relationships", relationships)
+        print("Imports", imports)
 
         return nodes, relationships
