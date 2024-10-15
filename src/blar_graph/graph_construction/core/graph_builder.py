@@ -505,8 +505,9 @@ class GraphConstructor:
             # Look for the node with the definition of the class
             target_class = None
             for directory in directories_to_check:
-                if self.global_graph_info.imports.get(directory):
-                    target_class = self.global_graph_info.imports.get(directory)
+                new_target_class = self._get_import_from_global_graph_info(directory)
+                if new_target_class:
+                    target_class = new_target_class
                     break
 
             if target_class:
