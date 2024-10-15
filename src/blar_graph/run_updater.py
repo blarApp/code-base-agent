@@ -7,7 +7,7 @@ from blar_graph.graph_construction.core.graph_updater import GraphUpdater
 
 def main():
     repoId = "test"
-    entity_id = "test"
+    entity_id = "test_updated"
     graph_manager = Neo4jManager(repoId, entity_id)
 
     try:

@@ -192,6 +192,14 @@ class Neo4jManager(BaseDBManager):
                 return result.graph()
             return result.data()
 
+    def delete_nodes_by_file_path(self, file_path: str):
+        query = """
+        MATCH (n {file_path: $file_path})
+        DETACH DELETE n
+        """
+        with self.driver.session() as session:
+            session.run(query, {"file_path": file_path})
+
     def search_code(self, query: str):
         # Function to get code from the Neo4j database based on a keyword query
         formatted_query = self.format_query(query)
