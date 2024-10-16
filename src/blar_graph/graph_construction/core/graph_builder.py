@@ -31,9 +31,6 @@ class GraphConstructor:
         # skip lock files
         if path.endswith("lock") or path == "package-lock.json" or path == "yarn.lock":
             return True
-        # skip tests and legacy directories
-        if path in ["legacy", "test"] and self.skip_tests:
-            return True
         # skip hidden files
         if path.startswith("."):
             return True
@@ -46,6 +43,15 @@ class GraphConstructor:
         # skip hidden directories
         if directory.startswith("."):
             return True
+
+        # skip tests and legacy directories
+        if directory in ["legacy", "test"] and self.skip_tests:
+            return True
+
+        # skip hidden directories
+        if directory.startswith("."):
+            return True
+
         return directory == "__pycache__" or directory == "node_modules"
 
     def _scan_directory(
@@ -106,10 +112,10 @@ class GraphConstructor:
             local_imports: Dict = {}
             local_visited: Set[str] = set()
 
-            if self._skip_file(entry.name):
-                return local_nodes, local_relationships, local_imports, local_visited
-
             if entry.is_file():
+                if self._skip_file(entry.name):
+                    return local_nodes, local_relationships, local_imports, local_visited
+
                 parser: BaseParser | None = self.parsers.get_parser(entry.name)
                 # If the file is a supported language, parse it
                 if parser:
