@@ -16,8 +16,8 @@ def create_graph(graph_manager, entity_id):
     graph_manager.save_graph(nodes, relationships)
 
 
-def delete_nodes(graph_manager, path, entity_id):
-    graph_manager.delete_nodes_by_file_path(path, entity_id)
+def delete_nodes(graph_manager, path):
+    graph_manager.delete_nodes_by_file_path(path)
 
 
 def update_graph(graph_manager, entity_id, whitelisted_files):
@@ -36,11 +36,12 @@ def main():
     repoId = "test"
     entity_id = "test-update"
     graph_manager = Neo4jManager(repoId, entity_id)
+    graph_manager_clean = Neo4jManager(repoId, entity_id + "_clean")
 
     try:
         create_graph(graph_manager, entity_id)
-        create_graph(graph_manager, entity_id + "_clean")
-        delete_nodes(graph_manager, "/home/juan/devel/blar/git-webhook-tester/main.py", entity_id)
+        create_graph(graph_manager_clean, entity_id + "_clean")
+        delete_nodes(graph_manager, "/home/juan/devel/blar/git-webhook-tester/main.py")
         update_graph(graph_manager, entity_id, ["main.py"])
 
         graph_manager.close()
