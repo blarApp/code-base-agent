@@ -16,8 +16,8 @@ def create_graph(graph_manager, entity_id):
     graph_manager.save_graph(nodes, relationships)
 
 
-def delete_node(graph_manager, path):
-    graph_manager.delete_node_by_file_path(path)
+def delete_nodes(graph_manager, path, entity_id):
+    graph_manager.delete_nodes_by_file_path(path, entity_id)
 
 
 def update_graph(graph_manager, entity_id, whitelisted_files):
@@ -40,7 +40,7 @@ def main():
     try:
         create_graph(graph_manager, entity_id)
         create_graph(graph_manager, entity_id + "_clean")
-        delete_node(graph_manager, "/home/juan/devel/blar/git-webhook-tester/main.py")
+        delete_nodes(graph_manager, "/home/juan/devel/blar/git-webhook-tester/main.py", entity_id)
         update_graph(graph_manager, entity_id, ["main.py"])
 
         graph_manager.close()
