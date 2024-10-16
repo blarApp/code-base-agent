@@ -27,9 +27,9 @@ class GraphConstructor:
         if max_workers is not None:
             self.max_workers = max_workers
 
-    def _skip_file(self, path: str) -> bool:
+    def _skip_file(self, path: str, name: str) -> bool:
         # skip lock files
-        if path.endswith("lock") or path == "package-lock.json" or path == "yarn.lock":
+        if path.endswith("lock") or path.endswith("package-lock.json") or path.endswith("yarn.lock"):
             return True
         # skip hidden files
         if path.startswith("."):
@@ -39,20 +39,16 @@ class GraphConstructor:
             return True
         return False
 
-    def _skip_directory(self, directory: str) -> bool:
+    def _skip_directory(self, path: str, name: str) -> bool:
         # skip hidden directories
-        if directory.startswith("."):
+        if name.startswith("."):
             return True
 
         # skip tests and legacy directories
-        if directory in ["legacy", "test"] and self.skip_tests:
+        if name in ["legacy", "test"] and self.skip_tests:
             return True
 
-        # skip hidden directories
-        if directory.startswith("."):
-            return True
-
-        return directory == "__pycache__" or directory == "node_modules"
+        return name == "__pycache__" or name == "node_modules"
 
     def _scan_directory(
         self,
@@ -113,7 +109,7 @@ class GraphConstructor:
             local_visited: Set[str] = set()
 
             if entry.is_file():
-                if self._skip_file(entry.name):
+                if self._skip_file(path=entry.path, name=entry.name):
                     return local_nodes, local_relationships, local_imports, local_visited
 
                 parser: BaseParser | None = self.parsers.get_parser(entry.name)
@@ -180,7 +176,7 @@ class GraphConstructor:
                         }
                     )
             elif entry.is_dir():
-                if self._skip_directory(entry.name):
+                if self._skip_directory(path=entry.path, name=entry.name):
                     return local_nodes, local_relationships, local_imports, local_visited
 
                 sub_nodes, sub_relationships, sub_imports = self._scan_directory(
