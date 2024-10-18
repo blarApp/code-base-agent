@@ -41,8 +41,8 @@ def main():
     try:
         create_graph(graph_manager, entity_id)
         create_graph(graph_manager_clean, entity_id + "_clean")
-        detach_nodes(graph_manager, "/home/juan/devel/blar/git-webhook-tester/folder/thing.py")
-        update_graph(graph_manager, entity_id, ["/home/juan/devel/blar/git-webhook-tester/folder/thing.py"])
+        detach_nodes(graph_manager, "/home/juan/devel/blar/git-webhook-tester/main.py")
+        update_graph(graph_manager, entity_id, ["/home/juan/devel/blar/git-webhook-tester/main.py"])
         graph_manager.delete_all_nodes_without_relationships()
 
         graph_manager.close()
