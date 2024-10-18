@@ -54,6 +54,11 @@ class LSPCaller:
         }
         return await self.send_request(reference_request)
 
+    async def shutdown_exit_close(self):
+        await self.shutdown()
+        await self.exit()
+        await self.close()
+
     async def shutdown(self):
         shutdown_request = {
             "jsonrpc": "2.0",
@@ -83,12 +88,18 @@ async def main():
         await lsp_caller.initialize()
         document_uri = "file:///home/juan/devel/blar/git-webhook-tester/main.py"
         document_symbols = await lsp_caller.get_document_symbols(document_uri)
+        references = await lsp_caller.get_references(
+            document_uri, {"line": 1, "character": 0}
+        )
+
+        print("Document symbols:")
         pretty_print(document_symbols)
 
+        print("References:")
+        pretty_print(references)
+
     finally:
-        await lsp_caller.shutdown()
-        await lsp_caller.exit()
-        await lsp_caller.close()
+        await lsp_caller.shutdown_exit_close()
 
 
 # Run the WebSocket client to get import paths from main.py
