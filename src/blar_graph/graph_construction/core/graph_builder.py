@@ -209,11 +209,11 @@ class GraphConstructor:
     def _relate_wildcard_imports(self, file_node_id: str, imports_list: list):
         import_edges = []
         for import_path in imports_list:
-            all_dir_imports = self.global_graph_info.import_aliases.get(import_path)
+            all_dir_imports = self._get_import_alias_from_global_graph_info(import_path)
             if all_dir_imports is None:
                 all_dir_imports = [import_path]
             for dir_import in all_dir_imports:
-                targetId = self.global_graph_info.imports.get(dir_import)
+                targetId = self._get_import_from_global_graph_info(dir_import)
                 if targetId:
                     import_edges.append(
                         {
