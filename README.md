@@ -1,0 +1,1 @@
+This is a proof of concept for a simple lsp client in python. It is based on the [Language Server Protocol](https://microsoft.github.io/language-server-protocol/).
