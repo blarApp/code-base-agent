@@ -16,8 +16,8 @@ def create_graph(graph_manager, entity_id):
     graph_manager.save_graph(nodes, relationships)
 
 
-def delete_nodes(graph_manager, path):
-    graph_manager.delete_nodes_by_file_path(path)
+def detach_nodes(graph_manager, path):
+    graph_manager.delete_all_outgoing_relationships_by_file_path(path)
 
 
 def update_graph(graph_manager, entity_id, whitelisted_files):
@@ -29,7 +29,7 @@ def update_graph(graph_manager, entity_id, whitelisted_files):
         whitelisted_files=whitelisted_files,
     )
     nodes, relationships = graph_updater.build_graph()
-    graph_manager.save_graph(nodes, relationships)
+    graph_manager.merge_and_save_graph(nodes, relationships)
 
 
 def main():
@@ -41,8 +41,9 @@ def main():
     try:
         create_graph(graph_manager, entity_id)
         create_graph(graph_manager_clean, entity_id + "_clean")
-        delete_nodes(graph_manager, "/home/juan/devel/blar/git-webhook-tester/main.py")
-        update_graph(graph_manager, entity_id, ["main.py"])
+        detach_nodes(graph_manager, "/home/juan/devel/blar/git-webhook-tester/folder/thing.py")
+        update_graph(graph_manager, entity_id, ["/home/juan/devel/blar/git-webhook-tester/folder/thing.py"])
+        graph_manager.delete_all_nodes_without_relationships()
 
         graph_manager.close()
     except Exception as e:

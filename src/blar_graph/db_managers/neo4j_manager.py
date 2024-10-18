@@ -53,6 +53,39 @@ class Neo4jManager(BaseDBManager):
         self.create_nodes(nodes)
         self.create_edges(edges)
 
+    def merge_and_save_graph(self, nodes: List[Any], edges: List[Any]):
+        self.merge_nodes(nodes)
+        self.create_edges(edges)
+
+    def merge_nodes(self, nodeList: List[Any]):
+        # Function to merge nodes in the Neo4j database
+        with self.driver.session() as session:
+            session.write_transaction(self._merge_nodes_txn, nodeList, 3000, repoId=self.repoId, entityId=self.entityId)
+
+    @staticmethod
+    def _merge_nodes_txn(tx, nodeList: List[Any], batch_size: int, repoId: str, entityId: str):
+        merge_query = """
+        CALL apoc.periodic.iterate(
+            "UNWIND $nodeList AS node RETURN node",
+            "MERGE (n {node_id: node.attributes.node_id})
+            SET n += apoc.map.merge(node.attributes, {repoId: $repoId, entityId: $entityId})
+            WITH n, node.type AS nodeType
+            CALL apoc.create.addLabels(n, [nodeType, 'NODE']) YIELD node as node_with_labels
+            RETURN count(node_with_labels) as count",
+            {batchSize: $batchSize, parallel: false, iterateList: true, params: {nodeList: $nodeList, repoId: $repoId, entityId: $entityId}}
+        )
+        YIELD batches, total, errorMessages, updateStatistics
+        RETURN batches, total, errorMessages, updateStatistics
+        """
+
+        result = tx.run(merge_query, nodeList=nodeList, batchSize=batch_size, repoId=repoId, entityId=entityId)
+
+        # Fetch the result
+        for record in result:
+            print(f"Merged {record['total']} nodes")
+            if record["errorMessages"]:
+                print(f"Error messages: {record['errorMessages']}")
+
     def create_function_name_index(self):
         # Creates a fulltext index on the name and path properties of the nodes
         with self.driver.session() as session:
@@ -192,13 +225,30 @@ class Neo4jManager(BaseDBManager):
                 return result.graph()
             return result.data()
 
-    def delete_nodes_by_file_path(self, file_path):
+    def delete_all_outgoing_relationships_by_file_path(self, path):
         query = """
-        MATCH (n {file_path: $file_path, entityId: $entityId})
-        DETACH DELETE n
+        MATCH (n {file_path: $path, entityId: $entityId})-[r]->(m)
+        DELETE r
         """
         with self.driver.session() as session:
-            session.run(query, {"file_path": file_path, "entityId": self.entityId})
+            session.run(query, {"path": path, "entityId": self.entityId})
+
+    def detach_all_node_relationships_by_file_path(self, path):
+        query = """
+        MATCH (n {file_path: $path, entityId: $entityId})-[r]-(m)
+        DELETE r
+        """
+        with self.driver.session() as session:
+            session.run(query, {"path": path, "entityId": self.entityId})
+
+    def delete_all_nodes_without_relationships(self):
+        query = """
+        MATCH (n {entityId: $entityId})
+        WHERE NOT (n)--()
+        DELETE n
+        """
+        with self.driver.session() as session:
+            session.run(query, {"entityId": self.entityId})
 
     def search_code(self, query: str):
         # Function to get code from the Neo4j database based on a keyword query
@@ -341,7 +391,8 @@ class Neo4jManager(BaseDBManager):
         node_creation_query = """
         CALL apoc.periodic.iterate(
             "UNWIND $nodeList AS node RETURN node",
-            "CALL apoc.create.node([node.type, 'NODE'], apoc.map.merge(node.attributes, {repoId: $repoId, entityId: $entityId})) YIELD node as n RETURN count(n) as count",
+            "CALL apoc.create.node([node.type, 'NODE'], apoc.map.merge(node.attributes, {repoId: $repoId, entityId: $entityId}))
+            YIELD node as n RETURN count(n) as count",
             {batchSize: $batchSize, parallel: false, iterateList: true, params: {nodeList: $nodeList, repoId: $repoId, entityId: $entityId}}
         )
         YIELD batches, total, errorMessages, updateStatistics
@@ -360,7 +411,9 @@ class Neo4jManager(BaseDBManager):
         edge_creation_query = """
         CALL apoc.periodic.iterate(
             'WITH $edgesList AS edges UNWIND edges AS edgeObject RETURN edgeObject',
-            'MATCH (node1:NODE {node_id: edgeObject.sourceId, entityId: $entityId}) MATCH (node2:NODE {node_id: edgeObject.targetId, entityId: $entityId}) CALL apoc.create.relationship(node1, edgeObject.type, {}, node2) YIELD rel RETURN rel',
+            'MATCH (node1:NODE {node_id: edgeObject.sourceId, entityId: $entityId}) MATCH (node2:NODE {node_id: edgeObject.targetId, entityId: $entityId})
+            CALL apoc.merge.relationship(node1, edgeObject.type, {}, {}, node2)
+            YIELD rel RETURN rel',
             {batchSize:$batchSize, parallel:false, iterateList: true, params:{edgesList: $edgesList, entityId: $entityId}}
         )
         YIELD batches, total, errorMessages, updateStatistics
@@ -372,3 +425,5 @@ class Neo4jManager(BaseDBManager):
         # Fetch the result
         for record in result:
             print(f"Created {record['total']} edges")
+            if record["errorMessages"]:
+                print(f"Error messages: {record['errorMessages']}")
