@@ -27,12 +27,9 @@ class GraphConstructor:
         if max_workers is not None:
             self.max_workers = max_workers
 
-    def _skip_file(self, path: str) -> bool:
+    def _skip_file(self, path: str, name: str) -> bool:
         # skip lock files
-        if path.endswith("lock") or path == "package-lock.json" or path == "yarn.lock":
-            return True
-        # skip tests and legacy directories
-        if path in ["legacy", "test"] and self.skip_tests:
+        if path.endswith("lock") or path.endswith("package-lock.json") or path.endswith("yarn.lock"):
             return True
         # skip hidden files
         if path.startswith("."):
@@ -42,11 +39,16 @@ class GraphConstructor:
             return True
         return False
 
-    def _skip_directory(self, directory: str) -> bool:
+    def _skip_directory(self, path: str, name: str) -> bool:
         # skip hidden directories
-        if directory.startswith("."):
+        if name.startswith("."):
             return True
-        return directory == "__pycache__" or directory == "node_modules"
+
+        # skip tests and legacy directories
+        if name in ["legacy", "test"] and self.skip_tests:
+            return True
+
+        return name == "__pycache__" or name == "node_modules"
 
     def _scan_directory(
         self,
@@ -106,10 +108,10 @@ class GraphConstructor:
             local_imports: Dict = {}
             local_visited: Set[str] = set()
 
-            if self._skip_file(entry.name):
-                return local_nodes, local_relationships, local_imports, local_visited
-
             if entry.is_file():
+                if self._skip_file(path=entry.path, name=entry.name):
+                    return local_nodes, local_relationships, local_imports, local_visited
+
                 parser: BaseParser | None = self.parsers.get_parser(entry.name)
                 # If the file is a supported language, parse it
                 if parser:
@@ -174,7 +176,7 @@ class GraphConstructor:
                         }
                     )
             elif entry.is_dir():
-                if self._skip_directory(entry.name):
+                if self._skip_directory(path=entry.path, name=entry.name):
                     return local_nodes, local_relationships, local_imports, local_visited
 
                 sub_nodes, sub_relationships, sub_imports = self._scan_directory(
@@ -207,11 +209,11 @@ class GraphConstructor:
     def _relate_wildcard_imports(self, file_node_id: str, imports_list: list):
         import_edges = []
         for import_path in imports_list:
-            all_dir_imports = self.global_graph_info.import_aliases.get(import_path)
+            all_dir_imports = self._get_import_alias_from_global_graph_info(import_path)
             if all_dir_imports is None:
                 all_dir_imports = [import_path]
             for dir_import in all_dir_imports:
-                targetId = self.global_graph_info.imports.get(dir_import)
+                targetId = self._get_import_from_global_graph_info(dir_import)
                 if targetId:
                     import_edges.append(
                         {
@@ -225,14 +227,16 @@ class GraphConstructor:
     # Recursive functions to relate imports
     def _relate_imports_and_directory_imports(self, file_node_id: str, path: str, visited_paths=set()):
         import_edges = []
-        import_alias = self.global_graph_info.import_aliases.get(path)
-        targetId = self.global_graph_info.imports.get(path)
+        import_alias = self._get_import_alias_from_global_graph_info(path)
+        targetNode = self._get_import_from_global_graph_info(path)
         # If the child is not found try to link the parent
-        if not targetId:
-            new_path = path[: path.rfind(".")] if "." in path else path
-            targetId = self.global_graph_info.imports.get(new_path)
 
-        if not targetId and import_alias:
+        if not targetNode:
+            # Remove last part of the path to get the parent
+            new_path = path[: path.rfind(".")] if "." in path else path
+            targetNode = self._get_import_from_global_graph_info(new_path)
+
+        if not targetNode and import_alias:
             if isinstance(import_alias, list):
                 for alias in import_alias:
                     if alias not in visited_paths:
@@ -241,16 +245,22 @@ class GraphConstructor:
                             self._relate_imports_and_directory_imports(file_node_id, alias, visited_paths)
                         )
             else:
-                targetId = self.global_graph_info.imports.get(import_alias)
-        if targetId:
+                targetNode = self._get_import_from_global_graph_info(import_alias)
+        if targetNode:
             import_edges.append(
                 {
                     "sourceId": file_node_id,
-                    "targetId": targetId["id"],
+                    "targetId": targetNode["id"],
                     "type": "IMPORTS",
                 }
             )
         return import_edges
+
+    def _get_import_alias_from_global_graph_info(self, path):
+        return self.global_graph_info.import_aliases.get(path)
+
+    def _get_import_from_global_graph_info(self, path):
+        return self.global_graph_info.imports.get(path)
 
     def _relate_imports(self, imports: dict):
         import_edges = []
@@ -452,8 +462,9 @@ class GraphConstructor:
             # Look for the node with the definition of the function
             target_object = None
             for directory in directories_to_check:
-                if self.global_graph_info.imports.get(directory):
-                    target_object = self.global_graph_info.imports.get(directory)
+                new_target_object = self._get_import_from_global_graph_info(directory)
+                if new_target_object:
+                    target_object = new_target_object
                     break
 
             if target_object:
@@ -496,8 +507,9 @@ class GraphConstructor:
             # Look for the node with the definition of the class
             target_class = None
             for directory in directories_to_check:
-                if self.global_graph_info.imports.get(directory):
-                    target_class = self.global_graph_info.imports.get(directory)
+                new_target_class = self._get_import_from_global_graph_info(directory)
+                if new_target_class:
+                    target_class = new_target_class
                     break
 
             if target_class:
@@ -537,5 +549,9 @@ class GraphConstructor:
         end_time = time.time()
         execution_time = end_time - start_time
         print(f"Execution time: {execution_time} seconds")
+
+        print("Nodes", nodes)
+        print("Relationships", relationships)
+        print("Imports", imports)
 
         return nodes, relationships

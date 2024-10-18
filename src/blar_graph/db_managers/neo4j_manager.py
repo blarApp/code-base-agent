@@ -53,6 +53,39 @@ class Neo4jManager(BaseDBManager):
         self.create_nodes(nodes)
         self.create_edges(edges)
 
+    def merge_and_save_graph(self, nodes: List[Any], edges: List[Any]):
+        self.merge_nodes(nodes)
+        self.create_edges(edges)
+
+    def merge_nodes(self, nodeList: List[Any]):
+        # Function to merge nodes in the Neo4j database
+        with self.driver.session() as session:
+            session.write_transaction(self._merge_nodes_txn, nodeList, 3000, repoId=self.repoId, entityId=self.entityId)
+
+    @staticmethod
+    def _merge_nodes_txn(tx, nodeList: List[Any], batch_size: int, repoId: str, entityId: str):
+        merge_query = """
+        CALL apoc.periodic.iterate(
+            "UNWIND $nodeList AS node RETURN node",
+            "MERGE (n {node_id: node.attributes.node_id})
+            SET n += apoc.map.merge(node.attributes, {repoId: $repoId, entityId: $entityId})
+            WITH n, node.type AS nodeType
+            CALL apoc.create.addLabels(n, [nodeType, 'NODE']) YIELD node as node_with_labels
+            RETURN count(node_with_labels) as count",
+            {batchSize: $batchSize, parallel: false, iterateList: true, params: {nodeList: $nodeList, repoId: $repoId, entityId: $entityId}}
+        )
+        YIELD batches, total, errorMessages, updateStatistics
+        RETURN batches, total, errorMessages, updateStatistics
+        """
+
+        result = tx.run(merge_query, nodeList=nodeList, batchSize=batch_size, repoId=repoId, entityId=entityId)
+
+        # Fetch the result
+        for record in result:
+            print(f"Merged {record['total']} nodes")
+            if record["errorMessages"]:
+                print(f"Error messages: {record['errorMessages']}")
+
     def create_function_name_index(self):
         # Creates a fulltext index on the name and path properties of the nodes
         with self.driver.session() as session:
@@ -126,6 +159,7 @@ class Neo4jManager(BaseDBManager):
             query = query.replace(character, f"\\{character}")
         return query
 
+    # TODO: This method may need to be removed
     def get_node_by_id(self, node_id: str):
         query = """
         MATCH (n)
@@ -146,6 +180,35 @@ class Neo4jManager(BaseDBManager):
             }
             return node_result, neighbours
 
+    def get_node_by_path(self, path: str):
+        query = """
+        MATCH (n)
+        WHERE n.path = $path
+        RETURN n, labels(n) AS labels
+        """
+        with self.driver.session() as session:
+            result = session.run(query, {"path": path})
+
+            # Check if result is empty
+            if result.peek() is None:
+                print(f"No node found for path: {path}")
+                return None, None
+
+            record = result.single()
+
+            node = record["n"]
+            labels = record["labels"]
+            node_result = {
+                "node_id": node.get("node_id"),
+                "node_name": node.get("name"),
+                "file_path": node.get("file_path"),
+                "start_line": node.get("start_line"),
+                "end_line": node.get("end_line"),
+                "text": node.get("text"),
+                "labels": labels,
+            }
+            return node_result
+
     def get_whole_graph(self, result_format: str = "data"):
         query = "match (n {repoId: $repoId})-[r]-(m) return n, m, r"
         with self.driver.session() as session:
@@ -161,6 +224,31 @@ class Neo4jManager(BaseDBManager):
             if result_format == "graph":
                 return result.graph()
             return result.data()
+
+    def delete_all_outgoing_relationships_by_file_path(self, path):
+        query = """
+        MATCH (n {file_path: $path, entityId: $entityId})-[r]->(m)
+        DELETE r
+        """
+        with self.driver.session() as session:
+            session.run(query, {"path": path, "entityId": self.entityId})
+
+    def detach_all_node_relationships_by_file_path(self, path):
+        query = """
+        MATCH (n {file_path: $path, entityId: $entityId})-[r]-(m)
+        DELETE r
+        """
+        with self.driver.session() as session:
+            session.run(query, {"path": path, "entityId": self.entityId})
+
+    def delete_all_nodes_without_relationships(self):
+        query = """
+        MATCH (n {entityId: $entityId})
+        WHERE NOT (n)--()
+        DELETE n
+        """
+        with self.driver.session() as session:
+            session.run(query, {"entityId": self.entityId})
 
     def search_code(self, query: str):
         # Function to get code from the Neo4j database based on a keyword query
@@ -303,7 +391,8 @@ class Neo4jManager(BaseDBManager):
         node_creation_query = """
         CALL apoc.periodic.iterate(
             "UNWIND $nodeList AS node RETURN node",
-            "CALL apoc.create.node([node.type, 'NODE'], apoc.map.merge(node.attributes, {repoId: $repoId, entityId: $entityId})) YIELD node as n RETURN count(n) as count",
+            "CALL apoc.create.node([node.type, 'NODE'], apoc.map.merge(node.attributes, {repoId: $repoId, entityId: $entityId}))
+            YIELD node as n RETURN count(n) as count",
             {batchSize: $batchSize, parallel: false, iterateList: true, params: {nodeList: $nodeList, repoId: $repoId, entityId: $entityId}}
         )
         YIELD batches, total, errorMessages, updateStatistics
@@ -322,7 +411,9 @@ class Neo4jManager(BaseDBManager):
         edge_creation_query = """
         CALL apoc.periodic.iterate(
             'WITH $edgesList AS edges UNWIND edges AS edgeObject RETURN edgeObject',
-            'MATCH (node1:NODE {node_id: edgeObject.sourceId, entityId: $entityId}) MATCH (node2:NODE {node_id: edgeObject.targetId, entityId: $entityId}) CALL apoc.create.relationship(node1, edgeObject.type, {}, node2) YIELD rel RETURN rel',
+            'MATCH (node1:NODE {node_id: edgeObject.sourceId, entityId: $entityId}) MATCH (node2:NODE {node_id: edgeObject.targetId, entityId: $entityId})
+            CALL apoc.merge.relationship(node1, edgeObject.type, {}, {}, node2)
+            YIELD rel RETURN rel',
             {batchSize:$batchSize, parallel:false, iterateList: true, params:{edgesList: $edgesList, entityId: $entityId}}
         )
         YIELD batches, total, errorMessages, updateStatistics
@@ -334,3 +425,5 @@ class Neo4jManager(BaseDBManager):
         # Fetch the result
         for record in result:
             print(f"Created {record['total']} edges")
+            if record["errorMessages"]:
+                print(f"Error messages: {record['errorMessages']}")
