@@ -41,18 +41,17 @@ class LSPCaller:
         }
         return await self.send_request(document_symbol_request)
 
-    async def get_references(self, document_uri, position):
-        reference_request = {
+    async def get_definition(self, document_uri, position):
+        definition_request = {
             "jsonrpc": "2.0",
             "id": 3,
-            "method": "textDocument/references",
+            "method": "textDocument/definition",
             "params": {
                 "textDocument": {"uri": document_uri},
                 "position": position,
-                "context": {"includeDeclaration": True},
             },
         }
-        return await self.send_request(reference_request)
+        return await self.send_request(definition_request)
 
     async def shutdown_exit_close(self):
         await self.shutdown()
@@ -88,10 +87,9 @@ async def main():
         await lsp_caller.initialize()
         document_uri = "file:///home/juan/devel/blar/git-webhook-tester/main.py"
         document_symbols = await lsp_caller.get_document_symbols(document_uri)
-        references = await lsp_caller.get_references(
-            document_uri, {"line": 1, "character": 0}
+        references = await lsp_caller.get_definition(
+            document_uri, {"line": 2, "character": 34}
         )
-
         print("Document symbols:")
         pretty_print(document_symbols)
 
