@@ -3,7 +3,7 @@ import websockets
 import json
 
 
-class LSPCaller:
+class LspCaller:
     def __init__(self, host="localhost", port=5000, root_uri=None):
         self.host = host
         self.port = port
@@ -105,7 +105,7 @@ def pretty_print(data):
 
 
 async def main():
-    lsp_caller = LSPCaller(root_uri="file:///home/juan/devel/blar/git-webhook-tester")
+    lsp_caller = LspCaller(root_uri="file:///home/juan/devel/blar/git-webhook-tester")
     await lsp_caller.connect()
 
     try:
@@ -143,5 +143,6 @@ async def main():
         await lsp_caller.shutdown_exit_close()
 
 
-# Run the WebSocket client to get import paths from main.py
-asyncio.run(main())
+if __name__ == "__main__":
+    # Run the WebSocket client to get import paths from main.py
+    asyncio.run(main())

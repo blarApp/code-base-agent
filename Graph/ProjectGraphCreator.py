@@ -1,5 +1,9 @@
+from LSP import LspCaller
+
+
 class ProjectGraphCreator:
-    def __init__(self, root_path: str):
+    def __init__(self, root_path: str, lsp_caller: LspCaller):
+        self.lsp_caller = lsp_caller
         self.root_path = root_path
         self.nodes = []
         self.relationships = []
@@ -14,6 +18,10 @@ class ProjectGraphCreator:
     def build_relationships(self):
         pass
 
+    def print(self):
+        self.print_nodes()
+        self.print_relationships()
+
     def print_nodes(self):
         for node in self.nodes:
             print(node)
@@ -21,7 +29,3 @@ class ProjectGraphCreator:
     def print_relationships(self):
         for rel in self.relationships:
             print(rel)
-
-    def print(self):
-        self.print_nodes()
-        self.print_relationships()

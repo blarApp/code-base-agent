@@ -1,8 +1,10 @@
 from Graph.ProjectGraphCreator import ProjectGraphCreator
+from LSP import LspCaller
 
 
 def main():
-    graph = ProjectGraphCreator("Test")
+    lsp_caller = LspCaller()
+    graph = ProjectGraphCreator("Test", lsp_caller)
 
     graph.build()
     graph.print()
