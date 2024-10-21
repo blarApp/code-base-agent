@@ -21,17 +21,17 @@ class ProjectGraphCreator:
 
     def build(self):
         for folder in self.project_files_iterator:
-            folder_node = self.create_and_add_folder_node(folder)
+            folder_node = self.create_folder_node(folder)
             nodes = self.create_folder_children_nodes(folder)
+            contains_relationships = self.create_contains_relationships(
+                folder_node, nodes
+            )
 
-            self.add_contains_relationships(folder_node, nodes)
+            self.graph.add_node(folder_node)
+            self.graph.add_nodes(nodes)
+            self.graph.add_relationships(contains_relationships)
 
         return self.graph
-
-    def create_and_add_folder_node(self, folder: Folder) -> Node:
-        folder_node = self.create_folder_node(folder)
-        self.graph.add_node(folder_node)
-        return folder_node
 
     def create_folder_node(self, folder: Folder) -> Node:
         return Node(label=NodeLabels.FOLDER, path=folder.path)
@@ -46,15 +46,16 @@ class ProjectGraphCreator:
 
         return nodes
 
-    def add_contains_relationships(self, container: Node, nodes: List[Node]) -> None:
+    def create_contains_relationships(self, container: Node, nodes: List[Node]):
+        contains = []
         for node in nodes:
-            self.add_contains_relationship(container, node)
+            contains.append(self.create_contains_relationship(container, node))
 
-    def add_contains_relationship(self, parent, child):
-        self.graph.add_relationship(
-            Relationship(
-                start_node=parent,
-                end_node=child,
-                rel_type=RelationshipType.CONTAINS,
-            )
+        return contains
+
+    def create_contains_relationship(self, parent, child):
+        return Relationship(
+            start_node=parent,
+            end_node=child,
+            rel_type=RelationshipType.CONTAINS,
         )

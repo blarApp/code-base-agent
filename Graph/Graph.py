@@ -3,8 +3,16 @@ class Graph:
         self.nodes = {}
         self.relationships = {}
 
+    def add_nodes(self, nodes):
+        for node in nodes:
+            self.add_node(node)
+
     def add_node(self, node):
         self.nodes[node.id] = node
+
+    def add_relationships(self, relationships):
+        for relationship in relationships:
+            self.add_relationship(relationship)
 
     def add_relationship(self, relationship):
         self.relationships[relationship.id] = relationship
