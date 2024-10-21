@@ -1,6 +1,7 @@
 from Graph.ProjectGraphCreator import ProjectGraphCreator
 from LSP import LspCaller
 from ProjectFilesIterator import ProjectFilesIterator
+from DbManagers.Neo4jManager import Neo4jManager
 
 
 def main():
@@ -18,10 +19,13 @@ def main():
         ],
     )
 
+    repoId = "test"
+    entity_id = "test"
+    graph_manager = Neo4jManager(repoId, entity_id)
+
     graph_creator = ProjectGraphCreator("Test", lsp_caller, project_files_iterator)
 
     graph = graph_creator.build()
-    print(graph)
 
 
 if __name__ == "__main__":
