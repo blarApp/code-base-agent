@@ -53,6 +53,18 @@ class LSPCaller:
         }
         return await self.send_request(definition_request)
 
+    async def get_declaration(self, document_uri, position):
+        definition_request = {
+            "jsonrpc": "2.0",
+            "id": 3,
+            "method": "textDocument/declaration",
+            "params": {
+                "textDocument": {"uri": document_uri},
+                "position": position,
+            },
+        }
+        return await self.send_request(definition_request)
+
     async def get_references(self, document_uri, position):
         reference_request = {
             "jsonrpc": "2.0",
@@ -101,9 +113,13 @@ async def main():
         document_uri = "file:///home/juan/devel/blar/git-webhook-tester/main.py"
         document_uri2 = "/home/juan/devel/blar/git-webhook-tester/class1.py"
 
-        document_symbols = await lsp_caller.get_document_symbols(document_uri)
+        document_symbols = await lsp_caller.get_document_symbols(document_uri2)
 
         definitions = await lsp_caller.get_definition(
+            document_uri, {"line": 2, "character": 34}
+        )
+
+        declarations = await lsp_caller.get_declaration(
             document_uri, {"line": 2, "character": 34}
         )
 
@@ -116,6 +132,9 @@ async def main():
 
         print("Definitions:")
         pretty_print(definitions)
+
+        print("Declarations:")
+        pretty_print(declarations)
 
         print("References:")
         pretty_print(references)
