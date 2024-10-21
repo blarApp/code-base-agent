@@ -8,5 +8,9 @@ class Relationship:
         self.end_node = end_node
         self.rel_type = rel_type
 
+    @property
+    def id(self):
+        return self.__str__()
+
     def __str__(self):
         return f"{self.start_node} --[{self.rel_type}]-> {self.end_node}"
