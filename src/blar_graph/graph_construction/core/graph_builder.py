@@ -155,13 +155,14 @@ class GraphConstructor:
                         print(f"Error reading file {entry.path}")
                         return local_nodes, local_relationships, local_imports, local_visited
 
+                    path = str(entry.path).replace("/", ".")
                     file_node = {
                         "type": "FILE",
                         "attributes": {
-                            "path": entry.path,
-                            "file_path": entry.path,
+                            "path": path,
+                            "file_path": path,
                             "name": entry.name,
-                            "node_id": BaseParser.generate_node_id(entry.path, self.global_graph_info.entity_id),
+                            "node_id": BaseParser.generate_node_id(path, self.global_graph_info.entity_id),
                             "text": text,
                         },
                     }
@@ -189,7 +190,6 @@ class GraphConstructor:
         with ThreadPoolExecutor(max_workers=min(self.max_workers, os.cpu_count() or 1)) as executor:
             # Submit all entries to the executor
             future_to_entry = {executor.submit(process_entry, entry): entry for entry in entries}
-
             for future in as_completed(future_to_entry):
                 try:
                     entry_nodes, entry_relationships, entry_imports, entry_visited = future.result()
