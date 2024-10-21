@@ -17,6 +17,14 @@ class Graph:
     def add_relationship(self, relationship):
         self.relationships[relationship.id] = relationship
 
+    def get_relationships_as_objects(self):
+        return [
+            relationship.as_object() for relationship in self.relationships.values()
+        ]
+
+    def get_nodes_as_objects(self):
+        return [node.as_object() for node in self.nodes.values()]
+
     def __str__(self):
         to_return = ""
 
