@@ -1,7 +1,7 @@
 import os
 from typing import List
-from Folder import Folder
-from File import File
+from .Folder import Folder
+from .File import File
 
 
 class ProjectFilesIterator:
@@ -50,8 +50,6 @@ class ProjectFilesIterator:
 
     def _should_skip(self, path: str) -> bool:
         is_basename_in_names_to_skip = os.path.basename(path) in self.names_to_skip
-
-        print(is_basename_in_names_to_skip, path)
 
         is_path_in_paths_to_skip = any(
             path.startswith(path_to_skip) for path_to_skip in self.paths_to_skip

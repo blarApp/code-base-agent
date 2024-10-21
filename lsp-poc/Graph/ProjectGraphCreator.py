@@ -1,8 +1,7 @@
 from LSP import LspCaller
-from ProjectFilesIterator import ProjectFilesIterator
-from Graph.Node import NodeLabels, Node
+from Files import ProjectFilesIterator, Folder
+from Graph.Node import NodeLabels, NodeFactory, Node
 from Graph.Relationship import Relationship, RelationshipType
-from Folder import Folder
 from typing import List
 from Graph.Graph import Graph
 
@@ -26,7 +25,6 @@ class ProjectGraphCreator:
             contains_relationships = self.create_contains_relationships(
                 folder_node, nodes
             )
-
             self.graph.add_node(folder_node)
             self.graph.add_nodes(nodes)
             self.graph.add_relationships(contains_relationships)
@@ -34,15 +32,15 @@ class ProjectGraphCreator:
         return self.graph
 
     def create_folder_node(self, folder: Folder) -> Node:
-        return Node(label=NodeLabels.FOLDER, path=folder.path)
+        return NodeFactory.create_folder_node(folder)
 
     def create_folder_children_nodes(self, folder: Folder) -> List[Node]:
         nodes = []
         for file in folder.files:
-            nodes.append(Node(label=NodeLabels.FILE, path=file.path))
+            nodes.append(NodeFactory.create_file_node(file))
 
         for folder in folder.folders:
-            nodes.append(Node(label=NodeLabels.FOLDER, path=folder.path))
+            nodes.append(NodeFactory.create_folder_node(folder))
 
         return nodes
 
@@ -58,4 +56,11 @@ class ProjectGraphCreator:
             start_node=parent,
             end_node=child,
             rel_type=RelationshipType.CONTAINS,
+        )
+
+    def create_imports_relationship(self, parent, child):
+        return Relationship(
+            start_node=parent,
+            end_node=child,
+            rel_type=RelationshipType.IMPORTS,
         )

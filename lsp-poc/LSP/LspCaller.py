@@ -1,5 +1,4 @@
-import asyncio
-import websockets
+import websockets.sync.client as ws
 import json
 
 
@@ -10,11 +9,11 @@ class LspCaller:
         self.root_uri = root_uri
         self.websocket = None
 
-    async def connect(self):
+    def connect(self):
         uri = f"ws://{self.host}:{self.port}"
-        self.websocket = await websockets.connect(uri)
+        self.websocket = ws.connect(uri)
 
-    async def initialize(self):
+    def initialize(self):
         initialize_request = {
             "jsonrpc": "2.0",
             "id": 1,
@@ -25,23 +24,23 @@ class LspCaller:
                 "capabilities": {},
             },
         }
-        await self.send_request(initialize_request)
+        self.send_request(initialize_request)
 
-    async def send_request(self, request):
-        await self.websocket.send(json.dumps(request))
-        response = await self.websocket.recv()
+    def send_request(self, request):
+        self.websocket.send(json.dumps(request))
+        response = self.websocket.recv()
         return json.loads(response)
 
-    async def get_document_symbols(self, document_uri):
+    def get_document_symbols(self, document_uri):
         document_symbol_request = {
             "jsonrpc": "2.0",
             "id": 2,
             "method": "textDocument/documentSymbol",
             "params": {"textDocument": {"uri": document_uri}},
         }
-        return await self.send_request(document_symbol_request)
+        return self.send_request(document_symbol_request)
 
-    async def get_definition(self, document_uri, position):
+    def get_definition(self, document_uri, position):
         definition_request = {
             "jsonrpc": "2.0",
             "id": 3,
@@ -51,24 +50,12 @@ class LspCaller:
                 "position": position,
             },
         }
-        return await self.send_request(definition_request)
+        return self.send_request(definition_request)
 
-    async def get_declaration(self, document_uri, position):
-        definition_request = {
-            "jsonrpc": "2.0",
-            "id": 3,
-            "method": "textDocument/declaration",
-            "params": {
-                "textDocument": {"uri": document_uri},
-                "position": position,
-            },
-        }
-        return await self.send_request(definition_request)
-
-    async def get_references(self, document_uri, position):
+    def get_references(self, document_uri, position):
         reference_request = {
             "jsonrpc": "2.0",
-            "id": 4,
+            "id": 5,
             "method": "textDocument/references",
             "params": {
                 "textDocument": {"uri": document_uri},
@@ -76,55 +63,75 @@ class LspCaller:
                 "context": {"includeDeclaration": True},
             },
         }
-        return await self.send_request(reference_request)
+        return self.send_request(reference_request)
 
-    async def shutdown_exit_close(self):
-        await self.shutdown()
-        await self.exit()
-        await self.close()
+    def get_selection_range(self, document_uri, position):
+        selection_range_request = {
+            "jsonrpc": "2.0",
+            "id": 7,
+            "method": "textDocument/selectionRange",
+            "params": {
+                "textDocument": {"uri": document_uri},
+                "position": position,
+            },
+        }
+        return self.send_request(selection_range_request)
 
-    async def shutdown(self):
-        shutdown_request = {
+    def get_document_link(self, document_uri):
+        document_link_request = {
             "jsonrpc": "2.0",
             "id": 4,
+            "method": "textDocument/documentLink",
+            "params": {"textDocument": {"uri": document_uri}},
+        }
+        return self.send_request(document_link_request)
+
+    def shutdown_exit_close(self):
+        self.shutdown()
+        self.exit()
+        self.close()
+
+    def shutdown(self):
+        shutdown_request = {
+            "jsonrpc": "2.0",
+            "id": 6,
             "method": "shutdown",
             "params": None,
         }
-        await self.send_request(shutdown_request)
+        self.send_request(shutdown_request)
 
-    async def exit(self):
+    def exit(self):
         exit_request = {"jsonrpc": "2.0", "method": "exit"}
-        await self.websocket.send(json.dumps(exit_request))
+        self.websocket.send(json.dumps(exit_request))
 
-    async def close(self):
-        await self.websocket.close()
+    def close(self):
+        self.websocket.close()
 
 
 def pretty_print(data):
     print(json.dumps(data, indent=2))
 
 
-async def main():
+def main():
     lsp_caller = LspCaller(root_uri="file:///home/juan/devel/blar/git-webhook-tester")
-    await lsp_caller.connect()
+    lsp_caller.connect()
 
     try:
-        await lsp_caller.initialize()
-        document_uri = "file:///home/juan/devel/blar/git-webhook-tester/main.py"
-        document_uri2 = "/home/juan/devel/blar/git-webhook-tester/class1.py"
+        lsp_caller.initialize()
+        document_uri = "file:///home/juan/devel/blar/git-webhook-tester/class1.py"
 
-        document_symbols = await lsp_caller.get_document_symbols(document_uri2)
+        document_symbols = lsp_caller.get_document_symbols(document_uri)
 
-        definitions = await lsp_caller.get_definition(
-            document_uri, {"line": 2, "character": 34}
+        definitions = lsp_caller.get_definition(
+            document_uri, {"line": 7, "character": 4}
         )
 
-        declarations = await lsp_caller.get_declaration(
-            document_uri, {"line": 2, "character": 34}
+        references = lsp_caller.get_references(
+            document_uri, {"line": 7, "character": 4}
         )
 
-        references = await lsp_caller.get_references(
-            document_uri, {"line": 2, "character": 34}
+        selection_range = lsp_caller.get_selection_range(
+            document_uri, {"line": 7, "character": 4}
         )
 
         print("Document symbols:")
@@ -133,16 +140,15 @@ async def main():
         print("Definitions:")
         pretty_print(definitions)
 
-        print("Declarations:")
-        pretty_print(declarations)
-
         print("References:")
         pretty_print(references)
 
+        print("Selection range:")
+        pretty_print(selection_range)
+
     finally:
-        await lsp_caller.shutdown_exit_close()
+        lsp_caller.shutdown_exit_close()
 
 
 if __name__ == "__main__":
-    # Run the WebSocket client to get import paths from main.py
-    asyncio.run(main())
+    main()

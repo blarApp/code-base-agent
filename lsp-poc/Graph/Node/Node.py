@@ -8,7 +8,7 @@ class Node:
 
     @property
     def id(self):
-        return self.path
+        return self.__str__()
 
     def as_object(self):
         return {

@@ -1,7 +1,8 @@
 from Graph.ProjectGraphCreator import ProjectGraphCreator
-from LSP import LspCaller
-from ProjectFilesIterator import ProjectFilesIterator
+from Files import ProjectFilesIterator
 from DbManagers.Neo4jManager import Neo4jManager
+from LSP import LspQueryHelper, LspCaller
+from Files import File
 
 
 def main():
@@ -25,5 +26,17 @@ def main():
     graph_manager.save_graph(nodes, relationships)
 
 
+def call_query_helper():
+    lsp_caller = LspCaller(root_uri="file:///home/juan/devel/blar/git-webhook-tester")
+    query_helper = LspQueryHelper(lsp_caller)
+    query_helper.start()
+
+    file = File("class1.py", "/home/juan/devel/blar/git-webhook-tester")
+    print(file.uri_path)
+    imports = query_helper.get_imports(file)
+    print(imports)
+
+
 if __name__ == "__main__":
-    main()
+    call_query_helper()
+    # main()
