@@ -1,5 +1,31 @@
 from .LspCaller import LspCaller
 from Files import File
+from .SymbolKind import SymbolKind
+from Graph.Node import NodeFactory
+
+
+class SymbolGetter:
+    @staticmethod
+    def get_symbol_start_position(symbol: dict):
+        return symbol["location"]["range"]["start"]
+
+    @staticmethod
+    def get_symbol_uri(symbol: dict):
+        return symbol["location"]["uri"]
+
+    @staticmethod
+    def get_symbol_kind_as_SymbolKind(symbol: dict):
+        return SymbolKind(symbol["kind"])
+
+    @staticmethod
+    def get_symbol_name(symbol: dict):
+        return symbol["name"]
+
+
+class DefinitionGetter:
+    @staticmethod
+    def get_definition_uri(definition: dict):
+        return definition["uri"]
 
 
 class LspQueryHelper:
@@ -10,12 +36,22 @@ class LspQueryHelper:
         self.lsp_caller.connect()
         self.lsp_caller.initialize()
 
-    def get_imports(self, file: File):
-        response = self.lsp_caller.get_document_symbols(file.uri_path)
+    def create_nodes_and_relationships(self, file: File):
+        symbols = self.lsp_caller.get_document_symbols(file.uri_path).get("result")
 
-        document_symbols = response.get("result", [])
+        for symbol in symbols:
+            start_position = SymbolGetter.get_symbol_start_position(symbol)
+            uri = SymbolGetter.get_symbol_uri(symbol)
+            kind = SymbolGetter.get_symbol_kind_as_SymbolKind(symbol)
 
-        for symbol in document_symbols:
-            print(symbol.get("name"))
+            definition = self.lsp_caller.get_definition(uri, start_position).get(
+                "result"
+            )
 
-        return document_symbols
+            definition_uri = DefinitionGetter.get_definition_uri(definition)
+
+    def get_symbols_declared_in_file(self, file: File):
+        self.lsp_caller.get_document_symbols(file.uri_path)
+
+    def get_reference_of_symbol(self, file: File, position):
+        self.lsp_caller.get_references(file.uri_path, position)

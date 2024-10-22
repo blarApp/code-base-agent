@@ -31,10 +31,9 @@ def call_query_helper():
     query_helper = LspQueryHelper(lsp_caller)
     query_helper.start()
 
-    file = File("class1.py", "/home/juan/devel/blar/git-webhook-tester")
+    file = File("main.py", "/home/juan/devel/blar/git-webhook-tester")
     print(file.uri_path)
-    imports = query_helper.get_imports(file)
-    print(imports)
+    imports = query_helper.create_nodes_and_relationships(file)
 
 
 if __name__ == "__main__":

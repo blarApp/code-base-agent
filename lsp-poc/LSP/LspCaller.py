@@ -123,15 +123,11 @@ def main():
         document_symbols = lsp_caller.get_document_symbols(document_uri)
 
         definitions = lsp_caller.get_definition(
-            document_uri, {"line": 7, "character": 4}
+            document_uri, {"line": 7, "character": 8}
         )
 
         references = lsp_caller.get_references(
-            document_uri, {"line": 7, "character": 4}
-        )
-
-        selection_range = lsp_caller.get_selection_range(
-            document_uri, {"line": 7, "character": 4}
+            document_uri, {"line": 7, "character": 8}
         )
 
         print("Document symbols:")
