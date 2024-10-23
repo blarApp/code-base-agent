@@ -2,7 +2,7 @@ from .ClassNode import ClassNode
 from .FileNode import FileNode
 from .FolderNode import FolderNode
 from .FunctionNode import FunctionNode
-from LSP import SymbolKind
+from LSP.SymbolKind import SymbolKind
 
 
 from Files import File, Folder
@@ -11,11 +11,11 @@ from Files import File, Folder
 class NodeFactory:
     @staticmethod
     def create_folder_node(folder: Folder) -> FolderNode:
-        return FolderNode(folder.path)
+        return FolderNode(folder.uri_path)
 
     @staticmethod
     def create_file_node(file: File) -> FileNode:
-        return FileNode(file.path)
+        return FileNode(file.uri_path)
 
     @staticmethod
     def create_class_node(class_name: str, path: str) -> ClassNode:

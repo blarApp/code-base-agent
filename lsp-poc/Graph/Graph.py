@@ -10,6 +10,9 @@ class Graph:
     def add_node(self, node):
         self.nodes[node.id] = node
 
+    def get_nodes_by_path(self, path):
+        return [node for node in self.nodes.values() if node.path == path]
+
     def add_relationships(self, relationships):
         for relationship in relationships:
             self.add_relationship(relationship)

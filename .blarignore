@@ -4,3 +4,4 @@ poetry.lock
 pyproject.toml
 .git
 .venv
+lsp-ws-proxy

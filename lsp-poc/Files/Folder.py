@@ -9,6 +9,10 @@ class Folder:
         self.files = files
         self.folders = folders
 
+    @property
+    def uri_path(self):
+        return "file://" + self.path
+
     def __str__(self):
         to_return = f"{self.path}\n"
         for file in self.files:

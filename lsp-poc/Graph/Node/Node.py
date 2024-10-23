@@ -6,6 +6,12 @@ class Node:
         self.label = label
         self.path = path
 
+        if not self.is_path_format_valid():
+            raise ValueError(f"Path format is not valid: {self.path}")
+
+    def is_path_format_valid(self):
+        return self.path.startswith("file://")
+
     @property
     def id(self):
         return self.__str__()

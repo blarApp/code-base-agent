@@ -7,6 +7,9 @@ from Files import File
 
 def main():
     lsp_caller = LspCaller()
+    lsp_query_helper = LspQueryHelper(lsp_caller)
+    lsp_query_helper.start()
+
     project_files_iterator = ProjectFilesIterator(
         "/home/juan/devel/blar/lsp-poc/",
         blarignore_path="/home/juan/devel/blar/lsp-poc/.blarignore",
@@ -16,7 +19,9 @@ def main():
     entity_id = "test"
     graph_manager = Neo4jManager(repoId, entity_id)
 
-    graph_creator = ProjectGraphCreator("Test", lsp_caller, project_files_iterator)
+    graph_creator = ProjectGraphCreator(
+        "Test", lsp_query_helper, project_files_iterator
+    )
 
     graph = graph_creator.build()
 
@@ -33,9 +38,9 @@ def call_query_helper():
 
     file = File("main.py", "/home/juan/devel/blar/git-webhook-tester")
     print(file.uri_path)
-    imports = query_helper.create_nodes_and_relationships(file)
+    imports = query_helper.create_document_symbols_nodes_for_file_node(file)
 
 
 if __name__ == "__main__":
-    call_query_helper()
-    # main()
+    # call_query_helper()
+    main()
