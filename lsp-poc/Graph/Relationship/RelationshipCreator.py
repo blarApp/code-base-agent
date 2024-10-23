@@ -1,5 +1,5 @@
 from typing import List
-from Graph.Node import Node
+from Graph.Node import Node, FileNode
 from Graph.Relationship import Relationship, RelationshipType
 
 
@@ -23,4 +23,16 @@ class RelationshipCreator:
 
             relationships.append(relationship)
 
+        return relationships
+
+    @staticmethod
+    def _create_relationships_from_references(references_paths: set, node: Node):
+        relationships = []
+        for reference in references_paths:
+            relationship = Relationship(
+                FileNode(reference),
+                node,
+                RelationshipType.USES,
+            )
+            relationships.append(relationship)
         return relationships

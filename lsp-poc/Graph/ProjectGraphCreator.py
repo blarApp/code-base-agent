@@ -58,9 +58,13 @@ class ProjectGraphCreator:
         return nodes
 
     def create_file_children_nodes(self, file: FileNode):
-        document_symbols = (
+        document_symbols, relationships = (
             self.lsp_query_helper.create_document_symbols_nodes_for_file_node(file)
         )
+
+        if relationships:
+            self.graph.add_relationships(relationships)
+
         return document_symbols or []
 
     def create_contains_relationships(self, container: Node, nodes: List[Node]):

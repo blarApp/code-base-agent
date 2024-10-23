@@ -8,6 +8,7 @@ class LspCaller:
         self.port = port
         self.root_uri = root_uri
         self.websocket = None
+        self.cache = {}
 
     def connect(self):
         uri = f"ws://{self.host}:{self.port}"
@@ -27,9 +28,17 @@ class LspCaller:
         self.send_request(initialize_request)
 
     def send_request(self, request):
+        req_key = (request["method"], json.dumps(request["params"]))
+
+        if req_key in self.cache:
+            return self.cache[req_key]
+
         self.websocket.send(json.dumps(request))
         response = self.websocket.recv()
-        return json.loads(response)
+        response = json.loads(response)
+
+        self.cache[req_key] = response
+        return response
 
     def get_document_symbols(self, document_uri):
         document_symbol_request = {
@@ -38,7 +47,7 @@ class LspCaller:
             "method": "textDocument/documentSymbol",
             "params": {"textDocument": {"uri": document_uri}},
         }
-        return self.send_request(document_symbol_request)
+        return self.send_request(document_symbol_request).get("result")
 
     def get_definition(self, document_uri, position):
         definition_request = {
@@ -50,7 +59,26 @@ class LspCaller:
                 "position": position,
             },
         }
-        return self.send_request(definition_request)
+
+        result = self.send_request(definition_request).get("result")
+        if result:
+            return result[0]
+        return None
+
+    def get_declaration(self, document_uri, position):
+        declaration_request = {
+            "jsonrpc": "2.0",
+            "id": 9,
+            "method": "textDocument/declaration",
+            "params": {
+                "textDocument": {"uri": document_uri},
+                "position": position,
+            },
+        }
+        result = self.send_request(declaration_request).get("result")
+        if result:
+            return result[0]
+        return None
 
     def get_references(self, document_uri, position):
         reference_request = {
@@ -60,10 +88,10 @@ class LspCaller:
             "params": {
                 "textDocument": {"uri": document_uri},
                 "position": position,
-                "context": {"includeDeclaration": True},
+                "context": {"includeDeclaration": False},
             },
         }
-        return self.send_request(reference_request)
+        return self.send_request(reference_request).get("result")
 
     def get_selection_range(self, document_uri, position):
         selection_range_request = {
@@ -75,7 +103,7 @@ class LspCaller:
                 "position": position,
             },
         }
-        return self.send_request(selection_range_request)
+        return self.send_request(selection_range_request).get("result")
 
     def get_document_link(self, document_uri):
         document_link_request = {
@@ -84,7 +112,7 @@ class LspCaller:
             "method": "textDocument/documentLink",
             "params": {"textDocument": {"uri": document_uri}},
         }
-        return self.send_request(document_link_request)
+        return self.send_request(document_link_request).get("result")
 
     def shutdown_exit_close(self):
         self.shutdown()
@@ -130,6 +158,10 @@ def main():
             document_uri, {"line": 7, "character": 8}
         )
 
+        declaration = lsp_caller.get_declaration(
+            document_uri, {"line": 7, "character": 8}
+        )
+
         print("Document symbols:")
         pretty_print(document_symbols)
 
@@ -139,8 +171,11 @@ def main():
         print("References:")
         pretty_print(references)
 
-        print("Selection range:")
-        pretty_print(selection_range)
+        print("Declaration:")
+        pretty_print(declaration)
+
+        # print("Selection range:")
+        # pretty_print(selection_range)
 
     finally:
         lsp_caller.shutdown_exit_close()
