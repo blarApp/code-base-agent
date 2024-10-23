@@ -42,6 +42,10 @@ class DefinitionGetter:
     def get_definition_uri(definition: dict):
         return definition["uri"]
 
+    @staticmethod
+    def get_definition_range(definition: dict):
+        return definition["range"]
+
 
 class LspQueryHelper:
     def __init__(self, lsp_caller: LspCaller):
@@ -53,44 +57,40 @@ class LspQueryHelper:
 
     # Document symbols are symbols that are declared in a file, this includes classes, functions, methods but also imports
     def create_document_symbols_nodes_for_file_node(self, file: FileNode):
-        symbols = self.lsp_caller.get_document_symbols(file.uri_path)
+        symbols = self.lsp_caller.get_document_symbols(file.path)
         if not symbols:
-            return [], []
+            return []
         return self._get_all_symbols_as_nodes(symbols)
 
     def _get_all_symbols_as_nodes(self, symbols):
         nodes = []
-        relationships = []
+
         for symbol in symbols:
-            start_position = SymbolGetter.get_symbol_start_position(symbol)
-            uri = SymbolGetter.get_symbol_uri(symbol)
-            kind = SymbolGetter.get_symbol_kind_as_SymbolKind(symbol)
-            name = SymbolGetter.get_symbol_name(symbol)
-
-            definition = self.lsp_caller.get_declaration(uri, start_position)
-
-            # print()
-            # print("References for symbol", name, ":", references)
-            # print("Definition for symbol", name, ":", definition)
-
-            if not definition:
-                print("No definition found for symbol", name, "at", uri)
-                continue
-
-            definition_uri = DefinitionGetter.get_definition_uri(definition)
-            node = NodeFactory.create_node_based_on_kind(kind, name, definition_uri)
+            node = self._create_node_from_symbol(symbol)
             if node:
                 nodes.append(node)
 
-                # references_paths = self._get_references_paths(references)
-
-                # relationships = (
-                #     RelationshipCreator._create_relationships_from_references(
-                #         set(references_paths), node
-                #     )
-                # )
-
         return nodes
+
+    def _create_node_from_symbol(self, symbol):
+        start_position = SymbolGetter.get_symbol_start_position(symbol)
+        uri = SymbolGetter.get_symbol_uri(symbol)
+        kind = SymbolGetter.get_symbol_kind_as_SymbolKind(symbol)
+        name = SymbolGetter.get_symbol_name(symbol)
+
+        definition = self.lsp_caller.get_declaration(uri, start_position)
+        if not definition:
+            return None
+
+        definition_uri = DefinitionGetter.get_definition_uri(definition)
+        definition_range = DefinitionGetter.get_definition_range(definition)
+
+        return NodeFactory.create_node_based_on_kind(
+            kind,
+            name,
+            definition_uri,
+            definition_range,
+        )
 
     def _remove_declaration_from_references(
         self, references: List[dict], declaration: dict
