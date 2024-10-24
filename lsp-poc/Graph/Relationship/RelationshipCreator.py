@@ -26,7 +26,9 @@ class RelationshipCreator:
         return relationships
 
     @staticmethod
-    def _create_relationships_from_references(references_paths: set, node: Node):
+    def create_relationships_from_paths_where_node_is_referenced(
+        references_paths: set, node: Node
+    ):
         relationships = []
         for reference in references_paths:
             relationship = Relationship(

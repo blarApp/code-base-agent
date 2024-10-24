@@ -92,10 +92,14 @@ class LspQueryHelper:
             definition_range,
         )
 
-    def _remove_declaration_from_references(
-        self, references: List[dict], declaration: dict
-    ):
-        return [reference for reference in references if reference != declaration]
+    def get_paths_where_node_is_referenced(self, node: Node):
+        references = self.lsp_caller.get_references(
+            node.path, node.definition_range["start"]
+        )
+        print(node.path, node.definition_range, node.label)
+        if not references:
+            return []
+        return self._get_references_paths(references)
 
     def _get_references_paths(self, references: List[dict]):
         return [reference["uri"] for reference in references]
