@@ -16,6 +16,10 @@ class Node:
     def id(self):
         return self.__str__()
 
+    @property
+    def pure_path(self):
+        return self.path.replace("file://", "")
+
     def as_object(self):
         return {
             "node_id": self.id,

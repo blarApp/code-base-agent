@@ -31,6 +31,8 @@ class RelationshipCreator:
     ):
         relationships = []
         for reference in references_paths:
+            if reference == node.path:
+                continue
             relationship = Relationship(
                 FileNode(reference),
                 node,
@@ -38,3 +40,11 @@ class RelationshipCreator:
             )
             relationships.append(relationship)
         return relationships
+
+    @staticmethod
+    def create_defines_relationship(node: Node, defined_node: Node):
+        return Relationship(
+            node,
+            defined_node,
+            RelationshipType.DECLARES,
+        )

@@ -3,17 +3,19 @@ from Files import ProjectFilesIterator
 from DbManagers.Neo4jManager import Neo4jManager
 from LSP import LspQueryHelper, LspCaller
 from Files import File
+import asyncio
+from TreeSitter import TreeSitterHelper, AvailableLanguages
 
 
 def main():
-    lsp_caller = LspCaller(
-        root_uri="file:///home/juan/devel/blar/lsp-poc/ruby-on-rails-sample-app"
-    )
+    lsp_caller = LspCaller(root_uri="file:///home/juan/devel/blar/blar-django-server")
     lsp_query_helper = LspQueryHelper(lsp_caller)
+    tree_sitter_helper = TreeSitterHelper(AvailableLanguages.python)
+
     lsp_query_helper.start()
 
     project_files_iterator = ProjectFilesIterator(
-        "/home/juan/devel/blar/lsp-poc/ruby-on-rails-sample-app",
+        "/home/juan/devel/blar/blar-django-server",
         blarignore_path="/home/juan/devel/blar/lsp-poc/.blarignore",
     )
 
@@ -22,7 +24,7 @@ def main():
     graph_manager = Neo4jManager(repoId, entity_id)
 
     graph_creator = ProjectGraphCreator(
-        "Test", lsp_query_helper, project_files_iterator
+        "Test", lsp_query_helper, tree_sitter_helper, project_files_iterator
     )
 
     graph = graph_creator.build()
@@ -32,17 +34,7 @@ def main():
 
     graph_manager.save_graph(nodes, relationships)
 
-    lsp_caller.shutdown_exit_close()
-
-
-def call_query_helper():
-    lsp_caller = LspCaller(root_uri="file:///home/juan/devel/blar/git-webhook-tester")
-    query_helper = LspQueryHelper(lsp_caller)
-    query_helper.start()
-
-    file = File("main.py", "/home/juan/devel/blar/git-webhook-tester")
-    print(file.uri_path)
-    imports = query_helper.create_document_symbols_nodes_for_file_node(file)
+    lsp_query_helper.shutdown_exit_close()
 
 
 if __name__ == "__main__":
