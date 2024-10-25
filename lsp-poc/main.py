@@ -6,12 +6,14 @@ from Files import File
 
 
 def main():
-    lsp_caller = LspCaller()
+    lsp_caller = LspCaller(
+        root_uri="file:///home/juan/devel/blar/lsp-poc/ruby-on-rails-sample-app"
+    )
     lsp_query_helper = LspQueryHelper(lsp_caller)
     lsp_query_helper.start()
 
     project_files_iterator = ProjectFilesIterator(
-        "/home/juan/devel/blar/lsp-poc/",
+        "/home/juan/devel/blar/lsp-poc/ruby-on-rails-sample-app",
         blarignore_path="/home/juan/devel/blar/lsp-poc/.blarignore",
     )
 
@@ -29,6 +31,8 @@ def main():
     nodes = graph.get_nodes_as_objects()
 
     graph_manager.save_graph(nodes, relationships)
+
+    lsp_caller.shutdown_exit_close()
 
 
 def call_query_helper():

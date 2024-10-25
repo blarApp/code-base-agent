@@ -5,3 +5,6 @@ pyproject.toml
 .git
 .venv
 lsp-ws-proxy
+Guardfile
+README.md
+422.html

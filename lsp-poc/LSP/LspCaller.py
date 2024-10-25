@@ -9,6 +9,7 @@ class LspCaller:
         self.root_uri = root_uri
         self.websocket = None
         self.cache = {}
+        self.unmatched_responses = {}
 
     def connect(self):
         uri = f"ws://{self.host}:{self.port}"
@@ -29,16 +30,36 @@ class LspCaller:
 
     def send_request(self, request):
         req_key = (request["method"], json.dumps(request["params"]))
+        request_id = request["id"]
 
+        # Check if the request is already cached
         if req_key in self.cache:
             return self.cache[req_key]
 
+        # Send the request
         self.websocket.send(json.dumps(request))
-        response = self.websocket.recv()
-        response = json.loads(response)
 
-        self.cache[req_key] = response
-        return response
+        return self.get_response(request_id, req_key)
+
+    def get_response(self, request_id, req_key):
+        # Check the response cache first
+        if request_id in self.unmatched_responses:
+            response = self.unmatched_responses.pop(request_id)
+            self.cache[req_key] = response
+            return response
+
+        # Wait for the correct response ID
+        while True:
+            response = self.websocket.recv()
+            response = json.loads(response)
+
+            response_id = response.get("id")
+
+            if response_id == request_id:
+                self.cache[req_key] = response
+                return response
+            else:
+                self.unmatched_responses[response_id] = response
 
     def get_document_symbols(self, document_uri):
         document_symbol_request = {
@@ -141,38 +162,41 @@ def pretty_print(data):
 
 
 def main():
-    lsp_caller = LspCaller(root_uri="file:///home/juan/devel/blar/git-webhook-tester")
+    lsp_caller = LspCaller(
+        root_uri="file:///home/juan/devel/blar/lsp-poc/ruby-on-rails-sample-app",
+        # port=7658,
+    )
     lsp_caller.connect()
 
     try:
         lsp_caller.initialize()
-        document_uri = "file:///home/juan/devel/blar/git-webhook-tester/class1.py"
+        document_uri = "file:///home/juan/devel/blar/lsp-poc/ruby-on-rails-sample-app/app/models/application_record.rb"
 
         document_symbols = lsp_caller.get_document_symbols(document_uri)
 
-        definitions = lsp_caller.get_definition(
-            document_uri, {"line": 7, "character": 8}
-        )
+        # definitions = lsp_caller.get_definition(
+        #     document_uri, {"line": 7, "character": 8}
+        # )
 
-        references = lsp_caller.get_references(
-            document_uri, {"line": 7, "character": 8}
-        )
+        # references = lsp_caller.get_references(
+        #     document_uri, {"line": 7, "character": 8}
+        # )
 
-        declaration = lsp_caller.get_declaration(
-            document_uri, {"line": 7, "character": 8}
-        )
+        # declaration = lsp_caller.get_declaration(
+        #     document_uri, {"line": 7, "character": 8}
+        # )
 
         print("Document symbols:")
         pretty_print(document_symbols)
 
-        print("Definitions:")
-        pretty_print(definitions)
+        # print("Definitions:")
+        # pretty_print(definitions)
 
-        print("References:")
-        pretty_print(references)
+        # print("References:")
+        # pretty_print(references)
 
-        print("Declaration:")
-        pretty_print(declaration)
+        # print("Declaration:")
+        # pretty_print(declaration)
 
         # print("Selection range:")
         # pretty_print(selection_range)

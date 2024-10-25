@@ -58,6 +58,7 @@ class LspQueryHelper:
     # Document symbols are symbols that are declared in a file, this includes classes, functions, methods but also imports
     def create_document_symbols_nodes_for_file_node(self, file: FileNode):
         symbols = self.lsp_caller.get_document_symbols(file.path)
+        print(symbols)
         if not symbols:
             return []
         return self._get_all_symbols_as_nodes(symbols)
@@ -74,11 +75,15 @@ class LspQueryHelper:
 
     def _create_node_from_symbol(self, symbol):
         start_position = SymbolGetter.get_symbol_start_position(symbol)
+        end_position = SymbolGetter.get_symbol_end_position(symbol)
         uri = SymbolGetter.get_symbol_uri(symbol)
         kind = SymbolGetter.get_symbol_kind_as_SymbolKind(symbol)
         name = SymbolGetter.get_symbol_name(symbol)
 
-        definition = self.lsp_caller.get_declaration(uri, start_position)
+        start_position["character"] = start_position["character"] + 3
+
+        definition = self.lsp_caller.get_definition(uri, start_position)
+        print(definition)
         if not definition:
             return None
 
