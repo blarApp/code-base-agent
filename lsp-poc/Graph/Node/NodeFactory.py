@@ -3,7 +3,7 @@ from .FileNode import FileNode
 from .FolderNode import FolderNode
 from .FunctionNode import FunctionNode
 from LSP.SymbolKind import SymbolKind
-
+from .DefinitionRange import DefinitionRange
 
 from Files import File, Folder
 
@@ -19,7 +19,7 @@ class NodeFactory:
 
     @staticmethod
     def create_class_node(
-        class_name: str, path: str, definition_range: dict
+        class_name: str, path: str, definition_range: DefinitionRange
     ) -> ClassNode:
         return ClassNode(class_name, path, definition_range)
 
@@ -31,7 +31,7 @@ class NodeFactory:
 
     @staticmethod
     def create_node_based_on_kind(
-        kind: SymbolKind, name: str, path: str, definition_range: dict
+        kind: SymbolKind, name: str, path: str, definition_range: DefinitionRange
     ):
         if kind == SymbolKind.Class:
             return NodeFactory.create_class_node(name, path, definition_range)

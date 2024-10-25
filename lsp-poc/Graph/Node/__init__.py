@@ -5,3 +5,4 @@ from .ClassNode import ClassNode
 from .FolderNode import FolderNode
 from .FileNode import FileNode
 from .FunctionNode import FunctionNode
+from .DefinitionRange import DefinitionRange
