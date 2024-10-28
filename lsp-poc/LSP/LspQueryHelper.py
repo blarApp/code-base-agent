@@ -71,7 +71,6 @@ class LspQueryHelper:
         references = await self.lsp_caller.get_references(
             node.path, node.definition_range.start_dict
         )
-        # print(node.path, node.definition_range, node.label)
         if not references:
             return []
         return self._get_references_paths(references)

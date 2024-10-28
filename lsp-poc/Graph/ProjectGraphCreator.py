@@ -94,21 +94,13 @@ class ProjectGraphCreator:
         loop.run_until_complete(self.async_create_relationships_from_references())
 
     async def async_create_relationships_from_references(self):
-        semaphore = asyncio.Semaphore(7)
-
-        async def create_with_semaphore(node):
-            async with semaphore:
-                return await self.create(node)
-
         file_nodes = self.graph.get_nodes_by_label(NodeLabels.FILE)
 
         tasks = []
         for file_node in file_nodes:
             nodes = self.graph.get_nodes_by_path(file_node.path)
             # Schedule tasks for creating relationships for each node
-            tasks.extend(
-                create_with_semaphore(node) for node in nodes if node != file_node
-            )
+            tasks.extend(self.create(node) for node in nodes if node != file_node)
 
         # Gather and await all create tasks concurrently
         relationships = await asyncio.gather(*tasks)
@@ -118,16 +110,9 @@ class ProjectGraphCreator:
         self.graph.add_relationships(flat_relationships)
 
     async def create(self, node):
-        # Await the asynchronous call to get_paths_where_node_is_referenced
         references = await self.lsp_query_helper.get_paths_where_node_is_referenced(
             node
         )
-
-        # print("Node: ", node.id)
-        # print("References: ", references)
-        # print("")
-
-        # Use RelationshipCreator to create relationships
         relationships = RelationshipCreator.create_relationships_from_paths_where_node_is_referenced(
             references, node
         )

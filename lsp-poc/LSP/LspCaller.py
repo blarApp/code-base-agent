@@ -9,12 +9,13 @@ class LspCaller:
         self.port = port
         self.root_uri = root_uri
         self.websocket = None
-        self.cache = {}
         self.unmatched_responses = {}
         self.response_futures = {}
 
         self.id = 0
         self.id_lock = asyncio.Lock()
+
+        self.semaphore = asyncio.Semaphore(5)
 
     async def get_id(self):
         async with self.id_lock:
@@ -31,16 +32,7 @@ class LspCaller:
         while True:
             try:
                 response = await self.websocket.recv()
-                response = json.loads(response)
-                response_id = response.get("id")
-
-                # Resolve the future if it exists
-                if response_id in self.response_futures:
-                    future = self.response_futures.pop(response_id)
-                    future.set_result(response)  # Set the result of the future
-                else:
-                    # Store unmatched responses
-                    self.unmatched_responses[response_id] = response
+                self.process_response(response)
             except websockets.ConnectionClosedOK:
                 # Handle normal closure of connection
                 print("WebSocket connection closed normally.")
@@ -49,6 +41,18 @@ class LspCaller:
                 # Handle any other exceptions
                 print(f"Error in listen_for_responses: {e}")
                 break  # O
+
+    def process_response(self, response):
+        response = json.loads(response)
+        response_id = response.get("id")
+
+        # Resolve the future if it exists
+        if response_id in self.response_futures:
+            future = self.response_futures.pop(response_id)
+            future.set_result(response)
+        else:
+            # Store unmatched responses
+            self.unmatched_responses[response_id] = response
 
     async def initialize(self):
         initialize_request = {
@@ -64,25 +68,19 @@ class LspCaller:
         return await self.send_request(initialize_request)
 
     async def send_request(self, request):
-        req_key = (request["method"], json.dumps(request["params"]))
         request_id = request["id"]
-
-        # Check if the request is already cached
-        if req_key in self.cache:
-            return self.cache[req_key]
 
         # Create a future for the response
         future = asyncio.Future()
         self.response_futures[request_id] = future
 
         # Send the request
-        await self.websocket.send(json.dumps(request))
+
+        async with self.semaphore:
+            await self.websocket.send(json.dumps(request))
 
         # Await the future to get the response
         response = await future
-
-        # Cache and return the response
-        self.cache[req_key] = response
         return response
 
     async def get_document_symbols(self, document_uri):
