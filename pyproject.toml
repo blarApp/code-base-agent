@@ -11,6 +11,9 @@ asyncio = "^3.4.3"
 websockets = "^13.1"
 neo4j = "^5.25.0"
 python-dotenv = "^1.0.1"
+tree-sitter = "^0.23.2"
+tree-sitter-python = "^0.23.2"
+tree-sitter-ruby = "^0.23.0"
 
 
 [build-system]
