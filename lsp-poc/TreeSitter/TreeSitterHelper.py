@@ -43,7 +43,7 @@ class TreeSitterHelper:
         if context_stack is None:
             context_stack = []
 
-        if tree_sitter_node.type in {"class_definition", "function_definition"}:
+        if self._is_node_type_in_capture_group_types(tree_sitter_node.type):
             node, relationship = self._handle_definition_node(
                 tree_sitter_node, context_stack
             )
@@ -56,8 +56,11 @@ class TreeSitterHelper:
         for child in tree_sitter_node.children:
             self._traverse(child, context_stack)
 
-        if tree_sitter_node.type in {"class_definition", "function_definition"}:
+        if self._is_node_type_in_capture_group_types(tree_sitter_node.type):
             context_stack.pop()
+
+    def _is_node_type_in_capture_group_types(self, node_type):
+        return node_type in self.language_definitions.get_capture_group_types()
 
     def _handle_definition_node(self, tree_sitter_node, context_stack):
         """Handle the printing of node information for class and function definitions."""
