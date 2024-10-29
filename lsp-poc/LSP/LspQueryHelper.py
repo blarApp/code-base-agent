@@ -3,8 +3,6 @@ from Files import File
 from .SymbolKind import SymbolKind
 from Graph.Node import NodeFactory, FileNode, Node, DefinitionRange
 from Graph.Relationship import RelationshipCreator, RelationshipType
-import asyncio
-
 from typing import List
 
 
@@ -52,23 +50,12 @@ class LspQueryHelper:
     def __init__(self, lsp_caller: LspCaller):
         self.lsp_caller = lsp_caller
 
-    async def _aenter__(self):
-        await self.start()
-        return self
-
-    async def __aexit__(self, exc_type, exc, tb):
-        await self.shutdown_exit_close()
-
     def start(self):
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(self._start())
+        self.lsp_caller.connect()
+        self.lsp_caller.initialize()
 
-    async def _start(self):
-        await self.lsp_caller.connect()
-        await self.lsp_caller.initialize()
-
-    async def get_paths_where_node_is_referenced(self, node: Node):
-        references = await self.lsp_caller.get_references(
+    def get_paths_where_node_is_referenced(self, node: Node):
+        references = self.lsp_caller.get_references(
             node.path, node.definition_range.start_dict
         )
         if not references:
@@ -79,8 +66,4 @@ class LspQueryHelper:
         return [reference["uri"] for reference in references]
 
     def shutdown_exit_close(self):
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(self._shutdown_exit_close())
-
-    async def _shutdown_exit_close(self):
-        await self.lsp_caller.shutdown_exit_close()
+        self.lsp_caller.shutdown_exit_close()

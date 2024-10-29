@@ -90,29 +90,20 @@ class ProjectGraphCreator:
         return document_symbols, document_relationships
 
     def create_relationships_from_references(self):
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(self.async_create_relationships_from_references())
-
-    async def async_create_relationships_from_references(self):
         file_nodes = self.graph.get_nodes_by_label(NodeLabels.FILE)
 
-        tasks = []
+        relationships = []
         for file_node in file_nodes:
             nodes = self.graph.get_nodes_by_path(file_node.path)
-            # Schedule tasks for creating relationships for each node
-            tasks.extend(self.create(node) for node in nodes if node != file_node)
+            for node in nodes:
+                if node.label == NodeLabels.FILE:
+                    continue
+                
+                relationships.extend(self.create_node_relationships(node))
+        self.graph.add_relationships(relationships)
 
-        # Gather and await all create tasks concurrently
-        relationships = await asyncio.gather(*tasks)
-
-        # Flatten the list of relationships and add them to the graph
-        flat_relationships = [rel for sublist in relationships for rel in sublist]
-        self.graph.add_relationships(flat_relationships)
-
-    async def create(self, node):
-        references = await self.lsp_query_helper.get_paths_where_node_is_referenced(
-            node
-        )
+    def create_node_relationships(self, node: Node):
+        references = self.lsp_query_helper.get_paths_where_node_is_referenced(node)
         relationships = RelationshipCreator.create_relationships_from_paths_where_node_is_referenced(
             references, node
         )
