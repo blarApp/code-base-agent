@@ -4,13 +4,15 @@ from DbManagers.Neo4jManager import Neo4jManager
 from LSP import LspQueryHelper, LspCaller
 from Files import File
 import asyncio
-from TreeSitter import TreeSitterHelper, AvailableLanguages
+from TreeSitter import TreeSitterHelper
+from TreeSitter.Languages import PythonDefinitions 
 
 
 def main():
     lsp_caller = LspCaller(root_uri="file:///home/juan/devel/blar/blar-django-server")
     lsp_query_helper = LspQueryHelper(lsp_caller)
-    tree_sitter_helper = TreeSitterHelper(AvailableLanguages.python)
+    tree_sitter_helper = TreeSitterHelper(language_definitions=PythonDefinitions)
+
 
     lsp_query_helper.start()
 

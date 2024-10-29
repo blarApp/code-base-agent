@@ -1,29 +1,21 @@
-from .AvailableLanguages import AvailableLanguages
-from tree_sitter import Tree, Language, Parser
-import tree_sitter_python as tspython
-import tree_sitter_ruby as tsruby
-from Graph.Node import NodeFactory, NodeLabels, Node, DefinitionRange
+from tree_sitter import Tree, Parser
+
+from Graph.Node import NodeFactory, Node, DefinitionRange
 from Graph.Relationship import RelationshipCreator
 from LSP import SymbolKind
+from .Languages import LanguageDefinitions, PythonDefinitions
 
 
 class TreeSitterHelper:
-    def __init__(self, language: AvailableLanguages):
-        self.language = language
+    def __init__(self, language_definitions: LanguageDefinitions):
+        self.language_definitions = language_definitions
         self.parser = self._get_parser()
 
     def _get_parser(self):
-        language = self._get_language()
-        return Parser(language)
-
-    def _get_language(self):
-        if self.language == AvailableLanguages.python:
-            return Language(tspython.language())
-
-        if self.language == AvailableLanguages.ruby:
-            return Language(tsruby.language())
-
-        raise ValueError(f"Language {self.language} not supported")
+        if not self.language_definitions:
+            raise Exception("Language definitions not set")
+        
+        return Parser(self.language_definitions.get_language())
 
     def create_nodes_and_relationships_in_file(self, file_node: Node):
         self.current_path = file_node.path
@@ -123,7 +115,7 @@ class TreeSitterHelper:
 
 
 if __name__ == "__main__":
-    ts = TreeSitterHelper(AvailableLanguages.python)
+    ts = TreeSitterHelper(language_definitions=PythonDefinitions())
     tree = ts._parse(
         """
         def top_function_2():
