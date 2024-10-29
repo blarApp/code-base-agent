@@ -1,8 +1,9 @@
-from Graph.Node import Node, NodeLabels
+from Graph.Node import NodeLabels
 from .DefinitionRange import DefinitionRange
+from .DefinitionNode import DefinitionNode
 
 
-class ClassNode(Node):
+class ClassNode(DefinitionNode):
     def __init__(self, name: str, path: str, definition_range: DefinitionRange):
         super().__init__(NodeLabels.CLASS, path)
         self.name = name

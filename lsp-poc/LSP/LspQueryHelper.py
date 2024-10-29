@@ -20,6 +20,7 @@ class LspQueryHelper:
         return self._get_references_paths(references)
 
     def _get_references_paths(self, references: List[dict]):
+        print(references)
         return [reference["uri"] for reference in references]
 
     def shutdown_exit_close(self):

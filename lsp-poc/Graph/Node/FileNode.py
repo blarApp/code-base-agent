@@ -1,6 +1,7 @@
-from Graph.Node import Node, NodeLabels
+from Graph.Node import NodeLabels
+from .DefinitionNode import DefinitionNode
 
 
-class FileNode(Node):
+class FileNode(DefinitionNode):
     def __init__(self, path: str):
         super().__init__(NodeLabels.FILE, path)

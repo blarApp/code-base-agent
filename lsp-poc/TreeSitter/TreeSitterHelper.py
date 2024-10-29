@@ -1,34 +1,51 @@
-from tree_sitter import Tree, Parser
+from tree_sitter import Language, Tree, Parser
 
-from Graph.Node import NodeFactory, Node, DefinitionRange
-from Graph.Relationship import RelationshipCreator
+from Graph.Node import NodeFactory, Node, DefinitionRange, DefinitionNode
 from LSP import SymbolKind
 from .Languages import LanguageDefinitions, PythonDefinitions
 
 
 class TreeSitterHelper:
+    language_definitions: LanguageDefinitions
+    language: Language
+    parser: Parser
+
     def __init__(self, language_definitions: LanguageDefinitions):
         self.language_definitions = language_definitions
+        self.language = self.language_definitions.get_language()
         self.parser = self._get_parser()
 
     def _get_parser(self):
-        if not self.language_definitions:
-            raise Exception("Language definitions not set")
-        
-        return Parser(self.language_definitions.get_language())
+        if not self.language:
+            raise Exception("Language is not set")
+
+        return Parser(self.language)
+
+    def create_function_call_references(self, tree_sitter_node):
+        function_call_query = self.language_definitions.get_function_call_query()
+        query = self.language.query(function_call_query)
+
+        functions = query.captures(tree_sitter_node)
+
+        return functions
 
     def create_nodes_and_relationships_in_file(self, file_node: Node):
         self.current_path = file_node.path
         self.created_nodes = []
-        self.created_relationships = []
 
-        if file_node.path.endswith(".py"):
+        if self._does_path_have_valid_extension(file_node.path):
             tree = self._parse(self._get_code_from_file(file_node))
             self._traverse(tree.root_node, context_stack=[file_node])
 
-            return self.created_nodes, self.created_relationships
+            return self.created_nodes
 
-        return [], []
+        return []
+
+    def _does_path_have_valid_extension(self, path: str):
+        return any(
+            path.endswith(extension)
+            for extension in self.language_definitions.get_language_file_extensions()
+        )
 
     def _parse(self, code: str) -> Tree:
         as_bytes = bytes(code, "utf-8")
@@ -44,13 +61,9 @@ class TreeSitterHelper:
             context_stack = []
 
         if self._is_node_type_in_capture_group_types(tree_sitter_node.type):
-            node, relationship = self._handle_definition_node(
-                tree_sitter_node, context_stack
-            )
+            node = self._handle_definition_node(tree_sitter_node, context_stack)
 
             self.created_nodes.append(node)
-            self.created_relationships.append(relationship)
-
             context_stack.append(node)
 
         for child in tree_sitter_node.children:
@@ -88,11 +101,10 @@ class TreeSitterHelper:
             definition_range=identifier_def_range,
         )
 
-        relationship = RelationshipCreator.create_defines_relationship(
-            context_stack[-1], node
-        )
+        parent_node = self.get_parent_node(context_stack)
+        parent_node.relate_node_as_define_relationship(node)
 
-        return node, relationship
+        return node
 
     def _get_identifier_node(self, node):
         for child in node.children:
@@ -115,6 +127,9 @@ class TreeSitterHelper:
             return SymbolKind.Function
         else:
             return None
+
+    def get_parent_node(self, context_stack) -> DefinitionNode:
+        return context_stack[-1]
 
 
 if __name__ == "__main__":

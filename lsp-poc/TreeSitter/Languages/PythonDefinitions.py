@@ -13,3 +13,11 @@ class PythonDefinitions(LanguageDefinitions):
 
     def get_capture_group_types() -> Set[str]:
         return {"class_definition", "function_definition"}
+
+    def get_function_call_query() -> str:
+        return """
+        (call function: _ @function_call)
+        """
+
+    def get_language_file_extensions() -> Set[str]:
+        return {".py"}

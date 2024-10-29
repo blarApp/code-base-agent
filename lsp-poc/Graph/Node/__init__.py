@@ -6,3 +6,4 @@ from .FolderNode import FolderNode
 from .FileNode import FileNode
 from .FunctionNode import FunctionNode
 from .DefinitionRange import DefinitionRange
+from .DefinitionNode import DefinitionNode

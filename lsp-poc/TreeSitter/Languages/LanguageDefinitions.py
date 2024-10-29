@@ -13,3 +13,13 @@ class LanguageDefinitions(ABC):
     @abstractmethod
     def get_capture_group_types() -> Set[str]:
         pass
+
+    @staticmethod
+    @abstractmethod
+    def get_function_call_query() -> str:
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def get_language_file_extensions() -> Set[str]:
+        pass

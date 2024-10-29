@@ -1,8 +1,12 @@
-from Graph.Node import NodeLabels
+from typing import List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from Graph.Relationship import Relationship
+    from Graph.Node import NodeLabels
 
 
 class Node:
-    def __init__(self, label: NodeLabels, path: str):
+    def __init__(self, label: "NodeLabels", path: str):
         self.label = label
         self.path = path
 
@@ -30,6 +34,9 @@ class Node:
                 "node_id": self.id,
             },
         }
+
+    def get_relationships(self) -> List["Relationship"]:
+        return []
 
     def __str__(self):
         return f"{self.label}({self.path})"

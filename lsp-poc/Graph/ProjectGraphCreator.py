@@ -1,11 +1,10 @@
-from LSP import LspCaller, LspQueryHelper
-from Files import ProjectFilesIterator, Folder, File
+from LSP import LspQueryHelper
+from Files import ProjectFilesIterator, Folder
 from Graph.Node import NodeLabels, NodeFactory, Node, FileNode
-from Graph.Relationship import Relationship, RelationshipType, RelationshipCreator
+from Graph.Relationship import RelationshipCreator
 from TreeSitter import TreeSitterHelper
 from typing import List
 from Graph.Graph import Graph
-import asyncio
 
 
 class ProjectGraphCreator:
@@ -27,22 +26,35 @@ class ProjectGraphCreator:
         for folder in self.project_files_iterator:
             self.process_folder(folder)
 
-        self.create_relationships_from_references()
+        # self.create_relationships_from_references()
         return self.graph
 
     def process_folder(self, folder: Folder):
-        folder_node = NodeFactory.create_folder_node(folder)
-        self.graph.add_node(folder_node)
+        folder_node = self.add_or_get_folder_node(folder)
+        file_nodes, folder_nodes = self.create_folder_children_nodes(folder)
 
-        file_nodes = self.create_file_nodes(folder)
-        folder_nodes = self.create_folder_nodes(folder)
-        nodes = file_nodes + folder_nodes
-        self.graph.add_nodes(nodes)
+        folder_node.relate_nodes_as_contain_relationship(file_nodes)
+        folder_node.relate_nodes_as_contain_relationship(folder_nodes)
 
-        contains_relationships = self.create_contains_relationships(folder_node, nodes)
-        self.graph.add_relationships(contains_relationships)
+        self.graph.add_nodes(file_nodes)
+        self.graph.add_nodes(folder_nodes)
 
         self.process_files(file_nodes)
+
+    def add_or_get_folder_node(self, folder: Folder):
+        folder_node = NodeFactory.create_folder_node(folder)
+
+        if self.graph.has_node(folder_node):
+            return self.graph.get_node_by_id(folder_node.id)
+        else:
+            self.graph.add_node(folder_node)
+            return folder_node
+
+    def create_folder_children_nodes(self, folder: Folder):
+        file_nodes = self.create_file_nodes(folder)
+        folder_nodes = self.create_folder_nodes(folder)
+
+        return file_nodes, folder_nodes
 
     def create_file_nodes(self, folder) -> List[Node]:
         nodes = []
@@ -55,39 +67,24 @@ class ProjectGraphCreator:
     def create_folder_nodes(self, folder: Folder) -> List[Node]:
         nodes = []
         for folder in folder.folders:
-            folder_node = NodeFactory.create_folder_node(folder)
+            folder_node = self.add_or_get_folder_node(folder)
             nodes.append(folder_node)
 
         return nodes
-
-    def create_contains_relationships(self, container: Node, nodes: List[Node]):
-        contains = []
-        for node in nodes:
-            contains.append(self.create_contains_relationship(container, node))
-
-        return contains
-
-    def create_contains_relationship(self, parent, child):
-        return Relationship(
-            start_node=parent,
-            end_node=child,
-            rel_type=RelationshipType.CONTAINS,
-        )
 
     def process_files(self, files: List[FileNode]):
         for file in files:
             self.process_file(file)
 
     def process_file(self, file: FileNode):
-        children_nodes, children_relationships = self.create_file_children_nodes(file)
-        self.graph.add_relationships(children_relationships)
+        children_nodes = self.create_file_children_nodes(file)
         self.graph.add_nodes(children_nodes)
 
     def create_file_children_nodes(self, file: FileNode):
-        document_symbols, document_relationships = (
+        document_symbols = (
             self.tree_sitter_helper.create_nodes_and_relationships_in_file(file)
         )
-        return document_symbols, document_relationships
+        return document_symbols
 
     def create_relationships_from_references(self):
         file_nodes = self.graph.get_nodes_by_label(NodeLabels.FILE)
@@ -98,7 +95,7 @@ class ProjectGraphCreator:
             for node in nodes:
                 if node.label == NodeLabels.FILE:
                     continue
-                
+
                 relationships.extend(self.create_node_relationships(node))
         self.graph.add_relationships(relationships)
 
