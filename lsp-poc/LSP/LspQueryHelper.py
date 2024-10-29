@@ -1,49 +1,6 @@
 from .LspCaller import LspCaller
-from Files import File
-from .SymbolKind import SymbolKind
-from Graph.Node import NodeFactory, FileNode, Node, DefinitionRange
-from Graph.Relationship import RelationshipCreator, RelationshipType
+from Graph.Node import Node
 from typing import List
-
-
-class SymbolGetter:
-    @staticmethod
-    def get_symbol_start_position(symbol: dict):
-        return symbol["location"]["range"]["start"]
-
-    @staticmethod
-    def get_symbol_end_position(symbol: dict):
-        return symbol["location"]["range"]["end"]
-
-    @staticmethod
-    def get_symbol_uri(symbol: dict):
-        return symbol["location"]["uri"]
-
-    @staticmethod
-    def get_symbol_kind_as_SymbolKind(symbol: dict):
-        return SymbolKind(symbol["kind"])
-
-    @staticmethod
-    def get_symbol_name(symbol: dict):
-        return symbol["name"]
-
-    @staticmethod
-    def get_symbol_start_line(symbol: dict):
-        return symbol["location"]["range"]["start"]["line"]
-
-    @staticmethod
-    def get_symbol_end_line(symbol: dict):
-        return symbol["location"]["range"]["end"]["line"]
-
-
-class DefinitionGetter:
-    @staticmethod
-    def get_definition_uri(definition: dict):
-        return definition["uri"]
-
-    @staticmethod
-    def get_definition_range(definition: dict):
-        return definition["range"]
 
 
 class LspQueryHelper:

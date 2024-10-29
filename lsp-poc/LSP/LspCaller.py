@@ -10,9 +10,9 @@ class LspCaller:
         self.websocket = None
         self.cache = {}
         self.unmatched_responses = {}
-        
+
         self._id = 0
-        
+
     @property
     def id(self):
         self._id += 1
@@ -174,5 +174,7 @@ def main():
         # port=7658,
     )
     lsp_caller.connect()
+
+
 if __name__ == "__main__":
     main()
