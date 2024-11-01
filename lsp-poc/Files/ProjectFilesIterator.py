@@ -26,27 +26,30 @@ class ProjectFilesIterator:
     def __iter__(self):
         for root, dirs, files in os.walk(self.root_path, topdown=True):
             dirs[:] = self._get_filtered_dirs(root, dirs)
-            files = self._get_filtered_files(root, files)
-
-            folders = self.empty_folders_from_dirs(root, dirs)
+            level = root.count(os.sep) - self.root_path.count(os.sep)
+            files = self._get_filtered_files(root, files, level + 1)
+            folders = self.empty_folders_from_dirs(root, dirs, level + 1)
 
             if not self._should_skip(root):
                 yield Folder(
                     root,
                     files,
                     folders,
+                    level,
                 )
 
     def _get_filtered_dirs(self, root: str, dirs: List[str]) -> List[Folder]:
         dirs = [dir for dir in dirs if not self._should_skip(os.path.join(root, dir))]
         return dirs
 
-    def _get_filtered_files(self, root: str, files: List[str]) -> List[File]:
+    def _get_filtered_files(
+        self, root: str, files: List[str], level: int
+    ) -> List[File]:
         files = [
             file for file in files if not self._should_skip(os.path.join(root, file))
         ]
 
-        return [File(name=file, root_path=root) for file in files]
+        return [File(name=file, root_path=root, level=level) for file in files]
 
     def _should_skip(self, path: str) -> bool:
         is_basename_in_names_to_skip = os.path.basename(path) in self.names_to_skip
@@ -57,8 +60,18 @@ class ProjectFilesIterator:
 
         return is_basename_in_names_to_skip or is_path_in_paths_to_skip
 
-    def empty_folders_from_dirs(self, root: str, dirs: List[str]) -> List[Folder]:
-        return [Folder(os.path.join(root, dir), [], []) for dir in dirs]
+    def empty_folders_from_dirs(
+        self, root: str, dirs: List[str], level
+    ) -> List[Folder]:
+        return [
+            Folder(
+                os.path.join(root, dir),
+                [],
+                [],
+                level,
+            )
+            for dir in dirs
+        ]
 
 
 if __name__ == "__main__":

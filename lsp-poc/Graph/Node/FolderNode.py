@@ -5,9 +5,9 @@ from Graph.Relationship import RelationshipCreator, Relationship
 
 
 class FolderNode(Node):
-    def __init__(self, path: str):
+    def __init__(self, path: str, name: str, level: int):
         self._contains = []
-        super().__init__(NodeLabels.FOLDER, path)
+        super().__init__(NodeLabels.FOLDER, path, name, level)
 
     def relate_node_as_contain_relationship(self, node: Union[FileNode, "FolderNode"]):
         if isinstance(node, FileNode) or isinstance(node, FolderNode):

@@ -3,3 +3,5 @@ __pycache__/
 .env
 lsp-ws-proxy/
 ruby-on-rails-sample-app/
+.python-version
+.vscode/
