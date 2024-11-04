@@ -1,13 +1,25 @@
 from LSP import LspQueryHelper
-from Files import ProjectFilesIterator, Folder, File
-from Graph.Node import NodeLabels, NodeFactory, Node, FolderNode
+from Files import ProjectFilesIterator
+from Graph.Node import NodeLabels, NodeFactory
 from Graph.Relationship import RelationshipCreator
 from TreeSitter import TreeSitterHelper
-from typing import List
+from typing import List, TYPE_CHECKING
 from Graph.Graph import Graph
+
+if TYPE_CHECKING:
+    from Graph.Node import FolderNode
+    from Files import Folder, File
+    from Graph.Node import Node
+    from Graph.Relationship import Relationship
 
 
 class ProjectGraphCreator:
+    root_path: str
+    lsp_query_helper: LspQueryHelper
+    tree_sitter_helper: TreeSitterHelper
+    project_files_iterator: ProjectFilesIterator
+    graph: Graph
+
     def __init__(
         self,
         root_path: str,
@@ -22,14 +34,14 @@ class ProjectGraphCreator:
 
         self.graph = Graph()
 
-    def build(self):
+    def build(self) -> Graph:
         for folder in self.project_files_iterator:
             self.process_folder(folder)
 
         self.create_relationships_from_references()
         return self.graph
 
-    def process_folder(self, folder: Folder):
+    def process_folder(self, folder: "Folder") -> None:
         folder_node = self.add_or_get_folder_node(folder)
         folder_nodes = self.create_subfolder_nodes(folder)
         folder_node.relate_nodes_as_contain_relationship(folder_nodes)
@@ -39,7 +51,7 @@ class ProjectGraphCreator:
         files = folder.files
         self.process_files(files, parent_folder=folder_node)
 
-    def add_or_get_folder_node(self, folder: Folder):
+    def add_or_get_folder_node(self, folder: "Folder") -> "FolderNode":
         folder_node = NodeFactory.create_folder_node(folder)
 
         if self.graph.has_node(folder_node):
@@ -48,12 +60,12 @@ class ProjectGraphCreator:
             self.graph.add_node(folder_node)
             return folder_node
 
-    def create_subfolder_nodes(self, folder: Folder):
+    def create_subfolder_nodes(self, folder: "Folder") -> List["Node"]:
         folder_nodes = self.create_folder_nodes(folder)
 
         return folder_nodes
 
-    def create_folder_nodes(self, folder: Folder) -> List[Node]:
+    def create_folder_nodes(self, folder: "Folder") -> List["Node"]:
         nodes = []
         for folder in folder.folders:
             folder_node = self.add_or_get_folder_node(folder)
@@ -61,11 +73,11 @@ class ProjectGraphCreator:
 
         return nodes
 
-    def process_files(self, files: List[File], parent_folder: FolderNode):
+    def process_files(self, files: List["File"], parent_folder: "FolderNode") -> None:
         for file in files:
             self.process_file(file, parent_folder)
 
-    def process_file(self, file: File, parent_folder: FolderNode):
+    def process_file(self, file: "File", parent_folder: "FolderNode") -> None:
         file_nodes = self.create_file_nodes(file)
         self.graph.add_nodes(file_nodes)
 
@@ -73,7 +85,7 @@ class ProjectGraphCreator:
 
         parent_folder.relate_node_as_contain_relationship(file_node)
 
-    def get_file_node_from_file_nodes(self, file_nodes):
+    def get_file_node_from_file_nodes(self, file_nodes) -> "Node":
         # File node should always be the first node in the list
         for node in file_nodes:
             if node.label == NodeLabels.FILE:
@@ -81,11 +93,11 @@ class ProjectGraphCreator:
 
         raise ValueError("File node not found in file nodes")
 
-    def create_file_nodes(self, file: File):
+    def create_file_nodes(self, file: "File") -> List["Node"]:
         document_symbols = self.tree_sitter_helper.create_nodes_and_relationships_in_file(file)
         return document_symbols
 
-    def create_relationships_from_references(self):
+    def create_relationships_from_references(self) -> None:
         file_nodes = self.graph.get_nodes_by_label(NodeLabels.FILE)
 
         references_relationships = []
@@ -98,7 +110,7 @@ class ProjectGraphCreator:
                 references_relationships.extend(self.create_node_relationships(node))
         self.graph.add_references_relationships(references_relationships=references_relationships)
 
-    def create_node_relationships(self, node: Node):
+    def create_node_relationships(self, node: "Node") -> List["Relationship"]:
         references = self.lsp_query_helper.get_paths_where_node_is_referenced(node)
         relationships = RelationshipCreator.create_relationships_from_paths_where_node_is_referenced(
             references=references, node=node, graph=self.graph
