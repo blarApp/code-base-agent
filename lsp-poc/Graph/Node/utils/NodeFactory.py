@@ -2,10 +2,13 @@ from ..ClassNode import ClassNode
 from ..FileNode import FileNode
 from ..FolderNode import FolderNode
 from ..FunctionNode import FunctionNode
-from ..types.CodeRange import CodeRange
 from LSP.SymbolKind import SymbolKind
 
 from Files import File, Folder
+from typing import Union, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..types.CodeRange import CodeRange
 
 
 class NodeFactory:
@@ -19,7 +22,7 @@ class NodeFactory:
 
     @staticmethod
     def create_file_node(
-        path: str, name: str, level: int, node_range: CodeRange, definition_range: CodeRange, code_text: str
+        path: str, name: str, level: int, node_range: "CodeRange", definition_range: "CodeRange", code_text: str
     ) -> FileNode:
         return FileNode(
             path=path,
@@ -34,8 +37,8 @@ class NodeFactory:
     def create_class_node(
         class_name: str,
         path: str,
-        definition_range: CodeRange,
-        node_range: CodeRange,
+        definition_range: "CodeRange",
+        node_range: "CodeRange",
         code_text: str,
         level: int,
     ) -> ClassNode:
@@ -45,8 +48,8 @@ class NodeFactory:
     def create_function_node(
         function_name: str,
         path: str,
-        definition_range: CodeRange,
-        node_range: CodeRange,
+        definition_range: "CodeRange",
+        node_range: "CodeRange",
         code_text: str,
         level: int,
     ) -> FunctionNode:
@@ -57,14 +60,14 @@ class NodeFactory:
         kind: SymbolKind,
         name: str,
         path: str,
-        definition_range: CodeRange,
-        node_range: CodeRange,
+        definition_range: "CodeRange",
+        node_range: "CodeRange",
         code_text: str,
         level: int,
-    ):
+    ) -> Union[ClassNode, FunctionNode]:
         if kind == SymbolKind.Class:
             return NodeFactory.create_class_node(name, path, definition_range, node_range, code_text, level)
         elif kind == SymbolKind.Function:
             return NodeFactory.create_function_node(name, path, definition_range, node_range, code_text, level)
         else:
-            return None
+            raise ValueError(f"Kind {kind} is not supported")
