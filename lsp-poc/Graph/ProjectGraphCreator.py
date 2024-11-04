@@ -26,7 +26,7 @@ class ProjectGraphCreator:
         for folder in self.project_files_iterator:
             self.process_folder(folder)
 
-        # self.create_relationships_from_references()
+        self.create_relationships_from_references()
         return self.graph
 
     def process_folder(self, folder: Folder):
@@ -89,20 +89,21 @@ class ProjectGraphCreator:
     def create_relationships_from_references(self):
         file_nodes = self.graph.get_nodes_by_label(NodeLabels.FILE)
 
-        relationships = []
+        references_relationships = []
         for file_node in file_nodes:
             nodes = self.graph.get_nodes_by_path(file_node.path)
             for node in nodes:
                 if node.label == NodeLabels.FILE:
                     continue
 
-                relationships.extend(self.create_node_relationships(node))
-        self.graph.add_relationships(relationships)
+                references_relationships.extend(self.create_node_relationships(node))
+        self.graph.add_references_relationships(references_relationships=references_relationships)
 
     def create_node_relationships(self, node: Node):
         references = self.lsp_query_helper.get_paths_where_node_is_referenced(node)
+        file_node_reference = self.graph.get_file_node_by_path(node.path)
         relationships = RelationshipCreator.create_relationships_from_paths_where_node_is_referenced(
-            references, node
+            references=references, node=node, file_node_reference=file_node_reference
         )
 
         return relationships

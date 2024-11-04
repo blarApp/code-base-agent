@@ -1,6 +1,5 @@
 from .LspCaller import LspCaller
 from Graph.Node import Node
-from typing import List
 
 
 class LspQueryHelper:
@@ -16,12 +15,9 @@ class LspQueryHelper:
             node.path, node.definition_range.start_dict
         )
         if not references:
+            print(f"No references found for {node.name}")
             return []
-        return self._get_references_paths(references)
-
-    def _get_references_paths(self, references: List[dict]):
-        print(references)
-        return [reference["uri"] for reference in references]
+        return references
 
     def shutdown_exit_close(self):
         self.lsp_caller.shutdown_exit_close()

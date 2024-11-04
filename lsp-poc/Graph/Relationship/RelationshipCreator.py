@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import List, TYPE_CHECKING
 from Graph.Relationship import Relationship, RelationshipType
 
@@ -29,16 +30,24 @@ class RelationshipCreator:
 
     @staticmethod
     def create_relationships_from_paths_where_node_is_referenced(
-        references_paths: set, node: "Node"
+        references: set, node: "Node", file_node_reference: "FileNode"
     ):
+        try:
+            FileNode
+        except NameError:
+            from Graph.Node import FileNode
+
         relationships = []
-        for reference in references_paths:
+        for reference in references:
             if reference == node.path:
                 continue
+
+            node_referenced = file_node_reference.reference_search(reference)
+
             relationship = Relationship(
-                FileNode(reference),
-                node,
-                RelationshipType.USES,
+                start_node=node,
+                end_node=node_referenced,
+                rel_type=RelationshipType.USES,
             )
             relationships.append(relationship)
         return relationships

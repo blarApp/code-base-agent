@@ -1,6 +1,6 @@
 from tree_sitter import Language, Tree, Parser
 
-from Graph.Node import NodeFactory, Node, DefinitionRange, DefinitionNode
+from Graph.Node import NodeFactory, Node, CodeRange, DefinitionNode
 from LSP import SymbolKind
 from .Languages import LanguageDefinitions, PythonDefinitions
 
@@ -42,10 +42,7 @@ class TreeSitterHelper:
         return []
 
     def _does_path_have_valid_extension(self, path: str):
-        return any(
-            path.endswith(extension)
-            for extension in self.language_definitions.get_language_file_extensions()
-        )
+        return any(path.endswith(extension) for extension in self.language_definitions.get_language_file_extensions())
 
     def _parse(self, code: str) -> Tree:
         as_bytes = bytes(code, "utf-8")
@@ -79,9 +76,9 @@ class TreeSitterHelper:
         """Handle the printing of node information for class and function definitions."""
 
         identifier_node = self._get_identifier_node(tree_sitter_node)
-        identifier_def_range = self._get_definition_range_from_identifier_node(
-            identifier_node
-        )
+        identifier_def_range = self._get_definition_range_from_identifier_node(node=identifier_node)
+        node_range = self._get_node_range_from_node(node=tree_sitter_node)
+
         identifier_name = identifier_node.text.decode("utf-8")
 
         # context = "File"
@@ -99,6 +96,7 @@ class TreeSitterHelper:
             name=identifier_name,
             path=self.current_path,
             definition_range=identifier_def_range,
+            node_range=node_range,
         )
 
         parent_node = self.get_parent_node(context_stack)
@@ -112,12 +110,20 @@ class TreeSitterHelper:
                 return child
         return None
 
-    def _get_definition_range_from_identifier_node(self, identifier_node):
-        return DefinitionRange(
-            identifier_node.start_point[0],
-            identifier_node.start_point[1],
-            identifier_node.end_point[0],
-            identifier_node.end_point[1],
+    def _get_definition_range_from_identifier_node(self, node):
+        return CodeRange(
+            start_line=node.start_point[0],
+            start_character=node.start_point[1],
+            end_line=node.end_point[0],
+            end_character=node.end_point[1],
+        )
+
+    def _get_node_range_from_node(self, node):
+        return CodeRange(
+            start_line=node.start_point[0],
+            start_character=node.start_point[1],
+            end_line=node.end_point[0],
+            end_character=node.end_point[1],
         )
 
     def _get_tree_sitter_node_kind(self, node):

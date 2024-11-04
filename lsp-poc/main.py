@@ -7,15 +7,17 @@ from TreeSitter.Languages import PythonDefinitions
 
 
 def main():
-    lsp_caller = LspCaller(root_uri="file:///home/juan/devel/blar/blar-django-server")
+    lsp_caller = LspCaller(
+        root_uri="/Users/berrazuriz/Desktop/Blar/repositories/code-base-agent/src/blar_graph"
+    )
     lsp_query_helper = LspQueryHelper(lsp_caller)
     tree_sitter_helper = TreeSitterHelper(language_definitions=PythonDefinitions)
 
     lsp_query_helper.start()
 
     project_files_iterator = ProjectFilesIterator(
-        "/home/juan/devel/blar/blar-django-server",
-        blarignore_path="/home/juan/devel/blar/lsp-poc/.blarignore",
+        "/Users/berrazuriz/Desktop/Blar/repositories/code-base-agent/src/blar_graph",
+        blarignore_path="/Users/berrazuriz/Desktop/Blar/repositories/lsp-poc/.blarignore",
     )
 
     repoId = "test"
