@@ -1,6 +1,6 @@
+from .types.CodeRange import CodeRange
+from .types.DefinitionNode import DefinitionNode
 from Graph.Node import NodeLabels
-from .DefinitionRange import DefinitionRange
-from .DefinitionNode import DefinitionNode
 
 
 class ClassNode(DefinitionNode):
@@ -8,15 +8,20 @@ class ClassNode(DefinitionNode):
         self,
         name: str,
         path: str,
-        definition_range: DefinitionRange,
-        node_range: DefinitionRange,
+        definition_range: CodeRange,
+        node_range: CodeRange,
         code_text: str,
         level: int,
     ):
-        super().__init__(NodeLabels.CLASS, path, name, level)
-        self.definition_range = definition_range
-        self.code_text = code_text
-        self.node_range = node_range
+        super().__init__(
+            label=NodeLabels.CLASS,
+            path=path,
+            name=name,
+            level=level,
+            definition_range=definition_range,
+            code_text=code_text,
+            node_range=node_range,
+        )
 
     def __str__(self):
         return f"{self.label}({self.path})#{self.name}"

@@ -3,7 +3,9 @@ import json
 
 
 class LspCaller:
-    def __init__(self, host="localhost", port=5000, root_uri=None):
+    def __init__(self, root_uri: str, host="localhost", port=5000):
+        self.validate_uri(root_uri)
+
         self.host = host
         self.port = port
         self.root_uri = root_uri
@@ -17,6 +19,10 @@ class LspCaller:
     def id(self):
         self._id += 1
         return self._id
+
+    def validate_uri(self, uri: str):
+        if not uri.endswith("/"):
+            raise ValueError("URI must end with a slash")
 
     def connect(self):
         uri = f"ws://{self.host}:{self.port}"

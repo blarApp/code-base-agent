@@ -1,7 +1,7 @@
 from typing import NamedTuple
 
 
-class DefinitionRange(NamedTuple):
+class CodeRange(NamedTuple):
     start_line: int
     start_character: int
     end_line: int
