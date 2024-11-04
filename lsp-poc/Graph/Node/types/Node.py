@@ -8,6 +8,8 @@ if TYPE_CHECKING:
 class Node:
     label: "NodeLabels"
     path: str
+    name: str
+    level: int
 
     def __init__(self, label: "NodeLabels", path: str, name: str, level: int):
         self.label = label

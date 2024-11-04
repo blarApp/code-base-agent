@@ -4,9 +4,23 @@ from .types.DefinitionNode import DefinitionNode
 
 
 class FunctionNode(DefinitionNode):
-    def __init__(self, path: str, name: str, definition_range: CodeRange, node_range: CodeRange):
+    def __init__(
+        self,
+        path: str,
+        name: str,
+        definition_range: CodeRange,
+        node_range: CodeRange,
+        code_text: str,
+        level: int,
+    ):
         super().__init__(
-            label=NodeLabels.FUNCTION, path=path, name=name, definition_range=definition_range, node_range=node_range
+            label=NodeLabels.FUNCTION,
+            path=path,
+            name=name,
+            level=level,
+            definition_range=definition_range,
+            code_text=code_text,
+            node_range=node_range,
         )
 
     def __str__(self):

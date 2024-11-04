@@ -1,6 +1,6 @@
 from LSP import LspQueryHelper
-from Files import ProjectFilesIterator, Folder
-from Graph.Node import NodeLabels, NodeFactory, Node, FileNode
+from Files import ProjectFilesIterator, Folder, File
+from Graph.Node import NodeLabels, NodeFactory, Node, FolderNode
 from Graph.Relationship import RelationshipCreator
 from TreeSitter import TreeSitterHelper
 from typing import List
@@ -31,15 +31,13 @@ class ProjectGraphCreator:
 
     def process_folder(self, folder: Folder):
         folder_node = self.add_or_get_folder_node(folder)
-        file_nodes, folder_nodes = self.create_folder_children_nodes(folder)
-
-        folder_node.relate_nodes_as_contain_relationship(file_nodes)
+        folder_nodes = self.create_subfolder_nodes(folder)
         folder_node.relate_nodes_as_contain_relationship(folder_nodes)
 
-        self.graph.add_nodes(file_nodes)
         self.graph.add_nodes(folder_nodes)
 
-        self.process_files(file_nodes)
+        files = folder.files
+        self.process_files(files, parent_folder=folder_node)
 
     def add_or_get_folder_node(self, folder: Folder):
         folder_node = NodeFactory.create_folder_node(folder)
@@ -50,19 +48,10 @@ class ProjectGraphCreator:
             self.graph.add_node(folder_node)
             return folder_node
 
-    def create_folder_children_nodes(self, folder: Folder):
-        file_nodes = self.create_file_nodes(folder)
+    def create_subfolder_nodes(self, folder: Folder):
         folder_nodes = self.create_folder_nodes(folder)
 
-        return file_nodes, folder_nodes
-
-    def create_file_nodes(self, folder) -> List[Node]:
-        nodes = []
-        for file in folder.files:
-            file_node = NodeFactory.create_file_node(file)
-            nodes.append(file_node)
-
-        return nodes
+        return folder_nodes
 
     def create_folder_nodes(self, folder: Folder) -> List[Node]:
         nodes = []
@@ -72,18 +61,28 @@ class ProjectGraphCreator:
 
         return nodes
 
-    def process_files(self, files: List[FileNode]):
+    def process_files(self, files: List[File], parent_folder: FolderNode):
         for file in files:
-            self.process_file(file)
+            self.process_file(file, parent_folder)
 
-    def process_file(self, file: FileNode):
-        children_nodes = self.create_file_children_nodes(file)
-        self.graph.add_nodes(children_nodes)
+    def process_file(self, file: File, parent_folder: FolderNode):
+        file_nodes = self.create_file_nodes(file)
+        self.graph.add_nodes(file_nodes)
 
-    def create_file_children_nodes(self, file: FileNode):
-        document_symbols = (
-            self.tree_sitter_helper.create_nodes_and_relationships_in_file(file)
-        )
+        file_node = self.get_file_node_from_file_nodes(file_nodes)
+
+        parent_folder.relate_node_as_contain_relationship(file_node)
+
+    def get_file_node_from_file_nodes(self, file_nodes):
+        # File node should always be the first node in the list
+        for node in file_nodes:
+            if node.label == NodeLabels.FILE:
+                return node
+
+        raise ValueError("File node not found in file nodes")
+
+    def create_file_nodes(self, file: File):
+        document_symbols = self.tree_sitter_helper.create_nodes_and_relationships_in_file(file)
         return document_symbols
 
     def create_relationships_from_references(self):
