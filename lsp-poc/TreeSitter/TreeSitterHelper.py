@@ -4,11 +4,16 @@ from Graph.Node import NodeFactory, Node, DefinitionRange, DefinitionNode
 from LSP import SymbolKind
 from .Languages import LanguageDefinitions, PythonDefinitions
 
+from typing import List
+
 
 class TreeSitterHelper:
     language_definitions: LanguageDefinitions
     language: Language
     parser: Parser
+    current_path: str
+    base_node_source_code: str
+    created_nodes: List[Node]
 
     def __init__(self, language_definitions: LanguageDefinitions):
         self.language_definitions = language_definitions
@@ -32,11 +37,13 @@ class TreeSitterHelper:
     def create_nodes_and_relationships_in_file(self, file_node: Node):
         self.current_path = file_node.path
         self.created_nodes = []
+        self.base_node_source_code = ""
 
         if self._does_path_have_valid_extension(file_node.path):
-            code = self._get_code_from_file(file_node)
-            tree = self._parse(code)
-            self._traverse(tree.root_node, context_stack=[file_node], code=code)
+            self.base_node_source_code = self._get_content_from_file(file_node)
+            file_content = self._get_content_from_file(file_node)
+            tree = self._parse(file_content)
+            self._traverse(tree.root_node, context_stack=[file_node])
 
             return self.created_nodes
 
@@ -52,23 +59,23 @@ class TreeSitterHelper:
         as_bytes = bytes(code, "utf-8")
         return self.parser.parse(as_bytes)
 
-    def _get_code_from_file(self, file_node: Node):
+    def _get_content_from_file(self, file_node: Node):
         with open(file_node.pure_path, "r") as file:
             return file.read()
 
-    def _traverse(self, tree_sitter_node, context_stack, code: str):
+    def _traverse(self, tree_sitter_node, context_stack):
         """Perform a recursive preorder traversal of the tree."""
         if context_stack is None:
             context_stack = []
 
         if self._is_node_type_in_capture_group_types(tree_sitter_node.type):
-            node = self._handle_definition_node(tree_sitter_node, context_stack, code)
+            node = self._handle_definition_node(tree_sitter_node, context_stack)
 
             self.created_nodes.append(node)
             context_stack.append(node)
 
         for child in tree_sitter_node.children:
-            self._traverse(child, context_stack, code)
+            self._traverse(child, context_stack)
 
         if self._is_node_type_in_capture_group_types(tree_sitter_node.type):
             context_stack.pop()
@@ -76,7 +83,7 @@ class TreeSitterHelper:
     def _is_node_type_in_capture_group_types(self, node_type):
         return node_type in self.language_definitions.get_capture_group_types()
 
-    def _handle_definition_node(self, tree_sitter_node, context_stack, code: str):
+    def _handle_definition_node(self, tree_sitter_node, context_stack):
         """Handle the printing of node information for class and function definitions."""
 
         identifier_node = self._get_identifier_node(tree_sitter_node)
@@ -92,7 +99,7 @@ class TreeSitterHelper:
             f"Node End: (line {node_range.end_line}, char {node_range.end_character})"
         )
 
-        code_snippet = self.get_code_segment(code, node_range)
+        code_snippet = self._get_code_snippet_from_base_file(node_range)
         parent_node = self.get_parent_node(context_stack)
 
         node = NodeFactory.create_node_based_on_kind(
@@ -112,10 +119,10 @@ class TreeSitterHelper:
         identifier_name = identifier_node.text.decode("utf-8")
         return identifier_name
 
-    def get_code_segment(self, code, node_range):
+    def _get_code_snippet_from_base_file(self, node_range) -> str:
         start_line = node_range.start_line
         end_line = node_range.end_line
-        code_lines = code.splitlines()
+        code_lines = self.base_node_source_code.split("\n")
         code_snippet = "\n".join(code_lines[start_line : end_line + 1])
         return code_snippet
 

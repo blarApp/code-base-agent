@@ -32,19 +32,20 @@ class ProjectFilesIterator:
 
             if not self._should_skip(current_path):
                 yield Folder(
+                    name=self.get_base_name(current_path),
                     path=current_path,
                     files=files,
                     folders=folders,
                     level=level,
                 )
 
-    def get_path_level_relative_to_root(self, path):
-        level = path.count(os.sep) - self.root_path.count(os.sep)
-        return level
-
     def _get_filtered_dirs(self, root: str, dirs: List[str]) -> List[Folder]:
         dirs = [dir for dir in dirs if not self._should_skip(os.path.join(root, dir))]
         return dirs
+
+    def get_path_level_relative_to_root(self, path):
+        level = path.count(os.sep) - self.root_path.count(os.sep)
+        return level
 
     def _get_filtered_files(
         self, root: str, files: List[str], level: int
@@ -54,15 +55,6 @@ class ProjectFilesIterator:
         ]
 
         return [File(name=file, root_path=root, level=level) for file in files]
-
-    def _should_skip(self, path: str) -> bool:
-        is_basename_in_names_to_skip = os.path.basename(path) in self.names_to_skip
-
-        is_path_in_paths_to_skip = any(
-            path.startswith(path_to_skip) for path_to_skip in self.paths_to_skip
-        )
-
-        return is_basename_in_names_to_skip or is_path_in_paths_to_skip
 
     def empty_folders_from_dirs(
         self, root: str, dirs: List[str], level
@@ -76,6 +68,18 @@ class ProjectFilesIterator:
             )
             for dir in dirs
         ]
+
+    def _should_skip(self, path: str) -> bool:
+        is_basename_in_names_to_skip = os.path.basename(path) in self.names_to_skip
+
+        is_path_in_paths_to_skip = any(
+            path.startswith(path_to_skip) for path_to_skip in self.paths_to_skip
+        )
+
+        return is_basename_in_names_to_skip or is_path_in_paths_to_skip
+
+    def get_base_name(self, current_path: str) -> str:
+        return os.path.basename(current_path)
 
 
 if __name__ == "__main__":

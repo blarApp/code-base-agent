@@ -6,9 +6,9 @@ import os
 
 class Folder:
     def __init__(
-        self, path: str, files: List[File], folders: List["Folder"], level: int
+        self, name:str,  path: str, files: List[File], folders: List["Folder"], level: int
     ):
-        self.name = os.path.basename(path)
+        self.name = name
         self.path = path
         self.files = files
         self.folders = folders
