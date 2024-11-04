@@ -1,5 +1,6 @@
 from collections import defaultdict
 from .Node import Node, NodeLabels
+from .Node import FileNode
 
 
 class Graph:
@@ -33,8 +34,8 @@ class Graph:
 
     def get_nodes_by_path(self, path):
         return self.nodes_by_path[path]
-    
-    def get_file_node_by_path(self, path):
+
+    def get_file_node_by_path(self, path) -> FileNode:
         return self.file_nodes_by_path[path]
 
     def get_nodes_by_label(self, label):
@@ -55,7 +56,7 @@ class Graph:
             relationships.extend(node.get_relationships())
 
         return relationships
-    
+
     def add_references_relationships(self, references_relationships: list):
         self.references_relationships.extend(references_relationships)
 
