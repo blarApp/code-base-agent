@@ -6,6 +6,9 @@ if TYPE_CHECKING:
 
 
 class Node:
+    label: "NodeLabels"
+    path: str
+
     def __init__(self, label: "NodeLabels", path: str):
         self.label = label
         self.path = path
