@@ -2,9 +2,10 @@ import os
 
 
 class File:
-    def __init__(self, name: str, root_path: str):
+    def __init__(self, name: str, root_path: str, level: int):
         self.name = name
         self.root_path = root_path
+        self.level = level
 
     @property
     def path(self):
