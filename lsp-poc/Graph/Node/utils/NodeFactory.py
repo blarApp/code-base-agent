@@ -14,11 +14,11 @@ if TYPE_CHECKING:
 class NodeFactory:
     @staticmethod
     def create_folder_node(folder: Folder) -> FolderNode:
-        return FolderNode(folder.uri_path, folder.name, folder.level)
+        return FolderNode(path=folder.uri_path, name=folder.name, level=folder.level)
 
     @staticmethod
     def create_file_node_from_file(file: File) -> FileNode:
-        return FileNode(file.uri_path, file.name, level=file.level)
+        return FileNode(path=file.uri_path, name=file.name, level=file.level)
 
     @staticmethod
     def create_file_node(
@@ -42,7 +42,14 @@ class NodeFactory:
         code_text: str,
         level: int,
     ) -> ClassNode:
-        return ClassNode(class_name, path, definition_range, node_range, code_text, level)
+        return ClassNode(
+            name=class_name,
+            path=path,
+            definition_range=definition_range,
+            node_range=node_range,
+            code_text=code_text,
+            level=level,
+        )
 
     @staticmethod
     def create_function_node(
@@ -66,8 +73,22 @@ class NodeFactory:
         level: int,
     ) -> Union[ClassNode, FunctionNode]:
         if kind == SymbolKind.Class:
-            return NodeFactory.create_class_node(name, path, definition_range, node_range, code_text, level)
+            return NodeFactory.create_class_node(
+                name=name,
+                path=path,
+                definition_range=definition_range,
+                node_range=node_range,
+                code_text=code_text,
+                level=level,
+            )
         elif kind == SymbolKind.Function:
-            return NodeFactory.create_function_node(name, path, definition_range, node_range, code_text, level)
+            return NodeFactory.create_function_node(
+                name=name,
+                path=path,
+                definition_range=definition_range,
+                node_range=node_range,
+                code_text=code_text,
+                level=level,
+            )
         else:
             raise ValueError(f"Kind {kind} is not supported")
