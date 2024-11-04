@@ -100,9 +100,8 @@ class ProjectGraphCreator:
 
     def create_node_relationships(self, node: Node):
         references = self.lsp_query_helper.get_paths_where_node_is_referenced(node)
-        file_node_reference = self.graph.get_file_node_by_path(node.path)
         relationships = RelationshipCreator.create_relationships_from_paths_where_node_is_referenced(
-            references=references, node=node, file_node_reference=file_node_reference
+            references=references, node=node, graph=self.graph
         )
 
         return relationships

@@ -2,7 +2,8 @@ from typing import List, TYPE_CHECKING
 from Graph.Relationship import Relationship, RelationshipType
 
 if TYPE_CHECKING:
-    from Graph.Node import Node, FileNode
+    from Graph.Graph import Graph
+    from Graph.Node import Node
 
 
 class RelationshipCreator:
@@ -28,13 +29,13 @@ class RelationshipCreator:
         return relationships
 
     @staticmethod
-    def create_relationships_from_paths_where_node_is_referenced(
-        references: set, node: "Node", file_node_reference: "FileNode"
-    ):
+    def create_relationships_from_paths_where_node_is_referenced(references: set, node: "Node", graph: "Graph"):
         relationships = []
         for reference in references:
             if reference == node.path:
                 continue
+
+            file_node_reference = graph.get_file_node_by_path(reference["uri"])
 
             node_referenced = file_node_reference.reference_search(reference)
 
