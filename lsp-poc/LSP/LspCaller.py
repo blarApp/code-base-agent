@@ -3,6 +3,12 @@ import json
 
 
 class LspCaller:
+    root_uri: str
+    host: str
+    port: int
+    websocket: ws.ClientConnection
+    unmatched_responses: dict
+
     def __init__(self, root_uri: str, host="localhost", port=5000):
         self.validate_uri(root_uri)
 
@@ -10,25 +16,24 @@ class LspCaller:
         self.port = port
         self.root_uri = root_uri
         self.websocket = None
-        self.cache = {}
         self.unmatched_responses = {}
 
         self._id = 0
 
     @property
-    def id(self):
+    def id(self) -> int:
         self._id += 1
         return self._id
 
-    def validate_uri(self, uri: str):
+    def validate_uri(self, uri: str) -> None:
         if not uri.endswith("/"):
             raise ValueError("URI must end with a slash")
 
-    def connect(self):
+    def connect(self) -> None:
         uri = f"ws://{self.host}:{self.port}"
         self.websocket = ws.connect(uri)
 
-    def initialize(self):
+    def initialize(self) -> None:
         initialize_request = {
             "jsonrpc": "2.0",
             "id": self.id,
@@ -41,24 +46,18 @@ class LspCaller:
         }
         self.send_request(initialize_request)
 
-    def send_request(self, request):
-        req_key = (request["method"], json.dumps(request["params"]))
+    def send_request(self, request: dict) -> dict:
         request_id = request["id"]
-
-        # Check if the request is already cached
-        if req_key in self.cache:
-            return self.cache[req_key]
 
         # Send the request
         self.websocket.send(json.dumps(request))
 
-        return self.get_response(request_id, req_key)
+        return self.get_response(request_id)
 
-    def get_response(self, request_id, req_key):
+    def get_response(self, request_id: str) -> dict:
         # Check the response cache first
         if request_id in self.unmatched_responses:
             response = self.unmatched_responses.pop(request_id)
-            self.cache[req_key] = response
             return response
 
         # Wait for the correct response ID
@@ -69,12 +68,11 @@ class LspCaller:
             response_id = response.get("id")
 
             if response_id == request_id:
-                self.cache[req_key] = response
                 return response
             else:
                 self.unmatched_responses[response_id] = response
 
-    def get_document_symbols(self, document_uri):
+    def get_document_symbols(self, document_uri: str) -> dict:
         document_symbol_request = {
             "jsonrpc": "2.0",
             "id": self.id,
@@ -83,7 +81,7 @@ class LspCaller:
         }
         return self.send_request(document_symbol_request).get("result")
 
-    def get_definition(self, document_uri, position):
+    def get_definition(self, document_uri: str, position: dict) -> dict:
         definition_request = {
             "jsonrpc": "2.0",
             "id": self.id,
@@ -99,7 +97,7 @@ class LspCaller:
             return result[0]
         return None
 
-    def get_declaration(self, document_uri, position):
+    def get_declaration(self, document_uri: str, position: dict) -> dict:
         declaration_request = {
             "jsonrpc": "2.0",
             "id": self.id,
@@ -114,7 +112,7 @@ class LspCaller:
             return result[0]
         return None
 
-    def get_references(self, document_uri, position):
+    def get_references(self, document_uri: str, position: dict) -> dict:
         reference_request = {
             "jsonrpc": "2.0",
             "id": self.id,
@@ -127,7 +125,7 @@ class LspCaller:
         }
         return self.send_request(reference_request).get("result")
 
-    def get_selection_range(self, document_uri, position):
+    def get_selection_range(self, document_uri: str, position: dict) -> dict:
         selection_range_request = {
             "jsonrpc": "2.0",
             "id": self.id,
@@ -139,7 +137,7 @@ class LspCaller:
         }
         return self.send_request(selection_range_request).get("result")
 
-    def get_document_link(self, document_uri):
+    def get_document_link(self, document_uri: str) -> dict:
         document_link_request = {
             "jsonrpc": "2.0",
             "id": self.id,
@@ -148,12 +146,12 @@ class LspCaller:
         }
         return self.send_request(document_link_request).get("result")
 
-    def shutdown_exit_close(self):
+    def shutdown_exit_close(self) -> None:
         self.shutdown()
         self.exit()
         self.close()
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         shutdown_request = {
             "jsonrpc": "2.0",
             "id": self.id,
@@ -162,15 +160,15 @@ class LspCaller:
         }
         self.send_request(shutdown_request)
 
-    def exit(self):
+    def exit(self) -> None:
         exit_request = {"jsonrpc": "2.0", "method": "exit"}
         self.websocket.send(json.dumps(exit_request))
 
-    def close(self):
+    def close(self) -> None:
         self.websocket.close()
 
 
-def pretty_print(data):
+def pretty_print(data) -> None:
     print(json.dumps(data, indent=2))
 
 
