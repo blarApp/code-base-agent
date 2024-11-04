@@ -24,29 +24,51 @@ class ProjectFilesIterator:
             return [line.strip() for line in f.readlines()]
 
     def __iter__(self):
-        for root, dirs, files in os.walk(self.root_path, topdown=True):
-            dirs[:] = self._get_filtered_dirs(root, dirs)
-            files = self._get_filtered_files(root, files)
+        for current_path, dirs, files in os.walk(self.root_path, topdown=True):
+            dirs[:] = self._get_filtered_dirs(current_path, dirs)
+            level = self.get_path_level_relative_to_root(current_path)
+            files = self._get_filtered_files(current_path, files, level + 1)
+            folders = self.empty_folders_from_dirs(current_path, dirs, level + 1)
 
-            folders = self.empty_folders_from_dirs(root, dirs)
-
-            if not self._should_skip(root):
+            if not self._should_skip(current_path):
                 yield Folder(
-                    root,
-                    files,
-                    folders,
+                    name=self.get_base_name(current_path),
+                    path=current_path,
+                    files=files,
+                    folders=folders,
+                    level=level,
                 )
 
     def _get_filtered_dirs(self, root: str, dirs: List[str]) -> List[Folder]:
         dirs = [dir for dir in dirs if not self._should_skip(os.path.join(root, dir))]
         return dirs
 
-    def _get_filtered_files(self, root: str, files: List[str]) -> List[File]:
+    def get_path_level_relative_to_root(self, path):
+        level = path.count(os.sep) - self.root_path.count(os.sep)
+        return level
+
+    def _get_filtered_files(
+        self, root: str, files: List[str], level: int
+    ) -> List[File]:
         files = [
             file for file in files if not self._should_skip(os.path.join(root, file))
         ]
 
-        return [File(name=file, root_path=root) for file in files]
+        return [File(name=file, root_path=root, level=level) for file in files]
+
+    def empty_folders_from_dirs(
+        self, root: str, dirs: List[str], level
+    ) -> List[Folder]:
+        return [
+            Folder(
+                name=dir,
+                path=os.path.join(root, dir),
+                files=[],
+                folders=[],
+                level=level,
+            )
+            for dir in dirs
+        ]
 
     def _should_skip(self, path: str) -> bool:
         is_basename_in_names_to_skip = os.path.basename(path) in self.names_to_skip
@@ -57,8 +79,8 @@ class ProjectFilesIterator:
 
         return is_basename_in_names_to_skip or is_path_in_paths_to_skip
 
-    def empty_folders_from_dirs(self, root: str, dirs: List[str]) -> List[Folder]:
-        return [Folder(os.path.join(root, dir), [], []) for dir in dirs]
+    def get_base_name(self, current_path: str) -> str:
+        return os.path.basename(current_path)
 
 
 if __name__ == "__main__":

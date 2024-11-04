@@ -7,9 +7,7 @@ from TreeSitter.Languages import PythonDefinitions
 
 
 def main():
-    lsp_caller = LspCaller(
-        root_uri="/Users/berrazuriz/Desktop/Blar/repositories/code-base-agent/src/blar_graph"
-    )
+    lsp_caller = LspCaller(root_uri="/Users/berrazuriz/Desktop/Blar/repositories/code-base-agent/src/blar_graph")
     lsp_query_helper = LspQueryHelper(lsp_caller)
     tree_sitter_helper = TreeSitterHelper(language_definitions=PythonDefinitions)
 
@@ -24,9 +22,7 @@ def main():
     entity_id = "test"
     graph_manager = Neo4jManager(repoId, entity_id)
 
-    graph_creator = ProjectGraphCreator(
-        "Test", lsp_query_helper, tree_sitter_helper, project_files_iterator
-    )
+    graph_creator = ProjectGraphCreator("Test", lsp_query_helper, tree_sitter_helper, project_files_iterator)
 
     graph = graph_creator.build()
 

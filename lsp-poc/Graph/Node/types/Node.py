@@ -9,9 +9,11 @@ class Node:
     label: "NodeLabels"
     path: str
 
-    def __init__(self, label: "NodeLabels", path: str):
+    def __init__(self, label: "NodeLabels", path: str, name: str, level: int):
         self.label = label
         self.path = path
+        self.name = name
+        self.level = level
 
         if not self.is_path_format_valid():
             raise ValueError(f"Path format is not valid: {self.path}")
@@ -35,6 +37,8 @@ class Node:
                 "label": self.label.name,
                 "path": self.path,
                 "node_id": self.id,
+                "name": self.name,
+                "level": self.level,
             },
         }
 
