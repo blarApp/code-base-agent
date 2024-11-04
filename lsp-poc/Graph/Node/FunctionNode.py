@@ -1,6 +1,10 @@
 from Graph.Node import NodeLabels
-from .types.CodeRange import CodeRange
 from .types.DefinitionNode import DefinitionNode
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .types.CodeRange import CodeRange
 
 
 class FunctionNode(DefinitionNode):
@@ -8,8 +12,8 @@ class FunctionNode(DefinitionNode):
         self,
         path: str,
         name: str,
-        definition_range: CodeRange,
-        node_range: CodeRange,
+        definition_range: "CodeRange",
+        node_range: "CodeRange",
         code_text: str,
         level: int,
     ):
@@ -23,10 +27,10 @@ class FunctionNode(DefinitionNode):
             node_range=node_range,
         )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.label}({self.path}).{self.name}"
 
-    def as_object(self):
+    def as_object(self) -> dict:
         obj = super().as_object()
         obj["attributes"]["start_line"] = self.node_range.start_line
         obj["attributes"]["end_line"] = self.node_range.end_line
