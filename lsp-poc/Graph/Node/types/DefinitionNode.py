@@ -46,5 +46,7 @@ class DefinitionNode(Node):
             scope_end = range.end_line
             if scope_start <= reference_start and scope_end >= reference_end:
                 return scope.reference_search(reference=reference)
+            if reference_end < scope_start:
+                break
 
         return self
