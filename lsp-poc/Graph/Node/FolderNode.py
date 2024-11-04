@@ -9,9 +9,13 @@ class FolderNode(Node):
     name: str
     level: int
 
-    def __init__(self, path: str, name: str, level: int):
+    def __init__(self, path: str, name: str, level: int, *args, **kwargs):
         self._contains = []
-        super().__init__(NodeLabels.FOLDER, path, name, level)
+        super().__init__(NodeLabels.FOLDER, path, name, level, *args, **kwargs)
+
+    @property
+    def node_repr_for_identifier(self) -> str:
+        return self.path
 
     def relate_node_as_contain_relationship(self, node: Union[FileNode, "FolderNode"]) -> None:
         if isinstance(node, FileNode) or isinstance(node, FolderNode):

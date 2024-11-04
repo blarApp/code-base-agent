@@ -9,6 +9,7 @@ from typing import List, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from tree_sitter import Node as TreeSitterNode
+    from Graph.Node import FolderNode
 
 
 class TreeSitterHelper:
@@ -38,25 +39,27 @@ class TreeSitterHelper:
 
         return functions
 
-    def create_nodes_and_relationships_in_file(self, file: File) -> List[Node]:
+    def create_nodes_and_relationships_in_file(self, file: File, parent_folder: "FolderNode" = None) -> List[Node]:
         self.current_path = file.uri_path
         self.created_nodes = []
         self.base_node_source_code = self._get_content_from_file(file)
 
         if self._does_path_have_valid_extension(file.uri_path):
-            self._handle_paths_with_valid_extension(file=file)
+            self._handle_paths_with_valid_extension(file=file, parent_folder=parent_folder)
             return self.created_nodes
 
-        file_node = self._create_file_node_from_raw_file(file)
+        file_node = self._create_file_node_from_raw_file(file, parent_folder)
         return [file_node]
 
     def _does_path_have_valid_extension(self, path: str) -> bool:
         return any(path.endswith(extension) for extension in self.language_definitions.get_language_file_extensions())
 
-    def _handle_paths_with_valid_extension(self, file: File) -> None:
+    def _handle_paths_with_valid_extension(self, file: File, parent_folder: "FolderNode" = None) -> None:
         tree = self._parse(self.base_node_source_code)
 
-        file_node = self._create_file_node_from_module_node(module_node=tree.root_node, file=file)
+        file_node = self._create_file_node_from_module_node(
+            module_node=tree.root_node, file=file, parent_folder=parent_folder
+        )
         self.created_nodes.append(file_node)
 
         self._traverse(tree.root_node, context_stack=[file_node])
@@ -65,7 +68,9 @@ class TreeSitterHelper:
         as_bytes = bytes(code, "utf-8")
         return self.parser.parse(as_bytes)
 
-    def _create_file_node_from_module_node(self, module_node: "TreeSitterNode", file: File) -> Node:
+    def _create_file_node_from_module_node(
+        self, module_node: "TreeSitterNode", file: File, parent_folder: "FolderNode" = None
+    ) -> Node:
         print(f"Creating file node for {file.uri_path}")
         return NodeFactory.create_file_node(
             path=file.uri_path,
@@ -74,6 +79,7 @@ class TreeSitterHelper:
             node_range=self._get_range_from_node(module_node),
             definition_range=self._get_range_from_node(module_node),
             code_text=self.base_node_source_code,
+            parent=parent_folder,
         )
 
     def _get_content_from_file(self, file: File) -> str:
@@ -131,6 +137,7 @@ class TreeSitterHelper:
             node_range=node_range,
             code_text=code_snippet,
             level=parent_node.level + 1,
+            parent=parent_node,
         )
 
         parent_node.relate_node_as_define_relationship(node)
@@ -172,7 +179,7 @@ class TreeSitterHelper:
     def get_parent_node(self, context_stack: List[Node]) -> DefinitionNode:
         return context_stack[-1]
 
-    def _create_file_node_from_raw_file(self, file: File) -> Node:
+    def _create_file_node_from_raw_file(self, file: File, parent_folder: "FolderNode" = None) -> Node:
         return NodeFactory.create_file_node(
             path=file.uri_path,
             name=file.name,
@@ -180,6 +187,7 @@ class TreeSitterHelper:
             node_range=CodeRange(0, 0, 0, 0),
             definition_range=CodeRange(0, 0, 0, 0),
             code_text=self.base_node_source_code,
+            parent=parent_folder,
         )
 
 

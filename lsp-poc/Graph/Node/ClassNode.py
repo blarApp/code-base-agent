@@ -21,6 +21,8 @@ class ClassNode(DefinitionNode):
         node_range: "CodeRange",
         code_text: str,
         level: int,
+        *args,
+        **kwargs,
     ):
         super().__init__(
             label=NodeLabels.CLASS,
@@ -30,10 +32,13 @@ class ClassNode(DefinitionNode):
             definition_range=definition_range,
             code_text=code_text,
             node_range=node_range,
+            *args,
+            **kwargs,
         )
 
-    def __str__(self) -> str:
-        return f"{self.label}({self.path})#{self.name}"
+    @property
+    def node_repr_for_identifier(self) -> str:
+        return "#" + self.name
 
     def as_object(self) -> dict:
         obj = super().as_object()
