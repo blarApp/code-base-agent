@@ -8,9 +8,9 @@ class CodeRange(NamedTuple):
     end_character: int
 
     @property
-    def start_dict(self):
+    def start_dict(self) -> dict:
         return {"line": self.start_line, "character": self.start_character}
 
     @property
-    def end_dict(self):
+    def end_dict(self) -> dict:
         return {"line": self.end_line, "character": self.end_character}

@@ -20,18 +20,18 @@ class Node:
         if not self.is_path_format_valid():
             raise ValueError(f"Path format is not valid: {self.path}")
 
-    def is_path_format_valid(self):
+    def is_path_format_valid(self) -> bool:
         return self.path.startswith("file://")
 
     @property
-    def id(self):
+    def id(self) -> str:
         return self.__str__()
 
     @property
-    def pure_path(self):
+    def pure_path(self) -> str:
         return self.path.replace("file://", "")
 
-    def as_object(self):
+    def as_object(self) -> dict:
         return {
             "node_id": self.id,
             "type": self.label.name,
@@ -47,5 +47,5 @@ class Node:
     def get_relationships(self) -> List["Relationship"]:
         return []
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.label}({self.path})"
