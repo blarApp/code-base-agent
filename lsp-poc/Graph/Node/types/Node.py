@@ -10,12 +10,14 @@ class Node:
     path: str
     name: str
     level: int
+    parent: "Node"
 
-    def __init__(self, label: "NodeLabels", path: str, name: str, level: int):
+    def __init__(self, label: "NodeLabels", path: str, name: str, level: int, parent: "Node" = None):
         self.label = label
         self.path = path
         self.name = name
         self.level = level
+        self.parent = parent
 
         if not self.is_path_format_valid():
             raise ValueError(f"Path format is not valid: {self.path}")
@@ -26,6 +28,10 @@ class Node:
     @property
     def id(self) -> str:
         return self.__str__()
+
+    @property
+    def node_repr_for_identifier(self) -> str:
+        return "." + self.name
 
     @property
     def pure_path(self) -> str:
@@ -48,4 +54,10 @@ class Node:
         return []
 
     def __str__(self) -> str:
-        return f"{self.label}({self.path})"
+        identifier = ""
+
+        if self.parent:
+            identifier += self.parent.id
+        identifier += self.node_repr_for_identifier
+
+        return identifier

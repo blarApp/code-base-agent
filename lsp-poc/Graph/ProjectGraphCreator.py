@@ -43,7 +43,7 @@ class ProjectGraphCreator:
 
     def process_folder(self, folder: "Folder") -> None:
         folder_node = self.add_or_get_folder_node(folder)
-        folder_nodes = self.create_subfolder_nodes(folder)
+        folder_nodes = self.create_subfolder_nodes(folder, folder_node)
         folder_node.relate_nodes_as_contain_relationship(folder_nodes)
 
         self.graph.add_nodes(folder_nodes)
@@ -51,25 +51,19 @@ class ProjectGraphCreator:
         files = folder.files
         self.process_files(files, parent_folder=folder_node)
 
-    def add_or_get_folder_node(self, folder: "Folder") -> "FolderNode":
-        folder_node = NodeFactory.create_folder_node(folder)
-
-        if self.graph.has_node(folder_node):
-            return self.graph.get_node_by_id(folder_node.id)
+    def add_or_get_folder_node(self, folder: "Folder", parent_folder: "Folder" = None) -> "FolderNode":
+        if self.graph.has_folder_node_with_path(folder.uri_path):
+            return self.graph.get_folder_node_by_path(folder.uri_path)
         else:
+            folder_node = NodeFactory.create_folder_node(folder, parent=parent_folder)
             self.graph.add_node(folder_node)
             return folder_node
 
-    def create_subfolder_nodes(self, folder: "Folder") -> List["Node"]:
-        folder_nodes = self.create_folder_nodes(folder)
-
-        return folder_nodes
-
-    def create_folder_nodes(self, folder: "Folder") -> List["Node"]:
+    def create_subfolder_nodes(self, folder: "Folder", folder_node: "FolderNode") -> List["Node"]:
         nodes = []
-        for folder in folder.folders:
-            folder_node = self.add_or_get_folder_node(folder)
-            nodes.append(folder_node)
+        for sub_folder in folder.folders:
+            node = self.add_or_get_folder_node(sub_folder, parent_folder=folder_node)
+            nodes.append(node)
 
         return nodes
 
@@ -78,7 +72,7 @@ class ProjectGraphCreator:
             self.process_file(file, parent_folder)
 
     def process_file(self, file: "File", parent_folder: "FolderNode") -> None:
-        file_nodes = self.create_file_nodes(file)
+        file_nodes = self.create_file_nodes(file, parent_folder)
         self.graph.add_nodes(file_nodes)
 
         file_node = self.get_file_node_from_file_nodes(file_nodes)
@@ -93,8 +87,10 @@ class ProjectGraphCreator:
 
         raise ValueError("File node not found in file nodes")
 
-    def create_file_nodes(self, file: "File") -> List["Node"]:
-        document_symbols = self.tree_sitter_helper.create_nodes_and_relationships_in_file(file)
+    def create_file_nodes(self, file: "File", parent_folder: "FolderNode") -> List["Node"]:
+        document_symbols = self.tree_sitter_helper.create_nodes_and_relationships_in_file(
+            file, parent_folder=parent_folder
+        )
         return document_symbols
 
     def create_relationships_from_references(self) -> None:

@@ -13,16 +13,22 @@ if TYPE_CHECKING:
 
 class NodeFactory:
     @staticmethod
-    def create_folder_node(folder: Folder) -> FolderNode:
-        return FolderNode(folder.uri_path, folder.name, folder.level)
+    def create_folder_node(folder: Folder, parent: FolderNode = None) -> FolderNode:
+        return FolderNode(folder.uri_path, folder.name, folder.level, parent=parent)
 
     @staticmethod
-    def create_file_node_from_file(file: File) -> FileNode:
-        return FileNode(file.uri_path, file.name, level=file.level)
+    def create_file_node_from_file(file: File, parent: FolderNode) -> FileNode:
+        return FileNode(file.uri_path, file.name, level=file.level, parent=parent)
 
     @staticmethod
     def create_file_node(
-        path: str, name: str, level: int, node_range: "CodeRange", definition_range: "CodeRange", code_text: str
+        path: str,
+        name: str,
+        level: int,
+        node_range: "CodeRange",
+        definition_range: "CodeRange",
+        code_text: str,
+        parent: FolderNode,
     ) -> FileNode:
         return FileNode(
             path=path,
@@ -31,6 +37,7 @@ class NodeFactory:
             node_range=node_range,
             definition_range=definition_range,
             code_text=code_text,
+            parent=parent,
         )
 
     @staticmethod
@@ -41,8 +48,9 @@ class NodeFactory:
         node_range: "CodeRange",
         code_text: str,
         level: int,
+        parent: Union[FileNode, ClassNode, FunctionNode] = None,
     ) -> ClassNode:
-        return ClassNode(class_name, path, definition_range, node_range, code_text, level)
+        return ClassNode(class_name, path, definition_range, node_range, code_text, level, parent=parent)
 
     @staticmethod
     def create_function_node(
@@ -52,8 +60,9 @@ class NodeFactory:
         node_range: "CodeRange",
         code_text: str,
         level: int,
+        parent: Union[FileNode, ClassNode, FunctionNode] = None,
     ) -> FunctionNode:
-        return FunctionNode(path, function_name, definition_range, node_range, code_text, level)
+        return FunctionNode(path, function_name, definition_range, node_range, code_text, level, parent=parent)
 
     @staticmethod
     def create_node_based_on_kind(
@@ -64,10 +73,11 @@ class NodeFactory:
         node_range: "CodeRange",
         code_text: str,
         level: int,
+        parent: Union[FileNode, ClassNode, FunctionNode] = None,
     ) -> Union[ClassNode, FunctionNode]:
         if kind == SymbolKind.Class:
-            return NodeFactory.create_class_node(name, path, definition_range, node_range, code_text, level)
+            return NodeFactory.create_class_node(name, path, definition_range, node_range, code_text, level, parent)
         elif kind == SymbolKind.Function:
-            return NodeFactory.create_function_node(name, path, definition_range, node_range, code_text, level)
+            return NodeFactory.create_function_node(name, path, definition_range, node_range, code_text, level, parent)
         else:
             raise ValueError(f"Kind {kind} is not supported")

@@ -9,3 +9,7 @@ class FileNode(DefinitionNode):
 
     def __init__(self, path: str, name: str, level: int, *args, **kwargs):
         super().__init__(label=NodeLabels.FILE, path=path, name=name, level=level, *args, **kwargs)
+
+    @property
+    def node_repr_for_identifier(self) -> str:
+        return self.path

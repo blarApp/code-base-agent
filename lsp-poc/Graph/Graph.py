@@ -11,6 +11,7 @@ if TYPE_CHECKING:
 class Graph:
     nodes_by_path: DefaultDict[str, Set[Node]]
     file_nodes_by_path: Dict[str, FileNode]
+    folder_nodes_by_path: Dict[str, Node]
     nodes_by_label: DefaultDict[str, Set[Node]]
     nodes: Dict[str, Node]
     references_relationships: List["Relationship"]
@@ -19,11 +20,12 @@ class Graph:
         self.nodes = {}
         self.nodes_by_path = defaultdict(set)
         self.file_nodes_by_path = {}
+        self.folder_nodes_by_path = {}
         self.nodes_by_label = defaultdict(set)
         self.references_relationships = []
 
-    def has_node(self, node: Node) -> bool:
-        return node.id in self.nodes
+    def has_folder_node_with_path(self, path: str) -> bool:
+        return path in self.folder_nodes_by_path
 
     def add_nodes(self, nodes: List[Node]) -> None:
         for node in nodes:
@@ -37,11 +39,17 @@ class Graph:
         if node.label == NodeLabels.FILE:
             self.file_nodes_by_path[node.path] = node
 
+        if node.label == NodeLabels.FOLDER:
+            self.folder_nodes_by_path[node.path] = node
+
     def get_nodes_by_path(self, path: str) -> set:
         return self.nodes_by_path[path]
 
     def get_file_node_by_path(self, path: str) -> FileNode:
         return self.file_nodes_by_path[path]
+
+    def get_folder_node_by_path(self, path: str) -> Node:
+        return self.folder_nodes_by_path[path]
 
     def get_nodes_by_label(self, label: str) -> set:
         return self.nodes_by_label[label]
