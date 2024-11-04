@@ -61,10 +61,11 @@ class ProjectFilesIterator:
     ) -> List[Folder]:
         return [
             Folder(
-                os.path.join(root, dir),
-                [],
-                [],
-                level,
+                name=dir,
+                path=os.path.join(root, dir),
+                files=[],
+                folders=[],
+                level=level,
             )
             for dir in dirs
         ]
