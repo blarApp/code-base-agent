@@ -103,12 +103,11 @@ class TreeSitterHelper:
 
     def _handle_definition_node(self, tree_sitter_node, context_stack):
         """Handle the printing of node information for class and function definitions."""
-
         identifier_node = self._get_identifier_node(tree_sitter_node)
         identifier_def_range = self._get_range_from_node(node=identifier_node)
-        node_range = self._get_range_from_node(node=tree_sitter_node)
-
         identifier_name = self.get_identifier_name(identifier_node=identifier_node)
+
+        node_range = self._get_range_from_node(node=tree_sitter_node)
 
         print(
             f"Identifier Start: (line {identifier_def_range.start_line}, char {identifier_def_range.start_character}), "
