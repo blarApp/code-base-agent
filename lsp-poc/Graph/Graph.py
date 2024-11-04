@@ -49,7 +49,7 @@ class Graph:
     def get_node_by_id(self, id: str) -> Node:
         return self.nodes[id]
 
-    def get_relationships_as_obdefaultdictjects(self) -> List[dict]:
+    def get_relationships_as_objects(self) -> List[dict]:
         internal_relationships = [relationship.as_object() for relationship in self.get_relationships()]
         reference_relationships = [relationship.as_object() for relationship in self.references_relationships]
 

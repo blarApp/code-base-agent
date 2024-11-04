@@ -1,10 +1,9 @@
-from Graph.Node import NodeLabels
+from Graph.Node import NodeLabels, DefinitionNode
 
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .types.CodeRange import CodeRange
-    from .types.DefinitionNode import DefinitionNode
 
 
 class ClassNode(DefinitionNode):

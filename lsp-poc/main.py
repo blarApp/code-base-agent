@@ -5,17 +5,24 @@ from LSP import LspQueryHelper, LspCaller
 from TreeSitter import TreeSitterHelper
 from TreeSitter.Languages import PythonDefinitions
 
+import dotenv
+import os
+
 
 def main():
-    lsp_caller = LspCaller(root_uri="/Users/berrazuriz/Desktop/Blar/repositories/code-base-agent/src/blar_graph")
+    dotenv.load_dotenv()
+    root_path = os.getenv("ROOT_PATH")
+    blarignore_path = os.getenv("BLARIGNORE_PATH")
+
+    lsp_caller = LspCaller(root_uri=root_path)
     lsp_query_helper = LspQueryHelper(lsp_caller)
     tree_sitter_helper = TreeSitterHelper(language_definitions=PythonDefinitions)
 
     lsp_query_helper.start()
 
     project_files_iterator = ProjectFilesIterator(
-        "/Users/berrazuriz/Desktop/Blar/repositories/code-base-agent/src/blar_graph",
-        blarignore_path="/Users/berrazuriz/Desktop/Blar/repositories/lsp-poc/.blarignore",
+        root_path=root_path,
+        blarignore_path=blarignore_path,
     )
 
     repoId = "test"
