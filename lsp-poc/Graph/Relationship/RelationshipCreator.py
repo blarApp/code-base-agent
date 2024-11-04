@@ -10,7 +10,7 @@ class RelationshipCreator:
     @staticmethod
     def create_relationships_for_document_symbol_nodes_found_in_file(
         document_symbol_nodes: List["Node"], file_node: "Node"
-    ):
+    ) -> List[Relationship]:
         relationships = []
         for node in document_symbol_nodes:
             if node.path == file_node.path:
@@ -29,7 +29,9 @@ class RelationshipCreator:
         return relationships
 
     @staticmethod
-    def create_relationships_from_paths_where_node_is_referenced(references: set, node: "Node", graph: "Graph"):
+    def create_relationships_from_paths_where_node_is_referenced(
+        references: set, node: "Node", graph: "Graph"
+    ) -> List[Relationship]:
         relationships = []
         for reference in references:
             if reference == node.path:
@@ -48,7 +50,7 @@ class RelationshipCreator:
         return relationships
 
     @staticmethod
-    def create_defines_relationship(node: "Node", defined_node: "Node"):
+    def create_defines_relationship(node: "Node", defined_node: "Node") -> Relationship:
         return Relationship(
             node,
             defined_node,
@@ -56,7 +58,7 @@ class RelationshipCreator:
         )
 
     @staticmethod
-    def create_contains_relationship(folder_node: "Node", contained_node: "Node"):
+    def create_contains_relationship(folder_node: "Node", contained_node: "Node") -> Relationship:
         return Relationship(
             folder_node,
             contained_node,

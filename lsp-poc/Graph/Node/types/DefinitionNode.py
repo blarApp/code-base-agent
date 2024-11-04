@@ -1,12 +1,12 @@
 from typing import List, Union, TYPE_CHECKING
 from Graph.Relationship import RelationshipCreator
 from .Node import Node
-from .CodeRange import CodeRange
 
 if TYPE_CHECKING:
     from ..ClassNode import ClassNode
     from ..FunctionNode import FunctionNode
     from Graph.Relationship import Relationship
+    from .CodeRange import CodeRange
 
 
 class DefinitionNode(Node):
@@ -22,10 +22,10 @@ class DefinitionNode(Node):
         self.code_text = code_text
         super().__init__(*args, **kwargs)
 
-    def relate_node_as_define_relationship(self, node: Union["ClassNode", "FunctionNode"]):
+    def relate_node_as_define_relationship(self, node: Union["ClassNode", "FunctionNode"]) -> None:
         self._defines.append(node)
 
-    def relate_nodes_as_define_relationship(self, nodes: List[Union["ClassNode", "FunctionNode"]]):
+    def relate_nodes_as_define_relationship(self, nodes: List[Union["ClassNode", "FunctionNode"]]) -> None:
         self._defines.extend(nodes)
 
     def get_relationships(self) -> List["Relationship"]:
@@ -35,18 +35,28 @@ class DefinitionNode(Node):
 
         return relationships
 
-    def reference_search(self, reference: dict):
+    def reference_search(self, reference: dict) -> "DefinitionNode":
         reference_range = reference["range"]
         reference_start = reference_range["start"]["line"]
         reference_end = reference_range["end"]["line"]
 
-        for scope in self._defines:
-            range = scope.node_range
+        for node in self._defines:
+            range = node.node_range
             scope_start = range.start_line
             scope_end = range.end_line
-            if scope_start <= reference_start and scope_end >= reference_end:
-                return scope.reference_search(reference=reference)
-            if reference_end < scope_start:
+
+            if self.is_reference_within_scope(reference_start, reference_end, scope_start, scope_end):
+                return node.reference_search(reference=reference)
+
+            if self.is_reference_end_before_scope_start(reference_end, scope_start):
                 break
 
         return self
+
+    def is_reference_within_scope(
+        self, reference_start: int, reference_end: int, scope_start: int, scope_end: int
+    ) -> bool:
+        return scope_start <= reference_start and scope_end >= reference_end
+
+    def is_reference_end_before_scope_start(self, reference_end: int, scope_start: int) -> bool:
+        return reference_end < scope_start
