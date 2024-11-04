@@ -80,26 +80,19 @@ class TreeSitterHelper:
         """Handle the printing of node information for class and function definitions."""
 
         identifier_node = self._get_identifier_node(tree_sitter_node)
-        identifier_def_range = self._get_definition_range_from_identifier_node(
-            identifier_node
-        )
+        identifier_def_range = self._get_node_range_from_tree_sitter_node(identifier_node)
         node_range = self._get_node_range_from_tree_sitter_node(tree_sitter_node)
-        identifier_name = identifier_node.text.decode("utf-8")
+        identifier_name = self.get_identifier_name(identifier_node)
 
-        # context = "File"
-        # if len(context_stack) > 2:
-        #     context = "->".join([node.name for node in context_stack])
         print(
-            # f"Node type: {tree_sitter_node.type} Context: {context}, "
             f"Identifier Start: (line {identifier_def_range.start_line}, char {identifier_def_range.start_character}), "
             f"Identifier End: (line {identifier_def_range.end_line}, char {identifier_def_range.end_character})"
             f"Identifier Name: {identifier_name}"
+            f"Node Start: (line {node_range.start_line}, char {node_range.start_character}), "
+            f"Node End: (line {node_range.end_line}, char {node_range.end_character})"
         )
 
-        start_line = node_range.start_line
-        end_line = node_range.end_line
-        code_lines = code.splitlines()
-        code_snippet = "\n".join(code_lines[start_line : end_line + 1])
+        code_snippet = self.get_code_segment(code, node_range)
         parent_node = self.get_parent_node(context_stack)
 
         node = NodeFactory.create_node_based_on_kind(
@@ -113,8 +106,18 @@ class TreeSitterHelper:
         )
 
         parent_node.relate_node_as_define_relationship(node)
-
         return node
+
+    def get_identifier_name(self, identifier_node):
+        identifier_name = identifier_node.text.decode("utf-8")
+        return identifier_name
+
+    def get_code_segment(self, code, node_range):
+        start_line = node_range.start_line
+        end_line = node_range.end_line
+        code_lines = code.splitlines()
+        code_snippet = "\n".join(code_lines[start_line : end_line + 1])
+        return code_snippet
 
     def _get_identifier_node(self, node):
         for child in node.children:
@@ -122,15 +125,7 @@ class TreeSitterHelper:
                 return child
         return None
 
-    def _get_definition_range_from_identifier_node(self, identifier_node):
-        return DefinitionRange(
-            identifier_node.start_point[0],
-            identifier_node.start_point[1],
-            identifier_node.end_point[0],
-            identifier_node.end_point[1],
-        )
-
-    def _get_node_range_from_tree_sitter_node(self, node):
+    def _get_node_range_from_tree_sitter_node(self, node) -> DefinitionRange:
         return DefinitionRange(
             node.start_point[0],
             node.start_point[1],
