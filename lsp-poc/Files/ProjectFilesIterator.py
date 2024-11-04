@@ -24,19 +24,23 @@ class ProjectFilesIterator:
             return [line.strip() for line in f.readlines()]
 
     def __iter__(self):
-        for root, dirs, files in os.walk(self.root_path, topdown=True):
-            dirs[:] = self._get_filtered_dirs(root, dirs)
-            level = root.count(os.sep) - self.root_path.count(os.sep)
-            files = self._get_filtered_files(root, files, level + 1)
-            folders = self.empty_folders_from_dirs(root, dirs, level + 1)
+        for current_path, dirs, files in os.walk(self.root_path, topdown=True):
+            dirs[:] = self._get_filtered_dirs(current_path, dirs)
+            level = self.get_path_level_relative_to_root(current_path)
+            files = self._get_filtered_files(current_path, files, level + 1)
+            folders = self.empty_folders_from_dirs(current_path, dirs, level + 1)
 
-            if not self._should_skip(root):
+            if not self._should_skip(current_path):
                 yield Folder(
-                    root,
-                    files,
-                    folders,
-                    level,
+                    path=current_path,
+                    files=files,
+                    folders=folders,
+                    level=level,
                 )
+
+    def get_path_level_relative_to_root(self, path):
+        level = path.count(os.sep) - self.root_path.count(os.sep)
+        return level
 
     def _get_filtered_dirs(self, root: str, dirs: List[str]) -> List[Folder]:
         dirs = [dir for dir in dirs if not self._should_skip(os.path.join(root, dir))]
