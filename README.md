@@ -1,1 +1,1 @@
-This is a proof of concept for a simple lsp client in python. It is based on the [Language Server Protocol](https://microsoft.github.io/language-server-protocol/).
+This repo introduces a method to represent a local code repository as a graph structure. The objective is to allow an LLM to traverse this graph to understand the code logic and flow. Providing the LLM with the power to debug, refactor, and optimize queries.
