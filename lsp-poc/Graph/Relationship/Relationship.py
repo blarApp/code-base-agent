@@ -1,13 +1,16 @@
-from Graph.Relationship import RelationshipType
-from Graph.Node import Node
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from Graph.Node import Node
+    from Graph.Relationship import RelationshipType
 
 
 class Relationship:
-    start_node: Node
-    end_node: Node
-    rel_type: RelationshipType
+    start_node: "Node"
+    end_node: "Node"
+    rel_type: "RelationshipType"
 
-    def __init__(self, start_node: Node, end_node: Node, rel_type: RelationshipType):
+    def __init__(self, start_node: "Node", end_node: "Node", rel_type: "RelationshipType"):
         self.start_node = start_node
         self.end_node = end_node
         self.rel_type = rel_type
