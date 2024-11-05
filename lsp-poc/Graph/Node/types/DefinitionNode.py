@@ -72,8 +72,4 @@ class DefinitionNode(Node):
             node.skeletonize()
 
     def _get_text_for_skeleton(self):
-        return f""" 
-        # Definition: {self.name}
-        # Code replaced, see node: {self.hashed_id} 
-
-        """
+        return f""" # Code replaced for brevity, see node: {self.hashed_id} """
