@@ -7,6 +7,7 @@ if TYPE_CHECKING:
     from ..FunctionNode import FunctionNode
     from Graph.Relationship import Relationship
     from .CodeRange import CodeRange
+    from tree_sitter import Node as TreeSitterNode
 
 
 class DefinitionNode(Node):
@@ -14,12 +15,14 @@ class DefinitionNode(Node):
     definition_range: "CodeRange"
     node_range: "CodeRange"
     code_text: str
+    _tree_sitter_node: "TreeSitterNode"
 
-    def __init__(self, definition_range, node_range, code_text, *args, **kwargs):
+    def __init__(self, definition_range, node_range, code_text, tree_sitter_node: "TreeSitterNode", *args, **kwargs):
         self._defines: List[Union["ClassNode", "FunctionNode"]] = []
         self.definition_range = definition_range
         self.node_range = node_range
         self.code_text = code_text
+        self._tree_sitter_node = tree_sitter_node
         super().__init__(*args, **kwargs)
 
     def relate_node_as_define_relationship(self, node: Union["ClassNode", "FunctionNode"]) -> None:
