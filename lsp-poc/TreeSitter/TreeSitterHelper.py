@@ -79,6 +79,7 @@ class TreeSitterHelper:
             node_range=self._get_range_from_node(module_node),
             definition_range=self._get_range_from_node(module_node),
             code_text=self.base_node_source_code,
+            body_text=self.base_node_source_code,
             parent=parent_folder,
         )
 
@@ -117,6 +118,11 @@ class TreeSitterHelper:
         identifier_name = self.get_identifier_name(identifier_node=identifier_node)
 
         node_range = self._get_range_from_node(node=tree_sitter_node)
+        code_snippet = self._get_code_snippet_from_base_file(node_range)
+
+        body_node = self._get_block_node(tree_sitter_node)
+        body_range = self._get_range_from_node(node=body_node)
+        body_snippet = self._get_code_snippet_from_base_file(body_range)
 
         print(
             f"Identifier Start: (line {identifier_def_range.start_line}, char {identifier_def_range.start_character}), "
@@ -126,7 +132,6 @@ class TreeSitterHelper:
             f"Node End: (line {node_range.end_line}, char {node_range.end_character})"
         )
 
-        code_snippet = self._get_code_snippet_from_base_file(node_range)
         parent_node = self.get_parent_node(context_stack)
 
         node = NodeFactory.create_node_based_on_kind(
@@ -136,6 +141,7 @@ class TreeSitterHelper:
             definition_range=identifier_def_range,
             node_range=node_range,
             code_text=code_snippet,
+            body_text=body_snippet,
             level=parent_node.level + 1,
             parent=parent_node,
         )
@@ -187,8 +193,15 @@ class TreeSitterHelper:
             node_range=CodeRange(0, 0, 0, 0),
             definition_range=CodeRange(0, 0, 0, 0),
             code_text=self.base_node_source_code,
+            body_text=self.base_node_source_code,
             parent=parent_folder,
         )
+
+    def _get_block_node(self, node: "TreeSitterNode") -> "TreeSitterNode":
+        for child in node.children:
+            if child.type == "block":
+                return child
+        return None
 
 
 if __name__ == "__main__":
