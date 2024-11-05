@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from tree_sitter import Language
 from typing import Set
+from Graph.Relationship import RelationshipType
 
 
 class LanguageDefinitions(ABC):
@@ -12,6 +13,11 @@ class LanguageDefinitions(ABC):
     @staticmethod
     @abstractmethod
     def get_capture_group_types() -> Set[str]:
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def get_relationships_group_types() -> dict[str, RelationshipType]:
         pass
 
     @staticmethod
