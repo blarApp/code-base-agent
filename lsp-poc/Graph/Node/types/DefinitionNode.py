@@ -60,3 +60,18 @@ class DefinitionNode(Node):
 
     def is_reference_end_before_scope_start(self, reference_end: int, scope_start: int) -> bool:
         return reference_end < scope_start
+
+    def skeletonize(self):
+        self._replace_code_of_children_for_id()
+
+    def _replace_code_of_children_for_id(self):
+        for node in self._defines:
+            self.code_text = self.code_text.replace(node.code_text, node._get_text_for_skeleton())
+            node.skeletonize()
+
+    def _get_text_for_skeleton(self):
+        return f""" 
+        # Definition: {self.name}
+        # Code replaced, see node: {self.hashed_id} 
+
+        """
