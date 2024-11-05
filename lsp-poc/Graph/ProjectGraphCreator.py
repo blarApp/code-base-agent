@@ -35,11 +35,13 @@ class ProjectGraphCreator:
         self.graph = Graph()
 
     def build(self) -> Graph:
-        for folder in self.project_files_iterator:
-            self.process_folder(folder)
-
+        self.create_code_hierarchy()
         self.create_relationships_from_references()
         return self.graph
+
+    def create_code_hierarchy(self):
+        for folder in self.project_files_iterator:
+            self.process_folder(folder)
 
     def process_folder(self, folder: "Folder") -> None:
         folder_node = self.add_or_get_folder_node(folder)
@@ -113,7 +115,7 @@ class ProjectGraphCreator:
     def create_node_relationships(self, node: "Node") -> List["Relationship"]:
         references = self.lsp_query_helper.get_paths_where_node_is_referenced(node)
         relationships = RelationshipCreator.create_relationships_from_paths_where_node_is_referenced(
-            references=references, node=node, graph=self.graph
+            references=references, node=node, graph=self.graph, tree_sitter_helper=self.tree_sitter_helper
         )
 
         return relationships
