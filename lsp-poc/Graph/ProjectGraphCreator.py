@@ -9,7 +9,7 @@ from Graph.Graph import Graph
 if TYPE_CHECKING:
     from Graph.Node import FolderNode
     from Files import Folder, File
-    from Graph.Node import Node
+    from Graph.Node import Node, FileNode
     from Graph.Relationship import Relationship
 
 
@@ -76,10 +76,11 @@ class ProjectGraphCreator:
         self.graph.add_nodes(file_nodes)
 
         file_node = self.get_file_node_from_file_nodes(file_nodes)
+        file_node.skeletonize()
 
         parent_folder.relate_node_as_contain_relationship(file_node)
 
-    def get_file_node_from_file_nodes(self, file_nodes) -> "Node":
+    def get_file_node_from_file_nodes(self, file_nodes) -> "FileNode":
         # File node should always be the first node in the list
         for node in file_nodes:
             if node.label == NodeLabels.FILE:

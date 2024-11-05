@@ -14,12 +14,14 @@ class DefinitionNode(Node):
     definition_range: "CodeRange"
     node_range: "CodeRange"
     code_text: str
+    body_text: str
 
-    def __init__(self, definition_range, node_range, code_text, *args, **kwargs):
+    def __init__(self, definition_range, node_range, code_text, body_text, *args, **kwargs):
         self._defines: List[Union["ClassNode", "FunctionNode"]] = []
         self.definition_range = definition_range
         self.node_range = node_range
         self.code_text = code_text
+        self.body_text = body_text
         super().__init__(*args, **kwargs)
 
     def relate_node_as_define_relationship(self, node: Union["ClassNode", "FunctionNode"]) -> None:
@@ -60,3 +62,18 @@ class DefinitionNode(Node):
 
     def is_reference_end_before_scope_start(self, reference_end: int, scope_start: int) -> bool:
         return reference_end < scope_start
+
+    def skeletonize(self):
+        self._replace_code_of_children_for_id()
+
+    def _replace_code_of_children_for_id(self):
+        for node in self._defines:
+            self.code_text = self.code_text.replace(node.body_text, node._get_text_for_skeleton())
+            node.skeletonize()
+
+    def _get_text_for_skeleton(self):
+        return f""" 
+        # Definition: {self.name}
+        # Code replaced, see node: {self.hashed_id} 
+
+        """

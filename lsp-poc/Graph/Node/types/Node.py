@@ -1,4 +1,5 @@
 from typing import List, TYPE_CHECKING
+from hashlib import md5
 
 if TYPE_CHECKING:
     from Graph.Relationship import Relationship
@@ -30,6 +31,10 @@ class Node:
         return self.__str__()
 
     @property
+    def hashed_id(self) -> str:
+        return md5(self.id.encode()).hexdigest()
+
+    @property
     def node_repr_for_identifier(self) -> str:
         return "." + self.name
 
@@ -47,6 +52,7 @@ class Node:
                 "node_id": self.id,
                 "name": self.name,
                 "level": self.level,
+                "hashed_id": self.hashed_id,
             },
         }
 
