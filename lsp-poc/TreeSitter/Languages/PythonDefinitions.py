@@ -16,9 +16,10 @@ class PythonDefinitions(LanguageDefinitions):
 
     def get_relationships_group_types() -> dict[str, RelationshipType]:
         return {
-            "function_call": RelationshipType.CALLS,
-            "import": RelationshipType.IMPORTS,
-            "inheritance": RelationshipType.INHERITS,
+            "call": RelationshipType.CALLS,
+            "interpolation": RelationshipType.CALLS,
+            "import_from_statement": RelationshipType.IMPORTS,
+            "superclasses": RelationshipType.INHERITS,
             "instantiation": RelationshipType.INSTANTIATES,
         }
 
