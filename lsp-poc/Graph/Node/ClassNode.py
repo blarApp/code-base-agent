@@ -13,24 +13,8 @@ class ClassNode(DefinitionNode):
     code_text: str
     level: int
 
-    def __init__(
-        self,
-        name: str,
-        path: str,
-        definition_range: "CodeRange",
-        node_range: "CodeRange",
-        code_text: str,
-        level: int,
-    ):
-        super().__init__(
-            label=NodeLabels.CLASS,
-            path=path,
-            name=name,
-            level=level,
-            definition_range=definition_range,
-            code_text=code_text,
-            node_range=node_range,
-        )
+    def __init__(self, **kwargs):
+        super().__init__(label=NodeLabels.CLASS, **kwargs)
 
     def __str__(self) -> str:
         return f"{self.label}({self.path})#{self.name}"
