@@ -1,3 +1,11 @@
 from enum import Enum
 
-RelationshipType = Enum("RelationshipType", ["CONTAINS", "IMPORTS", "USES", "DECLARES"])
+
+class RelationshipType(Enum):
+    CONTAINS = "CONTAINS"
+    IMPORTS = "IMPORTS"
+    CALLS = "CALLS"
+    INHERITS = "INHERITS"
+    FUNCTION_DEFINITION = "FUNCTION_DEFINITION"
+    CLASS_DEFINITION = "CLASS_DEFINITION"
+    INSTANTIATES = "INSTANTIATES"

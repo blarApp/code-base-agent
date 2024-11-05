@@ -9,11 +9,7 @@ import dotenv
 import os
 
 
-def main():
-    dotenv.load_dotenv()
-    root_path = os.getenv("ROOT_PATH")
-    blarignore_path = os.getenv("BLARIGNORE_PATH")
-
+def main(root_path: str = None, blarignore_path: str = None):
     lsp_caller = LspCaller(root_uri=root_path)
     lsp_query_helper = LspQueryHelper(lsp_caller)
     tree_sitter_helper = TreeSitterHelper(language_definitions=PythonDefinitions)
@@ -41,4 +37,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    dotenv.load_dotenv()
+    root_path = os.getenv("ROOT_PATH")
+    blarignore_path = os.getenv("BLARIGNORE_PATH")
+    main(root_path=root_path, blarignore_path=blarignore_path)

@@ -3,13 +3,5 @@ from .types.DefinitionNode import DefinitionNode
 
 
 class FileNode(DefinitionNode):
-    path: str
-    name: str
-    level: int
-
-    def __init__(self, path: str, name: str, level: int, *args, **kwargs):
-        super().__init__(label=NodeLabels.FILE, path=path, name=name, level=level, *args, **kwargs)
-
-    @property
-    def node_repr_for_identifier(self) -> str:
-        return self.path
+    def __init__(self, **kwargs):
+        super().__init__(label=NodeLabels.FILE, **kwargs)
