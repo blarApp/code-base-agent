@@ -41,7 +41,7 @@ class RelationshipCreator:
             file_node_reference = graph.get_file_node_by_path(reference["uri"])
 
             node_referenced = file_node_reference.reference_search(reference)
-            if node_referenced is None:
+            if node_referenced is None or node.id == node_referenced.id:
                 continue
 
             reference_type = tree_sitter_helper.get_reference_type(reference, node_referenced)
