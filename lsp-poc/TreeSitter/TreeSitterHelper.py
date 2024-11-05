@@ -49,11 +49,10 @@ class TreeSitterHelper:
         # Traverse up to find the named parent
         named_parent = child_node
         rel_types = self.language_definitions.get_relationships_group_types()
-        # while named_parent.grammar_name not in rel_types:
-        #     named_parent = named_parent.parent
+        while named_parent is not None and named_parent.type not in rel_types:
+            named_parent = named_parent.parent
 
-        # return rel_types[named_parent.grammar_name]
-        return RelationshipType.CALLS
+        return rel_types.get(named_parent.type, RelationshipType.USES)
 
     def create_function_call_references(self, tree_sitter_node: "TreeSitterNode") -> List[str]:
         function_call_query = self.language_definitions.get_function_call_query()
