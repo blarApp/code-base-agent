@@ -6,11 +6,11 @@ from .Languages import LanguageDefinitions
 from Files import File
 
 from typing import List, TYPE_CHECKING
+from Graph.Relationship import RelationshipType
 
 if TYPE_CHECKING:
     from tree_sitter import Node as TreeSitterNode
     from Graph.Node import DefinitionNode, Node, FolderNode
-    from Graph.Relationship import RelationshipType
 
 
 class TreeSitterHelper:
@@ -49,10 +49,11 @@ class TreeSitterHelper:
         # Traverse up to find the named parent
         named_parent = child_node
         rel_types = self.language_definitions.get_relationships_group_types()
-        while named_parent.grammar_name not in rel_types:
-            named_parent = named_parent.parent
+        # while named_parent.grammar_name not in rel_types:
+        #     named_parent = named_parent.parent
 
-        return rel_types[named_parent.grammar_name]
+        # return rel_types[named_parent.grammar_name]
+        return RelationshipType.CALLS
 
     def create_function_call_references(self, tree_sitter_node: "TreeSitterNode") -> List[str]:
         function_call_query = self.language_definitions.get_function_call_query()
@@ -93,7 +94,7 @@ class TreeSitterHelper:
 
     def _create_file_node_from_module_node(
         self, module_node: "TreeSitterNode", file: File, parent_folder: "FolderNode" = None
-    ) -> Node:
+    ) -> "Node":
         print(f"Creating file node for {file.uri_path}")
         return NodeFactory.create_file_node(
             path=file.uri_path,
@@ -210,7 +211,7 @@ class TreeSitterHelper:
     def get_parent_node(self, context_stack: List["Node"]) -> "DefinitionNode":
         return context_stack[-1]
 
-    def _create_file_node_from_raw_file(self, file: File, parent_folder: "FolderNode" = None) -> Node:
+    def _create_file_node_from_raw_file(self, file: File, parent_folder: "FolderNode" = None) -> "Node":
         return NodeFactory.create_file_node(
             path=file.uri_path,
             name=file.name,

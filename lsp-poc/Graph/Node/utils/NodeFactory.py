@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 class NodeFactory:
     @staticmethod
-    def create_folder_node(folder: Folder, parent: FolderNode = None) -> FolderNode:
+    def create_folder_node(folder: "Folder", parent: FolderNode = None) -> FolderNode:
         return FolderNode(path=folder.uri_path, name=folder.name, level=folder.level, parent=parent)
 
     @staticmethod
