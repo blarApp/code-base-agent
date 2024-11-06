@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from Graph.Relationship import Relationship
     from .CodeRange import CodeRange
     from tree_sitter import Node as TreeSitterNode
-    from LSP import Reference
+    from LSP.types import Reference
 
 
 class DefinitionNode(Node):
@@ -46,7 +46,7 @@ class DefinitionNode(Node):
     def get_start_end_line(self):
         return self.node_range.start_line, self.node_range.end_line
 
-    def reference_search(self, reference: Reference) -> "DefinitionNode":
+    def reference_search(self, reference: "Reference") -> "DefinitionNode":
         reference_start = reference.range.start.line
         reference_end = reference.range.end.line
 

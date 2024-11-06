@@ -1,13 +1,19 @@
+from dataclasses import dataclass
+
+
+@dataclass
 class Point:
     line: int
     character: int
 
 
+@dataclass
 class Range:
     start: Point
     end: Point
 
 
+@dataclass
 class Reference:
     range: Range
     uri: str
