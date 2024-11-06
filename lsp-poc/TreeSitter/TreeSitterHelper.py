@@ -1,15 +1,16 @@
 from tree_sitter import Language, Tree, Parser
 
-from Graph.Node import NodeFactory, Node, CodeRange, DefinitionNode
+from Graph.Node import NodeFactory, CodeRange
 from LSP import SymbolKind
-from .Languages import LanguageDefinitions, PythonDefinitions
+from .Languages import LanguageDefinitions
 from Files import File
 
 from typing import List, TYPE_CHECKING
+from Graph.Relationship import RelationshipType
 
 if TYPE_CHECKING:
     from tree_sitter import Node as TreeSitterNode
-    from Graph.Node import FolderNode
+    from Graph.Node import DefinitionNode, Node, FolderNode
 
 
 class TreeSitterHelper:
@@ -18,7 +19,7 @@ class TreeSitterHelper:
     parser: Parser
     current_path: str
     base_node_source_code: str
-    created_nodes: List[Node]
+    created_nodes: List["Node"]
 
     def __init__(self, language_definitions: LanguageDefinitions):
         self.language_definitions = language_definitions
@@ -31,6 +32,28 @@ class TreeSitterHelper:
 
         return Parser(self.language)
 
+    def get_reference_type(self, reference: dict, node_reference: "DefinitionNode") -> "RelationshipType":
+        tree = node_reference._tree_sitter_node
+
+        # Extract start and end positions from the reference
+        start_line = reference["range"]["start"]["line"]
+        start_char = reference["range"]["start"]["character"]
+        end_line = reference["range"]["end"]["line"]
+        end_char = reference["range"]["end"]["character"]
+
+        # Get the tree-sitter node for the reference
+        start_point = (start_line, start_char)
+        end_point = (end_line, end_char)
+        child_node = tree.descendant_for_point_range(start_point, end_point)
+
+        # Traverse up to find the named parent
+        named_parent = child_node
+        rel_types = self.language_definitions.get_relationships_group_types()
+        while named_parent is not None and named_parent.type not in rel_types:
+            named_parent = named_parent.parent
+
+        return rel_types.get(named_parent.type, RelationshipType.USES)
+
     def create_function_call_references(self, tree_sitter_node: "TreeSitterNode") -> List[str]:
         function_call_query = self.language_definitions.get_function_call_query()
         query = self.language.query(function_call_query)
@@ -39,7 +62,7 @@ class TreeSitterHelper:
 
         return functions
 
-    def create_nodes_and_relationships_in_file(self, file: File, parent_folder: "FolderNode" = None) -> List[Node]:
+    def create_nodes_and_relationships_in_file(self, file: File, parent_folder: "FolderNode" = None) -> List["Node"]:
         self.current_path = file.uri_path
         self.created_nodes = []
         self.base_node_source_code = self._get_content_from_file(file)
@@ -70,7 +93,7 @@ class TreeSitterHelper:
 
     def _create_file_node_from_module_node(
         self, module_node: "TreeSitterNode", file: File, parent_folder: "FolderNode" = None
-    ) -> Node:
+    ) -> "Node":
         print(f"Creating file node for {file.uri_path}")
         return NodeFactory.create_file_node(
             path=file.uri_path,
@@ -81,6 +104,7 @@ class TreeSitterHelper:
             code_text=self.base_node_source_code,
             body_text=self.base_node_source_code,
             parent=parent_folder,
+            tree_sitter_node=module_node,
         )
 
     def _get_content_from_file(self, file: File) -> str:
@@ -91,7 +115,7 @@ class TreeSitterHelper:
             # if content cannot be read, return empty string
             return ""
 
-    def _traverse(self, tree_sitter_node: "TreeSitterNode", context_stack: List[Node]) -> None:
+    def _traverse(self, tree_sitter_node: "TreeSitterNode", context_stack: List["Node"]) -> None:
         """Perform a recursive preorder traversal of the tree."""
         if context_stack is None:
             context_stack = []
@@ -111,7 +135,7 @@ class TreeSitterHelper:
     def _is_node_type_in_capture_group_types(self, node_type: str) -> bool:
         return node_type in self.language_definitions.get_capture_group_types()
 
-    def _handle_definition_node(self, tree_sitter_node: "TreeSitterNode", context_stack: List[Node]) -> Node:
+    def _handle_definition_node(self, tree_sitter_node: "TreeSitterNode", context_stack: List["Node"]) -> "Node":
         """Handle the printing of node information for class and function definitions."""
         identifier_node = self._get_identifier_node(tree_sitter_node)
         identifier_def_range = self._get_range_from_node(node=identifier_node)
@@ -144,6 +168,7 @@ class TreeSitterHelper:
             body_text=body_snippet,
             level=parent_node.level + 1,
             parent=parent_node,
+            tree_sitter_node=tree_sitter_node,
         )
 
         parent_node.relate_node_as_define_relationship(node)
@@ -182,10 +207,10 @@ class TreeSitterHelper:
         else:
             return None
 
-    def get_parent_node(self, context_stack: List[Node]) -> DefinitionNode:
+    def get_parent_node(self, context_stack: List["Node"]) -> "DefinitionNode":
         return context_stack[-1]
 
-    def _create_file_node_from_raw_file(self, file: File, parent_folder: "FolderNode" = None) -> Node:
+    def _create_file_node_from_raw_file(self, file: File, parent_folder: "FolderNode" = None) -> "Node":
         return NodeFactory.create_file_node(
             path=file.uri_path,
             name=file.name,
@@ -195,6 +220,7 @@ class TreeSitterHelper:
             code_text=self.base_node_source_code,
             body_text=self.base_node_source_code,
             parent=parent_folder,
+            tree_sitter_node=None,
         )
 
     def _get_block_node(self, node: "TreeSitterNode") -> "TreeSitterNode":
@@ -202,24 +228,3 @@ class TreeSitterHelper:
             if child.type == "block":
                 return child
         return None
-
-
-if __name__ == "__main__":
-    ts = TreeSitterHelper(language_definitions=PythonDefinitions())
-    tree = ts._parse(
-        """
-        def top_function_2():
-            pass
-
-        class MyClass:
-            def method(self):
-                def inner_function():
-                    pass
-            def another_method(self):
-                pass
-
-        def top_function():
-            pass
-        """
-    )
-    ts._traverse(tree.root_node)  # Start traversal from the root node
