@@ -20,7 +20,7 @@ class TreeSitterHelper:
     parser: Parser
     current_path: str
     base_node_source_code: str
-    created_nodes: List["node"]
+    created_nodes: List["Node"]
 
     def __init__(self, language_definitions: LanguageDefinitions):
         self.language_definitions = language_definitions
@@ -74,7 +74,7 @@ class TreeSitterHelper:
 
         return relationships_types.get(tree_sitter_node.type, None)
 
-    def create_nodes_and_relationships_in_file(self, file: File, parent_folder: "FolderNode" = None) -> List["node"]:
+    def create_nodes_and_relationships_in_file(self, file: File, parent_folder: "FolderNode" = None) -> List["Node"]:
         self.current_path = file.uri_path
         self.created_nodes = []
         self.base_node_source_code = self._get_content_from_file(file)
@@ -105,7 +105,7 @@ class TreeSitterHelper:
 
     def _create_file_node_from_module_node(
         self, module_node: "TreeSitterNode", file: File, parent_folder: "FolderNode" = None
-    ) -> "node":
+    ) -> "Node":
         print(f"Creating file node for {file.uri_path}")
         return NodeFactory.create_file_node(
             path=file.uri_path,
@@ -127,7 +127,7 @@ class TreeSitterHelper:
             # if content cannot be read, return empty string
             return ""
 
-    def _traverse(self, tree_sitter_node: "TreeSitterNode", context_stack: List["node"]) -> None:
+    def _traverse(self, tree_sitter_node: "TreeSitterNode", context_stack: List["Node"]) -> None:
         """Perform a recursive preorder traversal of the tree."""
         if context_stack is None:
             context_stack = []
@@ -147,7 +147,7 @@ class TreeSitterHelper:
     def _is_node_type_in_capture_group_types(self, node_type: str) -> bool:
         return node_type in self.language_definitions.get_capture_group_types()
 
-    def _handle_definition_node(self, tree_sitter_node: "TreeSitterNode", context_stack: List["node"]) -> "node":
+    def _handle_definition_node(self, tree_sitter_node: "TreeSitterNode", context_stack: List["Node"]) -> "Node":
         """Handle the printing of node information for class and function definitions."""
         identifier_node = self._get_identifier_node(tree_sitter_node)
         identifier_def_range = self._get_reference_from_node(node=identifier_node)
@@ -212,10 +212,10 @@ class TreeSitterHelper:
         else:
             return None
 
-    def get_parent_node(self, context_stack: List["node"]) -> "DefinitionNode":
+    def get_parent_node(self, context_stack: List["Node"]) -> "DefinitionNode":
         return context_stack[-1]
 
-    def _create_file_node_from_raw_file(self, file: File, parent_folder: "FolderNode" = None) -> "node":
+    def _create_file_node_from_raw_file(self, file: File, parent_folder: "FolderNode" = None) -> "Node":
         return NodeFactory.create_file_node(
             path=file.uri_path,
             name=file.name,
