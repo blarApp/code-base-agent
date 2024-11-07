@@ -1,8 +1,9 @@
 from tree_sitter import Language, Tree, Parser
 
 from graph.node import NodeFactory
-from code_references.types import SymbolKind, Reference, Range, Point
+from code_references.types import Reference, Range, Point
 from .languages import LanguageDefinitions
+from graph.node import NodeLabels
 from project_file_explorer import File
 
 from typing import List, TYPE_CHECKING, Optional
@@ -162,8 +163,8 @@ class TreeSitterHelper:
 
         parent_node = self.get_parent_node(context_stack)
 
-        node = NodeFactory.create_node_based_on_kind(
-            kind=self._get_tree_sitter_node_kind(tree_sitter_node),
+        node = NodeFactory.create_node_based_on_label(
+            kind=self._get_label_from_node(tree_sitter_node),
             name=identifier_name,
             path=self.current_path,
             definition_range=identifier_def_range,
@@ -204,13 +205,8 @@ class TreeSitterHelper:
             uri=self.current_path,
         )
 
-    def _get_tree_sitter_node_kind(self, node: "TreeSitterNode") -> SymbolKind:
-        if node.type == "class_definition":
-            return SymbolKind.Class
-        elif node.type == "function_definition":
-            return SymbolKind.Function
-        else:
-            return None
+    def _get_label_from_node(self, node: "TreeSitterNode") -> NodeLabels:
+        return self.language_definitions.get_node_label_from_type(node.type)
 
     def get_parent_node(self, context_stack: List["Node"]) -> "DefinitionNode":
         return context_stack[-1]

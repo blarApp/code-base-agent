@@ -33,6 +33,12 @@ class PythonDefinitions(LanguageDefinitions):
             },
         }
 
+    def get_node_label_from_type(type: str) -> NodeLabels:
+        return {
+            "class_definition": NodeLabels.CLASS,
+            "function_definition": NodeLabels.FUNCTION,
+        }[type]
+
     def get_function_call_query() -> str:
         return """
         (call function: _ @function_call)

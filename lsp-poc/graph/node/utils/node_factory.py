@@ -2,7 +2,7 @@ from ..class_node import ClassNode
 from ..file_node import FileNode
 from ..folder_node import FolderNode
 from ..function_node import FunctionNode
-from code_references.types import SymbolKind
+from ..types.node_labels import NodeLabels
 
 from typing import Union, TYPE_CHECKING
 
@@ -90,8 +90,8 @@ class NodeFactory:
         )
 
     @staticmethod
-    def create_node_based_on_kind(
-        kind: SymbolKind,
+    def create_node_based_on_label(
+        kind: NodeLabels,
         name: str,
         path: str,
         definition_range: "Reference",
@@ -102,7 +102,7 @@ class NodeFactory:
         tree_sitter_node: "TreeSitterNode",
         parent: Union[FileNode, ClassNode, FunctionNode] = None,
     ) -> Union[ClassNode, FunctionNode]:
-        if kind == SymbolKind.Class:
+        if kind == NodeLabels.CLASS:
             return NodeFactory.create_class_node(
                 class_name=name,
                 path=path,
@@ -114,7 +114,7 @@ class NodeFactory:
                 parent=parent,
                 tree_sitter_node=tree_sitter_node,
             )
-        elif kind == SymbolKind.Function:
+        elif kind == NodeLabels.FUNCTION:
             return NodeFactory.create_function_node(
                 function_name=name,
                 path=path,

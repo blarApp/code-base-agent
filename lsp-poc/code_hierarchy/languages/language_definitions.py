@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from tree_sitter import Language
 from typing import Set
 from graph.relationship import RelationshipType
+from graph.node import NodeLabels
 
 
 class LanguageDefinitions(ABC):
@@ -28,4 +29,9 @@ class LanguageDefinitions(ABC):
     @staticmethod
     @abstractmethod
     def get_language_file_extensions() -> Set[str]:
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def get_node_label_from_type(type: str) -> NodeLabels:
         pass
