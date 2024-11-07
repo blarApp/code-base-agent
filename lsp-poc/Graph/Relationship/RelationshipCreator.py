@@ -1,6 +1,5 @@
 from typing import List, TYPE_CHECKING
 from Graph.Relationship import Relationship, RelationshipType
-from Graph.Node import NodeLabels
 
 if TYPE_CHECKING:
     from Graph.Graph import Graph
@@ -36,8 +35,6 @@ class RelationshipCreator:
         references: list["Reference"], node: "Node", graph: "Graph", tree_sitter_helper: "TreeSitterHelper"
     ) -> List[Relationship]:
         relationships = []
-        if node.label == NodeLabels.CLASS:
-            print("Node is a file")
         for reference in references:
             file_node_reference = graph.get_file_node_by_path(path=reference.uri)
 
