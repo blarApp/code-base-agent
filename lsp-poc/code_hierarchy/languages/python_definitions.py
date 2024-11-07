@@ -4,7 +4,7 @@ from graph.relationship import RelationshipType
 import tree_sitter_python as tspython
 from tree_sitter import Language
 
-from typing import Set
+from typing import Optional, Set
 
 from graph.node import NodeLabels
 from tree_sitter import Node
@@ -31,6 +31,33 @@ class PythonDefinitions(LanguageDefinitions):
             if child.type == "block":
                 return child
         raise Exception("No body node found")
+
+    def get_relationship_type(node: Node, node_in_point_reference: Node) -> Optional[RelationshipType]:
+        return PythonDefinitions._find_relationship_type(
+            node_label=node.label,
+            node_in_point_reference=node_in_point_reference,
+        )
+
+    def _find_relationship_type(node_label: str, node_in_point_reference: Node) -> Optional[RelationshipType]:
+        # Traverse up to find the named parent
+        named_parent = node_in_point_reference
+        rel_types = PythonDefinitions.get_relationships_group_types()
+        type_found = None
+
+        while named_parent is not None and type_found is None:
+            type_found = PythonDefinitions._get_tree_sitter_node_relationship_type(
+                tree_sitter_node=named_parent, relationships_types=rel_types[node_label]
+            )
+            named_parent = named_parent.parent
+        return type_found
+
+    def _get_tree_sitter_node_relationship_type(
+        tree_sitter_node: Node, relationships_types: dict
+    ) -> Optional[RelationshipType]:
+        if tree_sitter_node is None:
+            return None
+
+        return relationships_types.get(tree_sitter_node.type, None)
 
     def get_relationships_group_types() -> dict[str, RelationshipType]:
         return {

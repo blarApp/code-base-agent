@@ -4,6 +4,7 @@ from typing import Set
 from graph.relationship import RelationshipType
 from graph.node import NodeLabels
 from tree_sitter import Node
+from typing import Optional
 
 
 class LanguageDefinitions(ABC):
@@ -45,4 +46,9 @@ class LanguageDefinitions(ABC):
     @staticmethod
     @abstractmethod
     def get_body_node(node: Node):
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def get_relationship_type(node: Node, node_in_point_reference: Node) -> Optional[RelationshipType]:
         pass
