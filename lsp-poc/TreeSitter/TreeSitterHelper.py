@@ -1,17 +1,17 @@
 from tree_sitter import Language, Tree, Parser
 
 from Graph.Node import NodeFactory, CodeRange
-from LSP import SymbolKind
+from LSP.types import SymbolKind
 from .Languages import LanguageDefinitions
 from Files import File
 
-from typing import List, TYPE_CHECKING
+from typing import List, TYPE_CHECKING, Optional
 from Graph.Relationship import RelationshipType
 
 if TYPE_CHECKING:
     from tree_sitter import Node as TreeSitterNode
     from Graph.Node import DefinitionNode, Node, FolderNode
-    from LSP import Reference
+    from LSP.types import Reference
 
 
 class TreeSitterHelper:
@@ -33,23 +33,37 @@ class TreeSitterHelper:
 
         return Parser(self.language)
 
+    def get_tree_sitter_node_relationship_type(
+        self, tree_sitter_node: "TreeSitterNode", relationships_types: dict
+    ) -> Optional[RelationshipType]:
+        if tree_sitter_node is None:
+            return None
+
+        return relationships_types.get(tree_sitter_node.type, None)
+
     def get_reference_type(
-        self, original_node: "DefinitionNode", reference: Reference, node_referenced: "DefinitionNode"
-    ) -> "RelationshipType":
+        self, original_node: "DefinitionNode", reference: "Reference", node_referenced: "DefinitionNode"
+    ) -> RelationshipType:
         tree = node_referenced._tree_sitter_node
+        label_original_node = original_node.label
 
         # Get the tree-sitter node for the reference
         start_point = (reference.range.start.line, reference.range.start.character)
         end_point = (reference.range.end.line, reference.range.end.character)
-        child_node = tree.descendant_for_point_range(start_point, end_point)
 
         # Traverse up to find the named parent
+        child_node = tree.descendant_for_point_range(start_point, end_point)
+
         named_parent = child_node
         rel_types = self.language_definitions.get_relationships_group_types()
-        while named_parent is not None and named_parent.type not in rel_types:
+        type_found = None
+        while named_parent is not None and type_found is None:
+            type_found = self.get_tree_sitter_node_relationship_type(
+                tree_sitter_node=named_parent, relationships_types=rel_types[label_original_node]
+            )
             named_parent = named_parent.parent
 
-        return rel_types.get(named_parent.type, RelationshipType.USES)
+        return type_found if type_found is not None else RelationshipType.USES
 
     def create_function_call_references(self, tree_sitter_node: "TreeSitterNode") -> List[str]:
         function_call_query = self.language_definitions.get_function_call_query()

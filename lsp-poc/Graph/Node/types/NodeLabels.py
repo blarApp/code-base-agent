@@ -1,5 +1,10 @@
 from enum import Enum
 
-NodeLabels = Enum(
-    "NodeLabels", ["FOLDER", "FILE", "FUNCTION", "CLASS", "METHOD", "MODULE"]
-)
+
+class NodeLabels(Enum):
+    FOLDER = "FOLDER"
+    FILE = "FILE"
+    FUNCTION = "FUNCTION"
+    CLASS = "CLASS"
+    METHOD = "METHOD"
+    MODULE = "MODULE"
