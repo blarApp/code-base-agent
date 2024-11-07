@@ -1,4 +1,4 @@
-from Graph.Node import NodeLabels
+from graph.node import NodeLabels
 from .types.definition_node import DefinitionNode
 
 

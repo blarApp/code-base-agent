@@ -1,11 +1,11 @@
 from typing import List, Union, TYPE_CHECKING
-from Graph.Relationship import RelationshipCreator
+from graph.relationship import RelationshipCreator
 from .node import Node
 
 if TYPE_CHECKING:
     from ..class_node import ClassNode
     from ..function_node import FunctionNode
-    from Graph.Relationship import Relationship
+    from graph.relationship import Relationship
     from LSP.types import Reference
     from tree_sitter import Node as TreeSitterNode
     from LSP.types import Reference
@@ -36,7 +36,7 @@ class DefinitionNode(Node):
     def relate_nodes_as_define_relationship(self, nodes: List[Union["ClassNode", "FunctionNode"]]) -> None:
         self._defines.extend(nodes)
 
-    def get_relationships(self) -> List["Relationship"]:
+    def get_relationships(self) -> List["relationship"]:
         relationships = []
         for node in self._defines:
             relationships.append(RelationshipCreator.create_defines_relationship(self, node))

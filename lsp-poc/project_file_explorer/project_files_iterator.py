@@ -1,7 +1,7 @@
 import os
 from typing import List, Iterator
-from .Folder import Folder
-from .File import File
+from .folder import Folder
+from .file import File
 
 
 class ProjectFilesIterator:
@@ -86,9 +86,9 @@ if __name__ == "__main__":
             "/home/juan/devel/blar/lsp-poc/__pycache__",
             "/home/juan/devel/blar/lsp-poc/.git",
             "/home/juan/devel/blar/lsp-poc/.venv",
-            "/home/juan/devel/blar/lsp-poc/Graph/__pycache__",
-            "/home/juan/devel/blar/lsp-poc/Graph/Node/__pycache__",
-            "/home/juan/devel/blar/lsp-poc/Graph/Relationship/__pycache__",
+            "/home/juan/devel/blar/lsp-poc/graph/__pycache__",
+            "/home/juan/devel/blar/lsp-poc/graph/node/__pycache__",
+            "/home/juan/devel/blar/lsp-poc/graph/relationship/__pycache__",
             "/home/juan/devel/blar/lsp-poc/LSP/__pycache__",
         ],
     ):

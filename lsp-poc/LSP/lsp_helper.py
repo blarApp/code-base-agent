@@ -1,6 +1,6 @@
-from .LspCaller import LspCaller
+from .lsp_caller import LspCaller
 from .types.Reference import Reference
-from Graph.Node import DefinitionNode
+from graph.node import DefinitionNode
 
 
 class LspQueryHelper:

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from tree_sitter import Language
 from typing import Set
-from Graph.Relationship import RelationshipType
+from graph.relationship import RelationshipType
 
 
 class LanguageDefinitions(ABC):

@@ -1,16 +1,16 @@
 from LSP import LspQueryHelper
-from Files import ProjectFilesIterator
-from Graph.Node import NodeLabels, NodeFactory
-from Graph.Relationship import RelationshipCreator
-from TreeSitter import TreeSitterHelper
+from project_file_explorer import ProjectFilesIterator
+from graph.node import NodeLabels, NodeFactory
+from graph.relationship import RelationshipCreator
+from tree_sitter_ import TreeSitterHelper
 from typing import List, TYPE_CHECKING
-from Graph.Graph import Graph
+from graph.graph import Graph
 
 if TYPE_CHECKING:
-    from Graph.Node import FolderNode
-    from Files import Folder, File
-    from Graph.Node import Node, FileNode
-    from Graph.Relationship import Relationship
+    from graph.node import FolderNode
+    from project_file_explorer import File
+    from graph.node import Node, FileNode
+    from graph.relationship import Relationship
 
 
 class ProjectGraphCreator:
@@ -61,7 +61,7 @@ class ProjectGraphCreator:
             self.graph.add_node(folder_node)
             return folder_node
 
-    def create_subfolder_nodes(self, folder: "Folder", folder_node: "FolderNode") -> List["Node"]:
+    def create_subfolder_nodes(self, folder: "Folder", folder_node: "FolderNode") -> List["node"]:
         nodes = []
         for sub_folder in folder.folders:
             node = self.add_or_get_folder_node(sub_folder, parent_folder=folder_node)
@@ -90,7 +90,7 @@ class ProjectGraphCreator:
 
         raise ValueError("File node not found in file nodes")
 
-    def create_file_nodes(self, file: "File", parent_folder: "FolderNode") -> List["Node"]:
+    def create_file_nodes(self, file: "File", parent_folder: "FolderNode") -> List["node"]:
         document_symbols = self.tree_sitter_helper.create_nodes_and_relationships_in_file(
             file, parent_folder=parent_folder
         )
@@ -109,7 +109,7 @@ class ProjectGraphCreator:
                 references_relationships.extend(self.create_node_relationships(node))
         self.graph.add_references_relationships(references_relationships=references_relationships)
 
-    def create_node_relationships(self, node: "Node") -> List["Relationship"]:
+    def create_node_relationships(self, node: "node") -> List["relationship"]:
         references = self.lsp_query_helper.get_paths_where_node_is_referenced(node)
         relationships = RelationshipCreator.create_relationships_from_paths_where_node_is_referenced(
             references=references, node=node, graph=self.graph, tree_sitter_helper=self.tree_sitter_helper

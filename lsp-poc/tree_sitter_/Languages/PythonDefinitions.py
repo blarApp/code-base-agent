@@ -1,12 +1,12 @@
 from .LanguageDefinitions import LanguageDefinitions
-from Graph.Relationship import RelationshipType
+from graph.relationship import RelationshipType
 
 import tree_sitter_python as tspython
 from tree_sitter import Language
 
 from typing import Set
 
-from Graph.Node import NodeLabels
+from graph.node import NodeLabels
 
 
 class PythonDefinitions(LanguageDefinitions):

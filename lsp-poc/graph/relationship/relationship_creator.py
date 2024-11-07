@@ -1,10 +1,10 @@
 from typing import List, TYPE_CHECKING
-from Graph.Relationship import Relationship, RelationshipType
+from graph.relationship import Relationship, RelationshipType
 
 if TYPE_CHECKING:
-    from Graph.Graph import Graph
-    from Graph.Node import Node
-    from TreeSitter import TreeSitterHelper
+    from graph.graph import Graph
+    from graph.node import Node
+    from tree_sitter_ import TreeSitterHelper
     from LSP.types import Reference
 
 

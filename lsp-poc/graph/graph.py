@@ -5,7 +5,7 @@ from .node import FileNode
 from typing import List, TYPE_CHECKING, Dict, Set, DefaultDict
 
 if TYPE_CHECKING:
-    from .Relationship import Relationship
+    from .relationship import Relationship
 
 
 class Graph:
@@ -14,7 +14,7 @@ class Graph:
     folder_nodes_by_path: Dict[str, Node]
     nodes_by_label: DefaultDict[str, Set[Node]]
     nodes: Dict[str, Node]
-    references_relationships: List["Relationship"]
+    references_relationships: List["relationship"]
 
     def __init__(self):
         self.nodes = {}
@@ -63,14 +63,14 @@ class Graph:
 
         return internal_relationships + reference_relationships
 
-    def get_relationships(self) -> List["Relationship"]:
+    def get_relationships(self) -> List["relationship"]:
         relationships = []
         for node in self.nodes.values():
             relationships.extend(node.get_relationships())
 
         return relationships
 
-    def add_references_relationships(self, references_relationships: List["Relationship"]) -> None:
+    def add_references_relationships(self, references_relationships: List["relationship"]) -> None:
         self.references_relationships.extend(references_relationships)
 
     def get_nodes_as_objects(self) -> List[dict]:

@@ -1,6 +1,6 @@
 from typing import List
 
-from .File import File
+from .file import File
 import os
 
 

@@ -1,4 +1,4 @@
-from Graph.Node import NodeLabels, DefinitionNode
+from graph.node import NodeLabels, DefinitionNode
 
 from typing import TYPE_CHECKING
 

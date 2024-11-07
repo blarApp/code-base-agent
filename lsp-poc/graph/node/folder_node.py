@@ -1,7 +1,7 @@
-from Graph.Node import Node, NodeLabels
+from graph.node import Node, NodeLabels
 from .file_node import FileNode
 from typing import Union, List
-from Graph.Relationship import RelationshipCreator, Relationship
+from graph.relationship import RelationshipCreator, Relationship
 
 
 class FolderNode(Node):

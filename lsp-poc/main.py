@@ -1,9 +1,9 @@
-from Graph.ProjectGraphCreator import ProjectGraphCreator
-from Files import ProjectFilesIterator
+from project_graph_creator import ProjectGraphCreator
+from project_file_explorer import ProjectFilesIterator
 from DbManagers.Neo4jManager import Neo4jManager
 from LSP import LspQueryHelper, LspCaller
-from TreeSitter import TreeSitterHelper
-from TreeSitter.Languages import PythonDefinitions
+from tree_sitter_ import TreeSitterHelper
+from tree_sitter_.Languages import PythonDefinitions
 
 import dotenv
 import os

@@ -56,7 +56,7 @@ class Node:
             },
         }
 
-    def get_relationships(self) -> List["Relationship"]:
+    def get_relationships(self) -> List["relationship"]:
         return []
 
     def __str__(self) -> str:
