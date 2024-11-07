@@ -1,11 +1,12 @@
 from typing import List, TYPE_CHECKING
 from Graph.Relationship import Relationship, RelationshipType
+from Graph.Node import NodeLabels
 
 if TYPE_CHECKING:
     from Graph.Graph import Graph
     from Graph.Node import Node
     from TreeSitter import TreeSitterHelper
-    from LSP import Reference
+    from LSP.types import Reference
 
 
 class RelationshipCreator:
@@ -32,13 +33,12 @@ class RelationshipCreator:
 
     @staticmethod
     def create_relationships_from_paths_where_node_is_referenced(
-        references: list[Reference], node: "Node", graph: "Graph", tree_sitter_helper: "TreeSitterHelper"
+        references: list["Reference"], node: "Node", graph: "Graph", tree_sitter_helper: "TreeSitterHelper"
     ) -> List[Relationship]:
         relationships = []
+        if node.label == NodeLabels.CLASS:
+            print("Node is a file")
         for reference in references:
-            if reference.uri == node.path:
-                continue
-
             file_node_reference = graph.get_file_node_by_path(path=reference.uri)
 
             node_referenced = file_node_reference.reference_search(reference=reference)
