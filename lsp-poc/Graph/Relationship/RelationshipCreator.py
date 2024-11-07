@@ -5,6 +5,7 @@ if TYPE_CHECKING:
     from Graph.Graph import Graph
     from Graph.Node import Node
     from TreeSitter import TreeSitterHelper
+    from LSP import Reference
 
 
 class RelationshipCreator:
@@ -31,20 +32,22 @@ class RelationshipCreator:
 
     @staticmethod
     def create_relationships_from_paths_where_node_is_referenced(
-        references: set, node: "Node", graph: "Graph", tree_sitter_helper: "TreeSitterHelper"
+        references: list[Reference], node: "Node", graph: "Graph", tree_sitter_helper: "TreeSitterHelper"
     ) -> List[Relationship]:
         relationships = []
         for reference in references:
-            if reference == node.path:
+            if reference.uri == node.path:
                 continue
 
-            file_node_reference = graph.get_file_node_by_path(reference["uri"])
+            file_node_reference = graph.get_file_node_by_path(path=reference.uri)
 
-            node_referenced = file_node_reference.reference_search(reference)
+            node_referenced = file_node_reference.reference_search(reference=reference)
             if node_referenced is None or node.id == node_referenced.id:
                 continue
 
-            reference_type = tree_sitter_helper.get_reference_type(reference, node_referenced)
+            reference_type = tree_sitter_helper.get_reference_type(
+                original_node=node, reference=reference, node_referenced=node_referenced
+            )
 
             relationship = Relationship(
                 start_node=node,

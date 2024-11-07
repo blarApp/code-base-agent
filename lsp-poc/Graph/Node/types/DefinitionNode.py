@@ -8,6 +8,7 @@ if TYPE_CHECKING:
     from Graph.Relationship import Relationship
     from .CodeRange import CodeRange
     from tree_sitter import Node as TreeSitterNode
+    from LSP.types import Reference
 
 
 class DefinitionNode(Node):
@@ -42,17 +43,22 @@ class DefinitionNode(Node):
 
         return relationships
 
-    def reference_search(self, reference: dict) -> "DefinitionNode":
-        reference_range = reference["range"]
-        reference_start = reference_range["start"]["line"]
-        reference_end = reference_range["end"]["line"]
+    def get_start_end_line(self):
+        return self.node_range.start_line, self.node_range.end_line
+
+    def reference_search(self, reference: "Reference") -> "DefinitionNode":
+        reference_start = reference.range.start.line
+        reference_end = reference.range.end.line
 
         for node in self._defines:
-            range = node.node_range
-            scope_start = range.start_line
-            scope_end = range.end_line
+            scope_start, scope_end = node.get_start_end_line()
 
-            if self.is_reference_within_scope(reference_start, reference_end, scope_start, scope_end):
+            if self.is_reference_within_scope(
+                reference_start=reference_start,
+                reference_end=reference_end,
+                scope_start=scope_start,
+                scope_end=scope_end,
+            ):
                 return node.reference_search(reference=reference)
 
             if self.is_reference_end_before_scope_start(reference_end, scope_start):

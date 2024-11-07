@@ -11,6 +11,7 @@ from Graph.Relationship import RelationshipType
 if TYPE_CHECKING:
     from tree_sitter import Node as TreeSitterNode
     from Graph.Node import DefinitionNode, Node, FolderNode
+    from LSP import Reference
 
 
 class TreeSitterHelper:
@@ -32,18 +33,14 @@ class TreeSitterHelper:
 
         return Parser(self.language)
 
-    def get_reference_type(self, reference: dict, node_reference: "DefinitionNode") -> "RelationshipType":
-        tree = node_reference._tree_sitter_node
-
-        # Extract start and end positions from the reference
-        start_line = reference["range"]["start"]["line"]
-        start_char = reference["range"]["start"]["character"]
-        end_line = reference["range"]["end"]["line"]
-        end_char = reference["range"]["end"]["character"]
+    def get_reference_type(
+        self, original_node: "DefinitionNode", reference: Reference, node_referenced: "DefinitionNode"
+    ) -> "RelationshipType":
+        tree = node_referenced._tree_sitter_node
 
         # Get the tree-sitter node for the reference
-        start_point = (start_line, start_char)
-        end_point = (end_line, end_char)
+        start_point = (reference.range.start.line, reference.range.start.character)
+        end_point = (reference.range.end.line, reference.range.end.character)
         child_node = tree.descendant_for_point_range(start_point, end_point)
 
         # Traverse up to find the named parent

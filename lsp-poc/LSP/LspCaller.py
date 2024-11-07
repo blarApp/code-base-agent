@@ -167,18 +167,8 @@ class LspCaller:
     def close(self) -> None:
         self.websocket.close()
 
-
-def pretty_print(data) -> None:
-    print(json.dumps(data, indent=2))
-
-
-def main():
-    lsp_caller = LspCaller(
-        root_uri="file:///home/juan/devel/blar/lsp-poc/ruby-on-rails-sample-app",
-        # port=7658,
-    )
-    lsp_caller.connect()
-
-
-if __name__ == "__main__":
-    main()
+    def map_reference(self, reference: dict) -> dict:
+        return {
+            "uri": reference["uri"],
+            "range": reference["range"],
+        }

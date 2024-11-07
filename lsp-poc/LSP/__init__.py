@@ -1,3 +1,4 @@
 from .LspCaller import LspCaller
 from .LspQueryHelper import LspQueryHelper
-from .SymbolKind import SymbolKind
+from .types.SymbolKind import SymbolKind
+from .types.Reference import Reference
