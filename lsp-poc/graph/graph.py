@@ -1,6 +1,6 @@
 from collections import defaultdict
-from .Node import Node, NodeLabels
-from .Node import FileNode
+from .node import Node, NodeLabels
+from .node import FileNode
 
 from typing import List, TYPE_CHECKING, Dict, Set, DefaultDict
 

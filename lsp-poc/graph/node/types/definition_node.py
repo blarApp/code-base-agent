@@ -1,10 +1,10 @@
 from typing import List, Union, TYPE_CHECKING
 from Graph.Relationship import RelationshipCreator
-from .Node import Node
+from .node import Node
 
 if TYPE_CHECKING:
-    from ..ClassNode import ClassNode
-    from ..FunctionNode import FunctionNode
+    from ..class_node import ClassNode
+    from ..function_node import FunctionNode
     from Graph.Relationship import Relationship
     from LSP.types import Reference
     from tree_sitter import Node as TreeSitterNode

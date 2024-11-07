@@ -3,7 +3,7 @@ from tree_sitter import Language, Tree, Parser
 from Graph.Node import NodeFactory
 from LSP.types import SymbolKind, Reference, Range, Point
 from .Languages import LanguageDefinitions
-from Files import File
+from project_file_explorer import File
 
 from typing import List, TYPE_CHECKING, Optional
 from Graph.Relationship import RelationshipType

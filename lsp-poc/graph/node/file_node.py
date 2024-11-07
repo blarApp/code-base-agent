@@ -1,5 +1,5 @@
 from Graph.Node import NodeLabels
-from .types.DefinitionNode import DefinitionNode
+from .types.definition_node import DefinitionNode
 
 
 class FileNode(DefinitionNode):

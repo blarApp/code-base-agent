@@ -6,11 +6,11 @@ if TYPE_CHECKING:
 
 
 class Relationship:
-    start_node: "Node"
-    end_node: "Node"
+    start_node: "node"
+    end_node: "node"
     rel_type: "RelationshipType"
 
-    def __init__(self, start_node: "Node", end_node: "Node", rel_type: "RelationshipType"):
+    def __init__(self, start_node: "node", end_node: "node", rel_type: "RelationshipType"):
         self.start_node = start_node
         self.end_node = end_node
         self.rel_type = rel_type

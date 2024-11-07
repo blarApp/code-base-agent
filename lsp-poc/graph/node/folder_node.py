@@ -1,5 +1,5 @@
 from Graph.Node import Node, NodeLabels
-from .FileNode import FileNode
+from .file_node import FileNode
 from typing import Union, List
 from Graph.Relationship import RelationshipCreator, Relationship
 

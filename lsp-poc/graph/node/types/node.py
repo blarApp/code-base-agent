@@ -11,9 +11,9 @@ class Node:
     path: str
     name: str
     level: int
-    parent: "Node"
+    parent: "node"
 
-    def __init__(self, label: "NodeLabels", path: str, name: str, level: int, parent: "Node" = None):
+    def __init__(self, label: "NodeLabels", path: str, name: str, level: int, parent: "node" = None):
         self.label = label
         self.path = path
         self.name = name

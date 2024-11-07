@@ -1,7 +1,7 @@
-from ..ClassNode import ClassNode
-from ..FileNode import FileNode
-from ..FolderNode import FolderNode
-from ..FunctionNode import FunctionNode
+from ..class_node import ClassNode
+from ..file_node import FileNode
+from ..folder_node import FolderNode
+from ..function_node import FunctionNode
 from LSP.types import SymbolKind
 
 from typing import Union, TYPE_CHECKING
