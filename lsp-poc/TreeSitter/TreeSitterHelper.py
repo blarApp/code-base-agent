@@ -1,7 +1,7 @@
 from tree_sitter import Language, Tree, Parser
 
-from Graph.Node import NodeFactory, CodeRange
-from LSP.types import SymbolKind
+from Graph.Node import NodeFactory
+from LSP.types import SymbolKind, Reference, Range, Point
 from .Languages import LanguageDefinitions
 from Files import File
 
@@ -33,45 +33,46 @@ class TreeSitterHelper:
 
         return Parser(self.language)
 
-    def get_tree_sitter_node_relationship_type(
+    def get_reference_type(
+        self, original_node: "DefinitionNode", reference: "Reference", node_referenced: "DefinitionNode"
+    ) -> RelationshipType:
+        node_label = original_node.label
+        node_in_point_reference = self._get_node_in_point_reference(node=node_referenced, reference=reference)
+        type_found = self._find_relationship_type(
+            node_label=node_label, node_in_point_reference=node_in_point_reference
+        )
+
+        return type_found if type_found is not None else RelationshipType.USES
+
+    def _get_node_in_point_reference(self, node: "DefinitionNode", reference: "Reference") -> "TreeSitterNode":
+        # Get the tree-sitter node for the reference
+        start_point = (reference.range.start.line, reference.range.start.character)
+        end_point = (reference.range.end.line, reference.range.end.character)
+
+        return node._tree_sitter_node.descendant_for_point_range(start_point, end_point)
+
+    def _find_relationship_type(
+        self, node_label: str, node_in_point_reference: "TreeSitterNode"
+    ) -> Optional[RelationshipType]:
+        # Traverse up to find the named parent
+        named_parent = node_in_point_reference
+        rel_types = self.language_definitions.get_relationships_group_types()
+        type_found = None
+
+        while named_parent is not None and type_found is None:
+            type_found = self._get_tree_sitter_node_relationship_type(
+                tree_sitter_node=named_parent, relationships_types=rel_types[node_label]
+            )
+            named_parent = named_parent.parent
+        return type_found
+
+    def _get_tree_sitter_node_relationship_type(
         self, tree_sitter_node: "TreeSitterNode", relationships_types: dict
     ) -> Optional[RelationshipType]:
         if tree_sitter_node is None:
             return None
 
         return relationships_types.get(tree_sitter_node.type, None)
-
-    def get_reference_type(
-        self, original_node: "DefinitionNode", reference: "Reference", node_referenced: "DefinitionNode"
-    ) -> RelationshipType:
-        tree = node_referenced._tree_sitter_node
-        label_original_node = original_node.label
-
-        # Get the tree-sitter node for the reference
-        start_point = (reference.range.start.line, reference.range.start.character)
-        end_point = (reference.range.end.line, reference.range.end.character)
-
-        # Traverse up to find the named parent
-        child_node = tree.descendant_for_point_range(start_point, end_point)
-
-        named_parent = child_node
-        rel_types = self.language_definitions.get_relationships_group_types()
-        type_found = None
-        while named_parent is not None and type_found is None:
-            type_found = self.get_tree_sitter_node_relationship_type(
-                tree_sitter_node=named_parent, relationships_types=rel_types[label_original_node]
-            )
-            named_parent = named_parent.parent
-
-        return type_found if type_found is not None else RelationshipType.USES
-
-    def create_function_call_references(self, tree_sitter_node: "TreeSitterNode") -> List[str]:
-        function_call_query = self.language_definitions.get_function_call_query()
-        query = self.language.query(function_call_query)
-
-        functions = query.captures(tree_sitter_node)
-
-        return functions
 
     def create_nodes_and_relationships_in_file(self, file: File, parent_folder: "FolderNode" = None) -> List["Node"]:
         self.current_path = file.uri_path
@@ -110,8 +111,8 @@ class TreeSitterHelper:
             path=file.uri_path,
             name=file.name,
             level=file.level,
-            node_range=self._get_range_from_node(module_node),
-            definition_range=self._get_range_from_node(module_node),
+            node_range=self._get_reference_from_node(module_node),
+            definition_range=self._get_reference_from_node(module_node),
             code_text=self.base_node_source_code,
             body_text=self.base_node_source_code,
             parent=parent_folder,
@@ -149,23 +150,15 @@ class TreeSitterHelper:
     def _handle_definition_node(self, tree_sitter_node: "TreeSitterNode", context_stack: List["Node"]) -> "Node":
         """Handle the printing of node information for class and function definitions."""
         identifier_node = self._get_identifier_node(tree_sitter_node)
-        identifier_def_range = self._get_range_from_node(node=identifier_node)
+        identifier_def_range = self._get_reference_from_node(node=identifier_node)
         identifier_name = self.get_identifier_name(identifier_node=identifier_node)
 
-        node_range = self._get_range_from_node(node=tree_sitter_node)
-        code_snippet = self._get_code_snippet_from_base_file(node_range)
+        node_reference = self._get_reference_from_node(node=tree_sitter_node)
+        code_snippet = self._get_code_snippet_from_base_file(node_reference.range)
 
         body_node = self._get_block_node(tree_sitter_node)
-        body_range = self._get_range_from_node(node=body_node)
-        body_snippet = self._get_code_snippet_from_base_file(body_range)
-
-        print(
-            f"Identifier Start: (line {identifier_def_range.start_line}, char {identifier_def_range.start_character}), "
-            f"Identifier End: (line {identifier_def_range.end_line}, char {identifier_def_range.end_character})"
-            f"Identifier Name: {identifier_name}"
-            f"Node Start: (line {node_range.start_line}, char {node_range.start_character}), "
-            f"Node End: (line {node_range.end_line}, char {node_range.end_character})"
-        )
+        node_reference = self._get_reference_from_node(node=body_node)
+        body_snippet = self._get_code_snippet_from_base_file(node_reference.range)
 
         parent_node = self.get_parent_node(context_stack)
 
@@ -174,7 +167,7 @@ class TreeSitterHelper:
             name=identifier_name,
             path=self.current_path,
             definition_range=identifier_def_range,
-            node_range=node_range,
+            node_range=node_reference,
             code_text=code_snippet,
             body_text=body_snippet,
             level=parent_node.level + 1,
@@ -189,9 +182,9 @@ class TreeSitterHelper:
         identifier_name = identifier_node.text.decode("utf-8")
         return identifier_name
 
-    def _get_code_snippet_from_base_file(self, node_range: CodeRange) -> str:
-        start_line = node_range.start_line
-        end_line = node_range.end_line
+    def _get_code_snippet_from_base_file(self, node_range: "Range") -> str:
+        start_line = node_range.start.line
+        end_line = node_range.start.line
         code_lines = self.base_node_source_code.split("\n")
         code_snippet = "\n".join(code_lines[start_line : end_line + 1])
         return code_snippet
@@ -202,12 +195,13 @@ class TreeSitterHelper:
                 return child
         return None
 
-    def _get_range_from_node(self, node: "TreeSitterNode") -> CodeRange:
-        return CodeRange(
-            start_line=node.start_point[0],
-            start_character=node.start_point[1],
-            end_line=node.end_point[0],
-            end_character=node.end_point[1],
+    def _get_reference_from_node(self, node: "TreeSitterNode") -> "Reference":
+        return Reference(
+            range=Range(
+                start=Point(line=node.start_point[0], character=node.start_point[1]),
+                end=Point(line=node.end_point[0], character=node.end_point[1]),
+            ),
+            uri=self.current_path,
         )
 
     def _get_tree_sitter_node_kind(self, node: "TreeSitterNode") -> SymbolKind:
@@ -226,12 +220,21 @@ class TreeSitterHelper:
             path=file.uri_path,
             name=file.name,
             level=file.level,
-            node_range=CodeRange(0, 0, 0, 0),
-            definition_range=CodeRange(0, 0, 0, 0),
+            node_range=self._empty_reference(),
+            definition_range=self._empty_reference(),
             code_text=self.base_node_source_code,
             body_text=self.base_node_source_code,
             parent=parent_folder,
             tree_sitter_node=None,
+        )
+
+    def _empty_reference(self) -> "Reference":
+        return Reference(
+            range=Range(
+                start=Point(line=0, character=0),
+                end=Point(line=0, character=0),
+            ),
+            uri=self.current_path,
         )
 
     def _get_block_node(self, node: "TreeSitterNode") -> "TreeSitterNode":

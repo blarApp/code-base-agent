@@ -1,6 +1,5 @@
 from .types.NodeLabels import NodeLabels
 from .types.Node import Node
-from .types.CodeRange import CodeRange
 from .types.DefinitionNode import DefinitionNode
 from .utils.NodeFactory import NodeFactory
 from .ClassNode import ClassNode

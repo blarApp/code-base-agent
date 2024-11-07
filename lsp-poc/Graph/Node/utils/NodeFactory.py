@@ -8,7 +8,7 @@ from typing import Union, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from Files import Folder
-    from ..types.CodeRange import CodeRange
+    from LSP.types import Reference
     from tree_sitter import Node as TreeSitterNode
 
 
@@ -22,8 +22,8 @@ class NodeFactory:
         path: str,
         name: str,
         level: int,
-        node_range: "CodeRange",
-        definition_range: "CodeRange",
+        node_range: "Reference",
+        definition_range: "Reference",
         code_text: str,
         parent: FolderNode,
         body_text: str,
@@ -45,8 +45,8 @@ class NodeFactory:
     def create_class_node(
         class_name: str,
         path: str,
-        definition_range: "CodeRange",
-        node_range: "CodeRange",
+        definition_range: "Reference",
+        node_range: "Reference",
         code_text: str,
         body_text: str,
         level: int,
@@ -69,8 +69,8 @@ class NodeFactory:
     def create_function_node(
         function_name: str,
         path: str,
-        definition_range: "CodeRange",
-        node_range: "CodeRange",
+        definition_range: "Reference",
+        node_range: "Reference",
         code_text: str,
         body_text: str,
         level: int,
@@ -94,8 +94,8 @@ class NodeFactory:
         kind: SymbolKind,
         name: str,
         path: str,
-        definition_range: "CodeRange",
-        node_range: "CodeRange",
+        definition_range: "Reference",
+        node_range: "Reference",
         code_text: str,
         body_text: str,
         level: int,

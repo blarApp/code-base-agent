@@ -6,15 +6,15 @@ if TYPE_CHECKING:
     from ..ClassNode import ClassNode
     from ..FunctionNode import FunctionNode
     from Graph.Relationship import Relationship
-    from .CodeRange import CodeRange
+    from LSP.types import Reference
     from tree_sitter import Node as TreeSitterNode
     from LSP.types import Reference
 
 
 class DefinitionNode(Node):
     _defines: List[Union["ClassNode", "FunctionNode"]]
-    definition_range: "CodeRange"
-    node_range: "CodeRange"
+    definition_range: "Reference"
+    node_range: "Reference"
     code_text: str
     body_text: str
     _tree_sitter_node: "TreeSitterNode"
@@ -43,25 +43,25 @@ class DefinitionNode(Node):
 
         return relationships
 
-    def get_start_end_line(self):
-        return self.node_range.start_line, self.node_range.end_line
+    def get_start_and_end_line(self):
+        return self.node_range.range.start.line, self.node_range.range.end.line
 
     def reference_search(self, reference: "Reference") -> "DefinitionNode":
         reference_start = reference.range.start.line
         reference_end = reference.range.end.line
 
         for node in self._defines:
-            scope_start, scope_end = node.get_start_end_line()
+            start_line, end_line = node.get_start_and_end_line()
 
             if self.is_reference_within_scope(
                 reference_start=reference_start,
                 reference_end=reference_end,
-                scope_start=scope_start,
-                scope_end=scope_end,
+                scope_start=start_line,
+                scope_end=end_line,
             ):
                 return node.reference_search(reference=reference)
 
-            if self.is_reference_end_before_scope_start(reference_end, scope_start):
+            if self.is_reference_end_before_scope_start(reference_end, start_line):
                 break
 
         return self

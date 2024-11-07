@@ -3,13 +3,13 @@ from Graph.Node import NodeLabels, DefinitionNode
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .types.CodeRange import CodeRange
+    from LSP.types import Reference
 
 
 class ClassNode(DefinitionNode):
     name: str
-    definition_range: "CodeRange"
-    node_range: "CodeRange"
+    definition_range: "Reference"
+    node_range: "Reference"
     code_text: str
     level: int
 
@@ -22,7 +22,7 @@ class ClassNode(DefinitionNode):
 
     def as_object(self) -> dict:
         obj = super().as_object()
-        obj["attributes"]["start_line"] = self.node_range.start_line
-        obj["attributes"]["end_line"] = self.node_range.end_line
+        obj["attributes"]["start_line"] = self.node_range.range.start.line
+        obj["attributes"]["end_line"] = self.node_range.range.end.line
         obj["attributes"]["text"] = self.code_text
         return obj
