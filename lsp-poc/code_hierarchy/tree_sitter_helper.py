@@ -2,7 +2,7 @@ from tree_sitter import Language, Tree, Parser
 
 from graph.node import NodeFactory
 from code_references.types import SymbolKind, Reference, Range, Point
-from .Languages import LanguageDefinitions
+from .languages import LanguageDefinitions
 from project_file_explorer import File
 
 from typing import List, TYPE_CHECKING, Optional
@@ -11,7 +11,7 @@ from graph.relationship import RelationshipType
 if TYPE_CHECKING:
     from tree_sitter import Node as TreeSitterNode
     from graph.node import DefinitionNode, Node, FolderNode
-    from LSP.types import Reference
+    from code_references.types import Reference
 
 
 class TreeSitterHelper:

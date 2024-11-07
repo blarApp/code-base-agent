@@ -1,4 +1,4 @@
-from .LanguageDefinitions import LanguageDefinitions
+from .language_definitions import LanguageDefinitions
 from graph.relationship import RelationshipType
 
 import tree_sitter_python as tspython
