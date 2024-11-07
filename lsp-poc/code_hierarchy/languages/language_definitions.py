@@ -3,17 +3,13 @@ from tree_sitter import Language
 from typing import Set
 from graph.relationship import RelationshipType
 from graph.node import NodeLabels
+from tree_sitter import Node
 
 
 class LanguageDefinitions(ABC):
     @staticmethod
     @abstractmethod
     def get_language() -> Language:
-        pass
-
-    @staticmethod
-    @abstractmethod
-    def get_capture_group_types() -> Set[str]:
         pass
 
     @staticmethod
@@ -34,4 +30,19 @@ class LanguageDefinitions(ABC):
     @staticmethod
     @abstractmethod
     def get_node_label_from_type(type: str) -> NodeLabels:
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def should_create_node(node: Node) -> bool:
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def get_identifier_node(node: Node):
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def get_body_node(node: Node):
         pass

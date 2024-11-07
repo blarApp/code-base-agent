@@ -7,14 +7,30 @@ from tree_sitter import Language
 from typing import Set
 
 from graph.node import NodeLabels
+from tree_sitter import Node
 
 
 class PythonDefinitions(LanguageDefinitions):
     def get_language() -> Language:
         return Language(tspython.language())
 
-    def get_capture_group_types() -> Set[str]:
-        return {"class_definition", "function_definition"}
+    def should_create_node(node: Node) -> bool:
+        return node.type in {
+            "class_definition",
+            "function_definition",
+        }
+
+    def get_identifier_node(node: Node) -> Node:
+        for child in node.children:
+            if child.type == "identifier":
+                return child
+        raise Exception("No identifier node found")
+
+    def get_body_node(node: Node) -> Node:
+        for child in node.children:
+            if child.type == "block":
+                return child
+        raise Exception("No body node found")
 
     def get_relationships_group_types() -> dict[str, RelationshipType]:
         return {

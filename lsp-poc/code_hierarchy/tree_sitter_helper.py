@@ -130,10 +130,12 @@ class TreeSitterHelper:
 
     def _traverse(self, tree_sitter_node: "TreeSitterNode", context_stack: List["Node"]) -> None:
         """Perform a recursive preorder traversal of the tree."""
+
         if context_stack is None:
             context_stack = []
 
-        if self._is_node_type_in_capture_group_types(tree_sitter_node.type):
+        node_was_created = False
+        if node_was_created := self.language_definitions.should_create_node(tree_sitter_node):
             node = self._handle_definition_node(tree_sitter_node, context_stack)
 
             self.created_nodes.append(node)
@@ -142,27 +144,23 @@ class TreeSitterHelper:
         for child in tree_sitter_node.children:
             self._traverse(child, context_stack)
 
-        if self._is_node_type_in_capture_group_types(tree_sitter_node.type):
+        if node_was_created:
             context_stack.pop()
-
-    def _is_node_type_in_capture_group_types(self, node_type: str) -> bool:
-        return node_type in self.language_definitions.get_capture_group_types()
 
     def _handle_definition_node(self, tree_sitter_node: "TreeSitterNode", context_stack: List["Node"]) -> "Node":
         """Handle the printing of node information for class and function definitions."""
-        identifier_node = self._get_identifier_node(tree_sitter_node)
+        identifier_node = self.language_definitions.get_identifier_node(tree_sitter_node)
         identifier_def_range = self._get_reference_from_node(node=identifier_node)
         identifier_name = self.get_identifier_name(identifier_node=identifier_node)
 
         node_reference = self._get_reference_from_node(node=tree_sitter_node)
         code_snippet = self._get_code_snippet_from_base_file(node_reference.range)
 
-        body_node = self._get_block_node(tree_sitter_node)
+        body_node = self.language_definitions.get_body_node(tree_sitter_node)
         node_reference = self._get_reference_from_node(node=body_node)
         body_snippet = self._get_code_snippet_from_base_file(node_reference.range)
 
         parent_node = self.get_parent_node(context_stack)
-
         node = NodeFactory.create_node_based_on_label(
             kind=self._get_label_from_node(tree_sitter_node),
             name=identifier_name,
@@ -189,12 +187,6 @@ class TreeSitterHelper:
         code_lines = self.base_node_source_code.split("\n")
         code_snippet = "\n".join(code_lines[start_line : end_line + 1])
         return code_snippet
-
-    def _get_identifier_node(self, node: "TreeSitterNode") -> "TreeSitterNode":
-        for child in node.children:
-            if child.type == "identifier":
-                return child
-        return None
 
     def _get_reference_from_node(self, node: "TreeSitterNode") -> "Reference":
         return Reference(
@@ -232,9 +224,3 @@ class TreeSitterHelper:
             ),
             uri=self.current_path,
         )
-
-    def _get_block_node(self, node: "TreeSitterNode") -> "TreeSitterNode":
-        for child in node.children:
-            if child.type == "block":
-                return child
-        return None
