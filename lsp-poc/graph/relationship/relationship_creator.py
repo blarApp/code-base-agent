@@ -4,14 +4,14 @@ from graph.relationship import Relationship, RelationshipType
 if TYPE_CHECKING:
     from graph.graph import Graph
     from graph.node import Node
-    from tree_sitter_ import TreeSitterHelper
+    from code_hierarchy import TreeSitterHelper
     from LSP.types import Reference
 
 
 class RelationshipCreator:
     @staticmethod
     def create_relationships_for_document_symbol_nodes_found_in_file(
-        document_symbol_nodes: List["node"], file_node: "node"
+        document_symbol_nodes: List["Node"], file_node: "Node"
     ) -> List[Relationship]:
         relationships = []
         for node in document_symbol_nodes:
@@ -32,7 +32,7 @@ class RelationshipCreator:
 
     @staticmethod
     def create_relationships_from_paths_where_node_is_referenced(
-        references: list["Reference"], node: "node", graph: "graph", tree_sitter_helper: "TreeSitterHelper"
+        references: list["Reference"], node: "Node", graph: "Graph", tree_sitter_helper: "TreeSitterHelper"
     ) -> List[Relationship]:
         relationships = []
         for reference in references:
@@ -55,7 +55,7 @@ class RelationshipCreator:
         return relationships
 
     @staticmethod
-    def create_defines_relationship(node: "node", defined_node: "node") -> Relationship:
+    def create_defines_relationship(node: "Node", defined_node: "Node") -> Relationship:
         rel_type = (
             RelationshipType.FUNCTION_DEFINITION
             if defined_node.label == "FUNCTION"
@@ -68,7 +68,7 @@ class RelationshipCreator:
         )
 
     @staticmethod
-    def create_contains_relationship(folder_node: "node", contained_node: "node") -> Relationship:
+    def create_contains_relationship(folder_node: "Node", contained_node: "Node") -> Relationship:
         return Relationship(
             folder_node,
             contained_node,

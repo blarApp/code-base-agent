@@ -1,7 +1,7 @@
 from tree_sitter import Language, Tree, Parser
 
 from graph.node import NodeFactory
-from LSP.types import SymbolKind, Reference, Range, Point
+from code_references.types import SymbolKind, Reference, Range, Point
 from .Languages import LanguageDefinitions
 from project_file_explorer import File
 

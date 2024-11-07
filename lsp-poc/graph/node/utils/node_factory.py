@@ -2,13 +2,13 @@ from ..class_node import ClassNode
 from ..file_node import FileNode
 from ..folder_node import FolderNode
 from ..function_node import FunctionNode
-from LSP.types import SymbolKind
+from code_references.types import SymbolKind
 
 from typing import Union, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from Files import Folder
-    from LSP.types import Reference
+    from project_file_explorer import Folder
+    from code_references.types import Reference
     from tree_sitter import Node as TreeSitterNode
 
 

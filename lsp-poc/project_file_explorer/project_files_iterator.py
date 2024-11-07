@@ -89,7 +89,7 @@ if __name__ == "__main__":
             "/home/juan/devel/blar/lsp-poc/graph/__pycache__",
             "/home/juan/devel/blar/lsp-poc/graph/node/__pycache__",
             "/home/juan/devel/blar/lsp-poc/graph/relationship/__pycache__",
-            "/home/juan/devel/blar/lsp-poc/LSP/__pycache__",
+            "/home/juan/devel/blar/lsp-poc/code_references/__pycache__",
         ],
     ):
         print(folder)

@@ -28,9 +28,7 @@ class Neo4jManager:
         retries = 3
         for attempt in range(retries):
             try:
-                self.driver = GraphDatabase.driver(
-                    uri, auth=(user, password), max_connection_pool_size=max_connections
-                )
+                self.driver = GraphDatabase.driver(uri, auth=(user, password), max_connection_pool_size=max_connections)
                 break
             except exceptions.ServiceUnavailable as e:
                 if attempt < retries - 1:
@@ -52,7 +50,7 @@ class Neo4jManager:
     def query(self, query: str, query_params: dict = {}, result_format: str = "data"):
         with self.driver.session() as session:
             result = session.run(query, query_params)
-            if result_format == "graph":
+            if result_format == "Graph":
                 return result.graph()
             return result.data()
 
@@ -76,9 +74,7 @@ class Neo4jManager:
             )
 
     @staticmethod
-    def _merge_nodes_txn(
-        tx, nodeList: List[Any], batch_size: int, repoId: str, entityId: str
-    ):
+    def _merge_nodes_txn(tx, nodeList: List[Any], batch_size: int, repoId: str, entityId: str):
         merge_query = """
         CALL apoc.periodic.iterate(
             "UNWIND $nodeList AS node RETURN node",
@@ -155,9 +151,7 @@ class Neo4jManager:
     def create_edges(self, edgesList: List[Any]):
         # Function to create edges between nodes in the Neo4j database
         with self.driver.session() as session:
-            session.write_transaction(
-                self._create_edges_txn, edgesList, 3000, entityId=self.entityId
-            )
+            session.write_transaction(self._create_edges_txn, edgesList, 3000, entityId=self.entityId)
 
     def format_query(self, query: str):
         # Function to format the query to be used in the fulltext index
@@ -240,7 +234,7 @@ class Neo4jManager:
         query = "match (n {repoId: $repoId})-[r]-(m) return n, m, r"
         with self.driver.session() as session:
             result = session.run(query, repoId=self.repoId)
-            if result_format == "graph":
+            if result_format == "Graph":
                 return result.graph()
             return result.data()
 
@@ -248,7 +242,7 @@ class Neo4jManager:
         query = "match (n {entityId: $entityId})-[r]-(m) return n, m, r"
         with self.driver.session() as session:
             result = session.run(query, entityId=self.entityId)
-            if result_format == "graph":
+            if result_format == "Graph":
                 return result.graph()
             return result.data()
 
@@ -286,14 +280,10 @@ class Neo4jManager:
     RETURN node.node_id, node.name, node.file_path, score
         """
         with self.driver.session() as session:
-            result = session.run(
-                node_query, formatted_query=f"*{formatted_query}", repoId=self.repoId
-            )
+            result = session.run(node_query, formatted_query=f"*{formatted_query}", repoId=self.repoId)
             data_result = result.data()
             if data_result is None:
-                result = session.run(
-                    node_query, formatted_query=formatted_query, repoId=self.repoId
-                )
+                result = session.run(node_query, formatted_query=formatted_query, repoId=self.repoId)
                 data_result = result.data()
             data_result = [
                 {
@@ -315,20 +305,14 @@ class Neo4jManager:
     RETURN node.text, node.node_id, node.name, node.file_path, node.start_line, node.end_line, score
         """
         with self.driver.session() as session:
-            result = session.run(
-                node_query, formatted_query=f"*{formatted_query}", repoId=self.repoId
-            )
+            result = session.run(node_query, formatted_query=f"*{formatted_query}", repoId=self.repoId)
             first_result = result.peek()
             if first_result is None:
-                result = session.run(
-                    node_query, formatted_query=formatted_query, repoId=self.repoId
-                )
+                result = session.run(node_query, formatted_query=formatted_query, repoId=self.repoId)
                 first_result = result.peek()
             if first_result is None:
                 return None, None
-            neighbours = self.get_1_hop_neighbours_and_relations(
-                first_result["node.node_id"]
-            )
+            neighbours = self.get_1_hop_neighbours_and_relations(first_result["node.node_id"])
             return first_result, neighbours
 
     def get_1_hop_neighbours_and_relations(self, node_id: str):
@@ -402,9 +386,7 @@ class Neo4jManager:
                 if len(relationship_types) == 1:
                     query += f"WHERE type(r) = '{relationship_types[0]}'"
                 else:
-                    relationship_types_str = ", ".join(
-                        [f"'{r}'" for r in relationship_types]
-                    )
+                    relationship_types_str = ", ".join([f"'{r}'" for r in relationship_types])
                     query += f"WHERE type(r) IN [{relationship_types_str}]"
 
             query += """
@@ -429,9 +411,7 @@ class Neo4jManager:
             return nodes_info
 
     @staticmethod
-    def _create_nodes_txn(
-        tx, nodeList: List[Any], batch_size: int, repoId: str, entityId: str
-    ):
+    def _create_nodes_txn(tx, nodeList: List[Any], batch_size: int, repoId: str, entityId: str):
         node_creation_query = """
         CALL apoc.periodic.iterate(
             "UNWIND $nodeList AS node RETURN node",
