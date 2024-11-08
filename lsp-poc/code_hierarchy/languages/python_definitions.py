@@ -82,10 +82,5 @@ class PythonDefinitions(LanguageDefinitions):
             "function_definition": NodeLabels.FUNCTION,
         }[type]
 
-    def get_function_call_query() -> str:
-        return """
-        (call function: _ @function_call)
-        """
-
     def get_language_file_extensions() -> Set[str]:
         return {".py"}
