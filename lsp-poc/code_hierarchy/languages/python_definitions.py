@@ -38,10 +38,19 @@ class PythonDefinitions(LanguageDefinitions):
             node_in_point_reference=node_in_point_reference,
         )
 
+    def get_node_label_from_type(type: str) -> NodeLabels:
+        return {
+            "class_definition": NodeLabels.CLASS,
+            "function_definition": NodeLabels.FUNCTION,
+        }[type]
+
+    def get_language_file_extensions() -> Set[str]:
+        return {".py"}
+
     def _find_relationship_type(node_label: str, node_in_point_reference: Node) -> Optional[RelationshipType]:
         # Traverse up to find the named parent
         named_parent = node_in_point_reference
-        rel_types = PythonDefinitions.get_relationships_group_types()
+        rel_types = PythonDefinitions._get_relationships_group_types()
         type_found = None
 
         while named_parent is not None and type_found is None:
@@ -59,7 +68,7 @@ class PythonDefinitions(LanguageDefinitions):
 
         return relationships_types.get(tree_sitter_node.type, None)
 
-    def get_relationships_group_types() -> dict[str, RelationshipType]:
+    def _get_relationships_group_types() -> dict[str, RelationshipType]:
         return {
             NodeLabels.CLASS: {
                 "import_from_statement": RelationshipType.IMPORTS,
@@ -75,12 +84,3 @@ class PythonDefinitions(LanguageDefinitions):
                 "assignment": RelationshipType.ASSIGNMENT,
             },
         }
-
-    def get_node_label_from_type(type: str) -> NodeLabels:
-        return {
-            "class_definition": NodeLabels.CLASS,
-            "function_definition": NodeLabels.FUNCTION,
-        }[type]
-
-    def get_language_file_extensions() -> Set[str]:
-        return {".py"}
