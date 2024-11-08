@@ -1,3 +1,4 @@
+from time import sleep
 from code_references import LspQueryHelper
 from project_file_explorer import ProjectFilesIterator
 from graph.node import NodeLabels, NodeFactory
@@ -8,7 +9,7 @@ from graph.graph import Graph
 
 if TYPE_CHECKING:
     from graph.node import FolderNode
-    from project_file_explorer import File
+    from project_file_explorer import File, Folder
     from graph.node import Node, FileNode
     from graph.relationship import Relationship
 
@@ -74,6 +75,7 @@ class ProjectGraphCreator:
             self.process_file(file, parent_folder)
 
     def process_file(self, file: "File", parent_folder: "FolderNode") -> None:
+        self.lsp_query_helper.initialize_directory(file)
         file_nodes = self.create_file_nodes(file, parent_folder)
         self.graph.add_nodes(file_nodes)
 
@@ -109,8 +111,11 @@ class ProjectGraphCreator:
                 references_relationships.extend(self.create_node_relationships(node))
         self.graph.add_references_relationships(references_relationships=references_relationships)
 
-    def create_node_relationships(self, node: "Node") -> List["relationship"]:
+    def create_node_relationships(self, node: "Node") -> List["Relationship"]:
+        sleep(5)
         references = self.lsp_query_helper.get_paths_where_node_is_referenced(node)
+        print(f"References found for {node.name}: {len(references)}")
+        print(f"References: {references}")
         relationships = RelationshipCreator.create_relationships_from_paths_where_node_is_referenced(
             references=references, node=node, graph=self.graph, tree_sitter_helper=self.tree_sitter_helper
         )

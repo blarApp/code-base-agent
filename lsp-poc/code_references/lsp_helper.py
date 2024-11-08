@@ -13,6 +13,13 @@ class LspQueryHelper:
         self.lsp_caller.connect()
         self.lsp_caller.initialize()
 
+    def initialize_directory(self, file) -> None:
+        self.lsp_caller.did_open(file.uri_path, self._read_file(file.path))
+
+    def _read_file(self, file_path: str) -> str:
+        with open(file_path, "r") as file:
+            return file.read()
+
     def get_paths_where_node_is_referenced(self, node: DefinitionNode) -> list[Reference]:
         references = self.lsp_caller.get_references(node.path, node.definition_range.start_dict)
         if not references:

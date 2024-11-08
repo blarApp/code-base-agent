@@ -132,9 +132,6 @@ class TreeSitterHelper:
         node_reference = self._get_reference_from_node(node=tree_sitter_node)
         code_snippet = self._get_code_snippet_from_base_file(node_reference.range)
 
-        print(f"Creating node for {identifier_name}")
-        print(code_snippet)
-
         body_node = self.language_definitions.get_body_node(tree_sitter_node)
         node_reference = self._get_reference_from_node(node=body_node)
         body_snippet = self._get_code_snippet_from_base_file(node_reference.range)
@@ -162,7 +159,7 @@ class TreeSitterHelper:
 
     def _get_code_snippet_from_base_file(self, node_range: "Range") -> str:
         start_line = node_range.start.line
-        end_line = node_range.start.line
+        end_line = node_range.end.line
         code_lines = self.base_node_source_code.split("\n")
         code_snippet = "\n".join(code_lines[start_line : end_line + 1])
         return code_snippet

@@ -21,16 +21,10 @@ class PythonDefinitions(LanguageDefinitions):
         }
 
     def get_identifier_node(node: Node) -> Node:
-        for child in node.children:
-            if child.type == "identifier":
-                return child
-        raise Exception("No identifier node found")
+        return LanguageDefinitions.get_identifier_node(node)
 
     def get_body_node(node: Node) -> Node:
-        for child in node.children:
-            if child.type == "block":
-                return child
-        raise Exception("No body node found")
+        return LanguageDefinitions.get_body_node(node)
 
     def get_relationship_type(node: Node, node_in_point_reference: Node) -> Optional[RelationshipType]:
         return PythonDefinitions._find_relationship_type(

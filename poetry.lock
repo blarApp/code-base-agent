@@ -112,6 +112,26 @@ docs = ["sphinx (>=7.3,<8.0)", "sphinx-book-theme"]
 tests = ["tree-sitter-html (>=0.23.0)", "tree-sitter-javascript (>=0.23.0)", "tree-sitter-json (>=0.23.0)", "tree-sitter-python (>=0.23.0)", "tree-sitter-rust (>=0.23.0)"]
 
 [[package]]
+name = "tree-sitter-javascript"
+version = "0.23.0"
+description = "Javascript grammar for tree-sitter"
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "tree_sitter_javascript-0.23.0-cp38-abi3-macosx_10_9_x86_64.whl", hash = "sha256:4fba9cd25d7a896b7a93f570a62190d19c21e9800201e7bea32b83a76f2c17f7"},
+    {file = "tree_sitter_javascript-0.23.0-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:8b655de77f9001af9d7a2fab8147f58b4f29d26e2b939a3d15d25545190b48f8"},
+    {file = "tree_sitter_javascript-0.23.0-cp38-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:0c52ec4d9a75c3c577d3f92d4e94da8dc9e365ead38ab895d4c26ec9984e0ade"},
+    {file = "tree_sitter_javascript-0.23.0-cp38-abi3-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:62b87827af5678000ff0d4d77e18d7c843ecc894eded570f1b5014be0258cf4a"},
+    {file = "tree_sitter_javascript-0.23.0-cp38-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:7f37cfe2b580fbc91ed078618919f97ee78f9defd6e0f25682b1eb4747e5c0bc"},
+    {file = "tree_sitter_javascript-0.23.0-cp38-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:c27f4276b8cc307544b25de25884cd1f352563dea3867d24af22b83851fb7490"},
+    {file = "tree_sitter_javascript-0.23.0-cp38-abi3-win_amd64.whl", hash = "sha256:13fb1b451d1856cd29bb2829d3376df371dcbe6d15708233630de6b8ecab7006"},
+    {file = "tree_sitter_javascript-0.23.0.tar.gz", hash = "sha256:f6cb999f0e5a37b8a08f28e1906ed6f3de03c8eaa49012cdadce40bd479cf3c1"},
+]
+
+[package.extras]
+core = ["tree-sitter (>=0.21,<1.0)"]
+
+[[package]]
 name = "tree-sitter-python"
 version = "0.23.2"
 description = "Python grammar for tree-sitter"
@@ -249,4 +269,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "f031e2b3a620e88c1881071fdfd67bf207d14fc9712d66825b7f763f90e46980"
+content-hash = "cc645924d963fe579b9b758e3c4bc5afb979beb0085bed102cd133076d6ca8a1"

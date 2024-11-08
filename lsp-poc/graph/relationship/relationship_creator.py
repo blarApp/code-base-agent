@@ -35,6 +35,9 @@ class RelationshipCreator:
         references: list["Reference"], node: "Node", graph: "Graph", tree_sitter_helper: "TreeSitterHelper"
     ) -> List[Relationship]:
         relationships = []
+        if node.label.value == "CLASS":
+            # return relationships
+            pass
         for reference in references:
             file_node_reference = graph.get_file_node_by_path(path=reference.uri)
 

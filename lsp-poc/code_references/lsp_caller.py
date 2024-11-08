@@ -9,7 +9,7 @@ class LspCaller:
     websocket: ws.ClientConnection
     unmatched_responses: dict
 
-    def __init__(self, root_uri: str, host="localhost", port=5000):
+    def __init__(self, root_uri: str, host="localhost", port=5000, log=False):
         self.validate_uri(root_uri)
 
         self.host = host
@@ -54,6 +54,9 @@ class LspCaller:
 
         return self.get_response(request_id)
 
+    def send_notification(self, notification: dict) -> None:
+        self.websocket.send(json.dumps(notification))
+
     def get_response(self, request_id: str) -> dict:
         # Check the response cache first
         if request_id in self.unmatched_responses:
@@ -64,6 +67,11 @@ class LspCaller:
         while True:
             response = self.websocket.recv()
             response = json.loads(response)
+
+            print(response)
+
+            if response.get("method") == "window/logMessage":
+                self.log(response)
 
             response_id = response.get("id")
 
@@ -146,6 +154,22 @@ class LspCaller:
         }
         return self.send_request(document_link_request).get("result")
 
+    def did_open(self, document_uri: str, text: str) -> None:
+        did_open_notification = {
+            "jsonrpc": "2.0",
+            "id": 400,
+            "method": "textDocument/didOpen",
+            "params": {
+                "textDocument": {
+                    "uri": document_uri,
+                    "languageId": "javascript",
+                    "version": 1,
+                    "text": text,
+                },
+            },
+        }
+        self.send_notification(did_open_notification)
+
     def shutdown_exit_close(self) -> None:
         self.shutdown()
         self.exit()
@@ -172,3 +196,11 @@ class LspCaller:
             "uri": reference["uri"],
             "range": reference["range"],
         }
+
+    def log(self, message: dict) -> None:
+        if self.log:
+            self.pretty_print(message)
+
+    def pretty_print(self, message: dict) -> None:
+        ## print formatted json
+        print(json.dumps(message, indent=2))

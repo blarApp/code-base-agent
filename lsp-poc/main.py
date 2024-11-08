@@ -3,16 +3,23 @@ from project_file_explorer import ProjectFilesIterator
 from db_managers.neo4j_manager import Neo4jManager
 from code_references import LspQueryHelper, LspCaller
 from code_hierarchy import TreeSitterHelper
-from code_hierarchy.languages import PythonDefinitions
+from code_hierarchy.languages import PythonDefinitions, JavascripLanguageDefinitions
 
 import dotenv
 import os
 
 
-def main(root_path: str = None, blarignore_path: str = None):
-    lsp_caller = LspCaller(root_uri=root_path)
+def main(root_path: str = None, blarignore_path: str = None, project_language: str = None):
+    if project_language == "python":
+        language_definitions = PythonDefinitions
+    elif project_language == "javascript":
+        language_definitions = JavascripLanguageDefinitions
+    else:
+        raise Exception(f"Unsupported language: {project_language}")
+
+    lsp_caller = LspCaller(root_uri=root_path, log=True)
     lsp_query_helper = LspQueryHelper(lsp_caller)
-    tree_sitter_helper = TreeSitterHelper(language_definitions=PythonDefinitions)
+    tree_sitter_helper = TreeSitterHelper(language_definitions=language_definitions)
 
     lsp_query_helper.start()
 
@@ -40,4 +47,5 @@ if __name__ == "__main__":
     dotenv.load_dotenv()
     root_path = os.getenv("ROOT_PATH")
     blarignore_path = os.getenv("BLARIGNORE_PATH")
-    main(root_path=root_path, blarignore_path=blarignore_path)
+    project_language = os.getenv("PROJECT_LANGUAGE")
+    main(root_path=root_path, blarignore_path=blarignore_path, project_language=project_language)
