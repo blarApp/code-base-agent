@@ -16,6 +16,10 @@ class File:
         return os.path.join(self.root_path, self.name)
 
     @property
+    def extension(self) -> str:
+        return os.path.splitext(self.name)[1]
+
+    @property
     def uri_path(self) -> str:
         return "file://" + self.path
 

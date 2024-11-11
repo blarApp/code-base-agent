@@ -2,16 +2,20 @@ from typing import Set, Optional
 from graph.relationship import RelationshipType
 from graph.node import NodeLabels
 
-from tree_sitter import Node, Language
+from tree_sitter import Node, Language, Parser
 from graph.node import Node as GraphNode
 
 from .language_definitions import LanguageDefinitions
 import tree_sitter_javascript as tsjavascript
+from typing import Dict
 
 
 class JavascripLanguageDefinitions(LanguageDefinitions):
-    def get_language() -> Language:
-        return Language(tsjavascript.language())
+    def get_parsers_for_extensions() -> Dict[str, Parser]:
+        return {
+            ".js": Parser(Language(tsjavascript.language())),
+            ".jsx": Parser(Language(tsjavascript.language())),
+        }
 
     def should_create_node(node: Node) -> bool:
         if node.type == "class_declaration":

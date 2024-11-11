@@ -3,7 +3,7 @@ from project_file_explorer import ProjectFilesIterator
 from db_managers.neo4j_manager import Neo4jManager
 from code_references import LspQueryHelper, LspCaller
 from code_hierarchy import TreeSitterHelper
-from code_hierarchy.languages import PythonDefinitions, JavascripLanguageDefinitions
+from code_hierarchy.languages import PythonDefinitions, JavascripLanguageDefinitions, TypescriptDefinitions
 
 import dotenv
 import os
@@ -14,6 +14,8 @@ def main(root_path: str = None, blarignore_path: str = None, project_language: s
         language_definitions = PythonDefinitions
     elif project_language == "javascript":
         language_definitions = JavascripLanguageDefinitions
+    elif project_language == "typescript":
+        language_definitions = TypescriptDefinitions
     else:
         raise Exception(f"Unsupported language: {project_language}")
 

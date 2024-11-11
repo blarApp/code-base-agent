@@ -1,4 +1,3 @@
-from time import sleep
 from code_references import LspQueryHelper
 from project_file_explorer import ProjectFilesIterator
 from graph.node import NodeLabels, NodeFactory
@@ -37,8 +36,6 @@ class ProjectGraphCreator:
 
     def build(self) -> Graph:
         self.create_code_hierarchy()
-
-        sleep(5)
         self.create_relationships_from_references()
         return self.graph
 

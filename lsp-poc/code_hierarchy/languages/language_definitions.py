@@ -1,19 +1,13 @@
 from abc import ABC, abstractmethod
-from tree_sitter import Language
+from tree_sitter import Language, Parser
 from typing import Set
 from graph.relationship import RelationshipType
 from graph.node import NodeLabels
 from tree_sitter import Node
-from typing import Optional
+from typing import Optional, Dict
 
 
 class LanguageDefinitions(ABC):
-    @staticmethod
-    @abstractmethod
-    def get_language() -> Language:
-        """This method should return the tree-sitter language for the language definition"""
-        pass
-
     @staticmethod
     @abstractmethod
     def should_create_node(node: Node) -> bool:
@@ -59,4 +53,10 @@ class LanguageDefinitions(ABC):
     @abstractmethod
     def get_language_file_extensions() -> Set[str]:
         """This method should return the file extensions for the language"""
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def get_parsers_for_extensions() -> Dict[str, Parser]:
+        """This method should return the parsers for the language"""
         pass
