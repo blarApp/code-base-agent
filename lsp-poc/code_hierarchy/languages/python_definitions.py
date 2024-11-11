@@ -27,7 +27,7 @@ class PythonDefinitions(LanguageDefinitions):
     def get_body_node(node: Node) -> Node:
         return LanguageDefinitions.get_body_node(node)
 
-    def get_relationship_type(node: Node, node_in_point_reference: Node) -> Optional[RelationshipType]:
+    def get_relationship_type(node: GraphNode, node_in_point_reference: Node) -> Optional[RelationshipType]:
         return PythonDefinitions._find_relationship_type(
             node_label=node.label,
             node_in_point_reference=node_in_point_reference,

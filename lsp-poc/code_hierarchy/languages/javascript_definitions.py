@@ -65,7 +65,7 @@ class JavascripLanguageDefinitions(LanguageDefinitions):
         return LanguageDefinitions.get_body_node(node)
 
     def get_language_file_extensions() -> Set[str]:
-        return {".js"}
+        return {".js", ".jsx"}
 
     def get_node_label_from_type(type: str) -> NodeLabels:
         # This method may need to be refactored to take the node instead in order to verify more complex node types
@@ -82,11 +82,13 @@ class JavascripLanguageDefinitions(LanguageDefinitions):
         return {
             NodeLabels.CLASS: {
                 "import_specifier": RelationshipType.IMPORTS,
+                "import_clause": RelationshipType.IMPORTS,
                 "new_expression": RelationshipType.INSTANTIATES,
                 "class_heritage": RelationshipType.INHERITS,
             },
             NodeLabels.FUNCTION: {
                 "import_specifier": RelationshipType.IMPORTS,
+                "import_clause": RelationshipType.IMPORTS,
                 "call_expression": RelationshipType.CALLS,
             },
         }
