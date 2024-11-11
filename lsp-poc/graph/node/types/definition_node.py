@@ -6,9 +6,9 @@ if TYPE_CHECKING:
     from ..class_node import ClassNode
     from ..function_node import FunctionNode
     from graph.relationship import Relationship
-    from LSP.types import Reference
+    from code_references.types import Reference
     from tree_sitter import Node as TreeSitterNode
-    from LSP.types import Reference
+    from code_hierarchy import Reference
 
 
 class DefinitionNode(Node):
@@ -36,7 +36,7 @@ class DefinitionNode(Node):
     def relate_nodes_as_define_relationship(self, nodes: List[Union["ClassNode", "FunctionNode"]]) -> None:
         self._defines.extend(nodes)
 
-    def get_relationships(self) -> List["relationship"]:
+    def get_relationships(self) -> List["Relationship"]:
         relationships = []
         for node in self._defines:
             relationships.append(RelationshipCreator.create_defines_relationship(self, node))

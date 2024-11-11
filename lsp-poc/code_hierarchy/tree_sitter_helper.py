@@ -17,7 +17,6 @@ if TYPE_CHECKING:
 
 class TreeSitterHelper:
     language_definitions: LanguageDefinitions
-    language: Language
     parser: Parser
     current_path: str
     base_node_source_code: str
@@ -25,14 +24,7 @@ class TreeSitterHelper:
 
     def __init__(self, language_definitions: LanguageDefinitions):
         self.language_definitions = language_definitions
-        self.language = self.language_definitions.get_language()
-        self.parser = self._get_parser()
-
-    def _get_parser(self) -> Parser:
-        if not self.language:
-            raise Exception("Language is not set")
-
-        return Parser(self.language)
+        self.parsers = self.language_definitions.get_parsers_for_extensions()
 
     def get_reference_type(
         self, original_node: "DefinitionNode", reference: "Reference", node_referenced: "DefinitionNode"
@@ -57,6 +49,7 @@ class TreeSitterHelper:
         self.base_node_source_code = self._get_content_from_file(file)
 
         if self._does_path_have_valid_extension(file.uri_path):
+            print(f"Handling paths with valid extension for {file.uri_path}")
             self._handle_paths_with_valid_extension(file=file, parent_folder=parent_folder)
             return self.created_nodes
 
@@ -67,7 +60,7 @@ class TreeSitterHelper:
         return any(path.endswith(extension) for extension in self.language_definitions.get_language_file_extensions())
 
     def _handle_paths_with_valid_extension(self, file: File, parent_folder: "FolderNode" = None) -> None:
-        tree = self._parse(self.base_node_source_code)
+        tree = self._parse(self.base_node_source_code, file.extension)
 
         file_node = self._create_file_node_from_module_node(
             module_node=tree.root_node, file=file, parent_folder=parent_folder
@@ -76,9 +69,10 @@ class TreeSitterHelper:
 
         self._traverse(tree.root_node, context_stack=[file_node])
 
-    def _parse(self, code: str) -> Tree:
+    def _parse(self, code: str, extension: str) -> Tree:
+        parser = self.parsers[extension]
         as_bytes = bytes(code, "utf-8")
-        return self.parser.parse(as_bytes)
+        return parser.parse(as_bytes)
 
     def _create_file_node_from_module_node(
         self, module_node: "TreeSitterNode", file: File, parent_folder: "FolderNode" = None
@@ -159,7 +153,7 @@ class TreeSitterHelper:
 
     def _get_code_snippet_from_base_file(self, node_range: "Range") -> str:
         start_line = node_range.start.line
-        end_line = node_range.start.line
+        end_line = node_range.end.line
         code_lines = self.base_node_source_code.split("\n")
         code_snippet = "\n".join(code_lines[start_line : end_line + 1])
         return code_snippet

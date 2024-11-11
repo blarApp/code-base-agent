@@ -34,6 +34,8 @@ class ProjectFilesIterator:
             files = self._get_filtered_files(current_path, files, level + 1)
             folders = self.empty_folders_from_dirs(current_path, dirs, level + 1)
 
+            print(f"current_path: {current_path}")
+
             if not self._should_skip(current_path):
                 yield Folder(
                     name=self.get_base_name(current_path),
@@ -69,6 +71,8 @@ class ProjectFilesIterator:
         ]
 
     def _should_skip(self, path: str) -> bool:
+        if path.find("Chat menu") != -1:
+            pass
         is_basename_in_names_to_skip = os.path.basename(path) in self.names_to_skip
 
         is_path_in_paths_to_skip = any(path.startswith(path_to_skip) for path_to_skip in self.paths_to_skip)
