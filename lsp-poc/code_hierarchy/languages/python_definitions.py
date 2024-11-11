@@ -8,6 +8,7 @@ from typing import Optional, Set
 
 from graph.node import NodeLabels
 from tree_sitter import Node
+from graph.node import Node as GraphNode
 
 
 class PythonDefinitions(LanguageDefinitions):
