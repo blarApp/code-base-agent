@@ -37,6 +37,8 @@ class ProjectGraphCreator:
 
     def build(self) -> Graph:
         self.create_code_hierarchy()
+
+        sleep(5)
         self.create_relationships_from_references()
         return self.graph
 
@@ -112,7 +114,6 @@ class ProjectGraphCreator:
         self.graph.add_references_relationships(references_relationships=references_relationships)
 
     def create_node_relationships(self, node: "Node") -> List["Relationship"]:
-        sleep(5)
         references = self.lsp_query_helper.get_paths_where_node_is_referenced(node)
         print(f"References found for {node.name}: {len(references)}")
         print(f"References: {references}")

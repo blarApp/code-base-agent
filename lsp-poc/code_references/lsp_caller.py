@@ -68,8 +68,6 @@ class LspCaller:
             response = self.websocket.recv()
             response = json.loads(response)
 
-            print(response)
-
             if response.get("method") == "window/logMessage":
                 self.log(response)
 
@@ -129,6 +127,7 @@ class LspCaller:
                 "textDocument": {"uri": document_uri},
                 "position": position,
                 "context": {"includeDeclaration": False},
+                "workDoneToken": 1,
             },
         }
         return self.send_request(reference_request).get("result")
