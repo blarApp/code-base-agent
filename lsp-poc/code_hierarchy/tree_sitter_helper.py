@@ -1,12 +1,12 @@
-from tree_sitter import Language, Tree, Parser
+from tree_sitter import Tree, Parser
 
 from graph.node import NodeFactory
 from code_references.types import Reference, Range, Point
-from .languages import LanguageDefinitions
+from .languages import LanguageDefinitions, FallbackDefinitions
 from graph.node import NodeLabels
 from project_file_explorer import File
 
-from typing import List, TYPE_CHECKING, Optional
+from typing import List, TYPE_CHECKING
 from graph.relationship import RelationshipType
 
 if TYPE_CHECKING:
@@ -57,6 +57,8 @@ class TreeSitterHelper:
         return [file_node]
 
     def _does_path_have_valid_extension(self, path: str) -> bool:
+        if isinstance(self.language_definitions, FallbackDefinitions):
+            return False
         return any(path.endswith(extension) for extension in self.language_definitions.get_language_file_extensions())
 
     def _handle_paths_with_valid_extension(self, file: File, parent_folder: "FolderNode" = None) -> None:

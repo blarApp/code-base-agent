@@ -5,3 +5,4 @@ lsp-ws-proxy/
 ruby-on-rails-sample-app/
 .python-version
 .vscode/
+dist/

@@ -1,4 +1,5 @@
 from .language_definitions import LanguageDefinitions
 from .python_definitions import PythonDefinitions
-from .javascript_definitions import JavascripLanguageDefinitions
+from .javascript_definitions import JavascripDefinitions
 from .typescript_definitions import TypescriptDefinitions
+from .fallback_definitions import FallbackDefinitions
