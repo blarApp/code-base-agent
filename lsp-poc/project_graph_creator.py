@@ -3,6 +3,7 @@ from project_file_explorer import ProjectFilesIterator
 from graph.node import NodeLabels, NodeFactory
 from graph.relationship import RelationshipCreator
 from code_hierarchy import TreeSitterHelper
+from code_hierarchy.languages import PythonDefinitions, JavascripDefinitions, TypescriptDefinitions, FallbackDefinitions
 from typing import List, TYPE_CHECKING
 from graph.graph import Graph
 
@@ -16,20 +17,24 @@ if TYPE_CHECKING:
 class ProjectGraphCreator:
     root_path: str
     lsp_query_helper: LspQueryHelper
-    tree_sitter_helper: TreeSitterHelper
     project_files_iterator: ProjectFilesIterator
     graph: Graph
+    languages: dict = {
+        ".py": PythonDefinitions,
+        ".js": JavascripDefinitions,
+        ".jsx": JavascripDefinitions,
+        ".ts": TypescriptDefinitions,
+        ".tsx": TypescriptDefinitions,
+    }
 
     def __init__(
         self,
         root_path: str,
         lsp_query_helper: LspQueryHelper,
-        tree_sitter_helper: TreeSitterHelper,
         project_files_iterator: ProjectFilesIterator,
     ):
         self.root_path = root_path
         self.lsp_query_helper = lsp_query_helper
-        self.tree_sitter_helper = tree_sitter_helper
         self.project_files_iterator = project_files_iterator
 
         self.graph = Graph()
@@ -73,9 +78,18 @@ class ProjectGraphCreator:
         for file in files:
             self.process_file(file, parent_folder)
 
+    def _get_language_definition(self, file_extension: str):
+        return self.languages.get(file_extension, FallbackDefinitions)
+
     def process_file(self, file: "File", parent_folder: "FolderNode") -> None:
+        language = self._get_language_definition(file.extension)
+
+        tree_sitter_helper = TreeSitterHelper(language)
+
         self.lsp_query_helper.initialize_directory(file)
-        file_nodes = self.create_file_nodes(file, parent_folder)
+        file_nodes = self.create_file_nodes(
+            file=file, parent_folder=parent_folder, tree_sitter_helper=tree_sitter_helper
+        )
         self.graph.add_nodes(file_nodes)
 
         file_node = self.get_file_node_from_file_nodes(file_nodes)
@@ -91,10 +105,10 @@ class ProjectGraphCreator:
 
         raise ValueError("File node not found in file nodes")
 
-    def create_file_nodes(self, file: "File", parent_folder: "FolderNode") -> List["Node"]:
-        document_symbols = self.tree_sitter_helper.create_nodes_and_relationships_in_file(
-            file, parent_folder=parent_folder
-        )
+    def create_file_nodes(
+        self, file: "File", parent_folder: "FolderNode", tree_sitter_helper: TreeSitterHelper
+    ) -> List["Node"]:
+        document_symbols = tree_sitter_helper.create_nodes_and_relationships_in_file(file, parent_folder=parent_folder)
         return document_symbols
 
     def create_relationships_from_references(self) -> None:

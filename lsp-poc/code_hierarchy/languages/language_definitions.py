@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from tree_sitter import Language, Parser
+from tree_sitter import Parser
 from typing import Set
 from graph.relationship import RelationshipType
 from graph.node import NodeLabels
