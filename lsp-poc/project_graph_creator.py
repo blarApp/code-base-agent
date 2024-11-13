@@ -3,7 +3,13 @@ from project_file_explorer import ProjectFilesIterator
 from graph.node import NodeLabels, NodeFactory
 from graph.relationship import RelationshipCreator
 from code_hierarchy import TreeSitterHelper
-from code_hierarchy.languages import PythonDefinitions, JavascripDefinitions, TypescriptDefinitions, FallbackDefinitions
+from code_hierarchy.languages import (
+    PythonDefinitions,
+    JavascripDefinitions,
+    TypescriptDefinitions,
+    FallbackDefinitions,
+    RubyDefinitions,
+)
 from typing import List, TYPE_CHECKING
 from graph.graph import Graph
 
@@ -25,6 +31,7 @@ class ProjectGraphCreator:
         ".jsx": JavascripDefinitions,
         ".ts": TypescriptDefinitions,
         ".tsx": TypescriptDefinitions,
+        ".rb": RubyDefinitions,
     }
 
     def __init__(
