@@ -3,7 +3,12 @@ from project_file_explorer import ProjectFilesIterator
 from db_managers.neo4j_manager import Neo4jManager
 from code_references import LspQueryHelper, LspCaller
 from code_hierarchy import TreeSitterHelper
-from code_hierarchy.languages import PythonDefinitions, JavascripLanguageDefinitions, TypescriptDefinitions
+from code_hierarchy.languages import (
+    PythonDefinitions,
+    JavascripLanguageDefinitions,
+    TypescriptDefinitions,
+    RubyDefinitions,
+)
 
 import dotenv
 import os
@@ -16,6 +21,8 @@ def main(root_path: str = None, blarignore_path: str = None, project_language: s
         language_definitions = JavascripLanguageDefinitions
     elif project_language == "typescript":
         language_definitions = TypescriptDefinitions
+    elif project_language == "ruby":
+        language_definitions = RubyDefinitions
     else:
         raise Exception(f"Unsupported language: {project_language}")
 
@@ -40,6 +47,15 @@ def main(root_path: str = None, blarignore_path: str = None, project_language: s
 
     relationships = graph.get_relationships_as_objects()
     nodes = graph.get_nodes_as_objects()
+
+    print(f"Saving graph with {len(nodes)} nodes and {len(relationships)} relationships")
+
+    # batch nodes and relationships
+    graph_manager.save_graph(nodes, [])
+
+    for relationship in relationships:
+        graph_manager.save_graph([], [relationship])
+
     graph_manager.save_graph(nodes, relationships)
 
     lsp_query_helper.shutdown_exit_close()
