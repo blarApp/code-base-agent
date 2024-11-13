@@ -1,5 +1,6 @@
 from .language_definitions import LanguageDefinitions, BodyNodeNotFound, IdentifierNodeNotFound
 from .python_definitions import PythonDefinitions
-from .javascript_definitions import JavascripLanguageDefinitions
+from .javascript_definitions import JavascripDefinitions
 from .typescript_definitions import TypescriptDefinitions
 from .ruby_definitions import RubyDefinitions
+from .fallback_definitions import FallbackDefinitions

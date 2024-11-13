@@ -2,33 +2,14 @@ from project_graph_creator import ProjectGraphCreator
 from project_file_explorer import ProjectFilesIterator
 from db_managers.neo4j_manager import Neo4jManager
 from code_references import LspQueryHelper, LspCaller
-from code_hierarchy import TreeSitterHelper
-from code_hierarchy.languages import (
-    PythonDefinitions,
-    JavascripLanguageDefinitions,
-    TypescriptDefinitions,
-    RubyDefinitions,
-)
 
 import dotenv
 import os
 
 
-def main(root_path: str = None, blarignore_path: str = None, project_language: str = None):
-    if project_language == "python":
-        language_definitions = PythonDefinitions
-    elif project_language == "javascript":
-        language_definitions = JavascripLanguageDefinitions
-    elif project_language == "typescript":
-        language_definitions = TypescriptDefinitions
-    elif project_language == "ruby":
-        language_definitions = RubyDefinitions
-    else:
-        raise Exception(f"Unsupported language: {project_language}")
-
+def main(root_path: str = None, blarignore_path: str = None):
     lsp_caller = LspCaller(root_uri=root_path, log=True)
     lsp_query_helper = LspQueryHelper(lsp_caller)
-    tree_sitter_helper = TreeSitterHelper(language_definitions=language_definitions)
 
     lsp_query_helper.start()
 
@@ -41,7 +22,7 @@ def main(root_path: str = None, blarignore_path: str = None, project_language: s
     entity_id = "test"
     graph_manager = Neo4jManager(repoId, entity_id)
 
-    graph_creator = ProjectGraphCreator("Test", lsp_query_helper, tree_sitter_helper, project_files_iterator)
+    graph_creator = ProjectGraphCreator("Test", lsp_query_helper, project_files_iterator)
 
     graph = graph_creator.build()
 
@@ -65,5 +46,4 @@ if __name__ == "__main__":
     dotenv.load_dotenv()
     root_path = os.getenv("ROOT_PATH")
     blarignore_path = os.getenv("BLARIGNORE_PATH")
-    project_language = os.getenv("PROJECT_LANGUAGE")
-    main(root_path=root_path, blarignore_path=blarignore_path, project_language=project_language)
+    main(root_path=root_path, blarignore_path=blarignore_path)

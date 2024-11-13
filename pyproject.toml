@@ -1,9 +1,13 @@
 [tool.poetry]
-name = "lsp-poc"
+name = "blar-lsp-poc"
 version = "0.1.0"
 description = "A simple graph builder based on LSP calls"
-authors = ["Your Name <you@example.com>"]
+authors = ["Juan Vargas <juan@blar.io>", "Benjamín Errazuriz <benjamin@blar.io>"]
 readme = "README.md"
+homepage = "https://blar.io"
+repository = "https://github.com/blarApp/code-base-agent"
+license = "MIT"
+packages = [{include = "lsp-poc"}]
 
 [tool.poetry.dependencies]
 python = "^3.12"
