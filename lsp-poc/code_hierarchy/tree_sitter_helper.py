@@ -56,7 +56,7 @@ class TreeSitterHelper:
         return [file_node]
 
     def _does_path_have_valid_extension(self, path: str) -> bool:
-        if isinstance(self.language_definitions, FallbackDefinitions):
+        if self.language_definitions == FallbackDefinitions:
             return False
         return any(path.endswith(extension) for extension in self.language_definitions.get_language_file_extensions())
 
