@@ -18,6 +18,17 @@ class IdentifierNodeNotFound(Exception):
 class LanguageDefinitions(ABC):
     @staticmethod
     @abstractmethod
+    def get_language_name() -> str:
+        """
+        This method should return the language name.
+
+        This name MUST match the LSP specification
+        https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocumentItem
+        """
+        pass
+
+    @staticmethod
+    @abstractmethod
     def should_create_node(node: Node) -> bool:
         """This method should return a boolean indicating if a node should be created"""
         pass

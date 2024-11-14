@@ -8,7 +8,9 @@ from .language_definitions import LanguageDefinitions, BodyNodeNotFound
 
 
 class RubyDefinitions(LanguageDefinitions):
-    @staticmethod
+    def get_language_name() -> str:
+        return "ruby"
+
     def should_create_node(node: Node) -> bool:
         print(f"Node type: {node.type}")
         if node.type == "method":
@@ -17,15 +19,12 @@ class RubyDefinitions(LanguageDefinitions):
             return True
         return False
 
-    @staticmethod
     def get_identifier_node(node: Node) -> Node:
         return LanguageDefinitions.get_identifier_node(node)
 
-    @staticmethod
     def get_body_node(node: Node) -> Node:
         return LanguageDefinitions.get_body_node(node)
 
-    @staticmethod
     def get_node_label_from_type(type: str) -> NodeLabels:
         if type == "class":
             return NodeLabels.CLASS
@@ -71,11 +70,9 @@ class RubyDefinitions(LanguageDefinitions):
 
         return None
 
-    @staticmethod
     def get_language_file_extensions() -> Set[str]:
         return {".rb"}
 
-    @staticmethod
     def get_parsers_for_extensions() -> Dict[str, Parser]:
         return {
             ".rb": Parser(Language(tsruby.language())),

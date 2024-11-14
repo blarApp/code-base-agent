@@ -12,6 +12,9 @@ from graph.node import Node as GraphNode
 
 
 class PythonDefinitions(LanguageDefinitions):
+    def get_language_name() -> str:
+        return "python"
+
     def get_parsers_for_extensions() -> Dict[str, Parser]:
         return {
             ".py": Parser(Language(tspython.language())),

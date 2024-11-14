@@ -1,4 +1,4 @@
-from code_references import LspQueryHelper
+from code_references import LspQueryHelper, FileExtensionNotSupported
 from project_file_explorer import ProjectFilesIterator
 from graph.node import NodeLabels, NodeFactory
 from graph.relationship import RelationshipCreator
@@ -87,7 +87,7 @@ class ProjectGraphCreator:
 
     def process_file(self, file: "File", parent_folder: "FolderNode") -> None:
         tree_sitter_helper = self._get_tree_sitter_for_file_extension(file.extension)
-        self.lsp_query_helper.initialize_directory(file)
+        self.try_initialize_directory(file)
         file_nodes = self.create_file_nodes(
             file=file, parent_folder=parent_folder, tree_sitter_helper=tree_sitter_helper
         )
@@ -97,6 +97,12 @@ class ProjectGraphCreator:
         file_node.skeletonize()
 
         parent_folder.relate_node_as_contain_relationship(file_node)
+
+    def try_initialize_directory(self, file: "File") -> None:
+        try:
+            self.lsp_query_helper.initialize_directory(file)
+        except FileExtensionNotSupported as e:
+            print(f"Error initializing directory: {e}")
 
     def _get_tree_sitter_for_file_extension(self, file_extension: str) -> TreeSitterHelper:
         language = self._get_language_definition(file_extension=file_extension)

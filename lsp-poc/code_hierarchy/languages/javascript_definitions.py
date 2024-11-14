@@ -11,6 +11,9 @@ from typing import Dict
 
 
 class JavascriptDefinitions(LanguageDefinitions):
+    def get_language_name() -> str:
+        return "javascript"
+
     def get_parsers_for_extensions() -> Dict[str, Parser]:
         return {
             ".js": Parser(Language(tsjavascript.language())),
