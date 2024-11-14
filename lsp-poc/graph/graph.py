@@ -2,7 +2,7 @@ from collections import defaultdict
 from .node import Node, NodeLabels
 from .node import FileNode
 
-from typing import List, TYPE_CHECKING, Dict, Set, DefaultDict
+from typing import List, TYPE_CHECKING, Dict, Set, DefaultDict, Optional
 
 if TYPE_CHECKING:
     from .relationship import Relationship
@@ -45,8 +45,8 @@ class Graph:
     def get_nodes_by_path(self, path: str) -> set:
         return self.nodes_by_path[path]
 
-    def get_file_node_by_path(self, path: str) -> FileNode:
-        return self.file_nodes_by_path[path]
+    def get_file_node_by_path(self, path: str) -> Optional[FileNode]:
+        return self.file_nodes_by_path.get(path)
 
     def get_folder_node_by_path(self, path: str) -> Node:
         return self.folder_nodes_by_path[path]
@@ -63,14 +63,14 @@ class Graph:
 
         return internal_relationships + reference_relationships
 
-    def get_relationships(self) -> List["relationship"]:
+    def get_relationships(self) -> List["Relationship"]:
         relationships = []
         for node in self.nodes.values():
             relationships.extend(node.get_relationships())
 
         return relationships
 
-    def add_references_relationships(self, references_relationships: List["relationship"]) -> None:
+    def add_references_relationships(self, references_relationships: List["Relationship"]) -> None:
         self.references_relationships.extend(references_relationships)
 
     def get_nodes_as_objects(self) -> List[dict]:

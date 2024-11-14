@@ -8,8 +8,9 @@ class LspCaller:
     port: int
     websocket: ws.ClientConnection
     unmatched_responses: dict
+    lsp_server_name: str
 
-    def __init__(self, root_uri: str, host="localhost", port=5000, log=False):
+    def __init__(self, root_uri: str, host="localhost", port=5000, log=False, lsp_server_name=""):
         self.validate_uri(root_uri)
 
         self.host = host
@@ -17,6 +18,7 @@ class LspCaller:
         self.root_uri = root_uri
         self.websocket = None
         self.unmatched_responses = {}
+        self.lsp_server_name = lsp_server_name
 
         self._id = 0
 
@@ -31,7 +33,13 @@ class LspCaller:
 
     def connect(self) -> None:
         uri = f"ws://{self.host}:{self.port}"
+        uri += self._get_query_params()
         self.websocket = ws.connect(uri)
+
+    def _get_query_params(self) -> str:
+        if self.lsp_server_name:
+            return f"?name={self.lsp_server_name}"
+        return ""
 
     def initialize(self) -> None:
         initialize_request = {

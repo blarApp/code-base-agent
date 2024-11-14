@@ -1,9 +1,15 @@
-from code_references import LspQueryHelper
+from code_references import LspQueryHelper, FileExtensionNotSupported
 from project_file_explorer import ProjectFilesIterator
 from graph.node import NodeLabels, NodeFactory
 from graph.relationship import RelationshipCreator
 from code_hierarchy import TreeSitterHelper
-from code_hierarchy.languages import PythonDefinitions, JavascripDefinitions, TypescriptDefinitions, FallbackDefinitions
+from code_hierarchy.languages import (
+    PythonDefinitions,
+    JavascriptDefinitions,
+    TypescriptDefinitions,
+    FallbackDefinitions,
+    RubyDefinitions,
+)
 from typing import List, TYPE_CHECKING
 from graph.graph import Graph
 
@@ -21,10 +27,11 @@ class ProjectGraphCreator:
     graph: Graph
     languages: dict = {
         ".py": PythonDefinitions,
-        ".js": JavascripDefinitions,
-        ".jsx": JavascripDefinitions,
+        ".js": JavascriptDefinitions,
+        ".jsx": JavascriptDefinitions,
         ".ts": TypescriptDefinitions,
         ".tsx": TypescriptDefinitions,
+        ".rb": RubyDefinitions,
     }
 
     def __init__(
@@ -78,15 +85,9 @@ class ProjectGraphCreator:
         for file in files:
             self.process_file(file, parent_folder)
 
-    def _get_language_definition(self, file_extension: str):
-        return self.languages.get(file_extension, FallbackDefinitions)
-
     def process_file(self, file: "File", parent_folder: "FolderNode") -> None:
-        language = self._get_language_definition(file.extension)
-
-        tree_sitter_helper = TreeSitterHelper(language)
-
-        self.lsp_query_helper.initialize_directory(file)
+        tree_sitter_helper = self._get_tree_sitter_for_file_extension(file.extension)
+        self.try_initialize_directory(file)
         file_nodes = self.create_file_nodes(
             file=file, parent_folder=parent_folder, tree_sitter_helper=tree_sitter_helper
         )
@@ -96,6 +97,19 @@ class ProjectGraphCreator:
         file_node.skeletonize()
 
         parent_folder.relate_node_as_contain_relationship(file_node)
+
+    def try_initialize_directory(self, file: "File") -> None:
+        try:
+            self.lsp_query_helper.initialize_directory(file)
+        except FileExtensionNotSupported as e:
+            print(f"Error initializing directory: {e}")
+
+    def _get_tree_sitter_for_file_extension(self, file_extension: str) -> TreeSitterHelper:
+        language = self._get_language_definition(file_extension=file_extension)
+        return TreeSitterHelper(language_definitions=language)
+
+    def _get_language_definition(self, file_extension: str):
+        return self.languages.get(file_extension, FallbackDefinitions)
 
     def get_file_node_from_file_nodes(self, file_nodes) -> "FileNode":
         # File node should always be the first node in the list
@@ -121,15 +135,18 @@ class ProjectGraphCreator:
                 if node.label == NodeLabels.FILE:
                     continue
 
-                references_relationships.extend(self.create_node_relationships(node))
+                tree_sitter_helper = self._get_tree_sitter_for_file_extension(node.extension)
+                references_relationships.extend(
+                    self.create_node_relationships(node=node, tree_sitter_helper=tree_sitter_helper)
+                )
         self.graph.add_references_relationships(references_relationships=references_relationships)
 
-    def create_node_relationships(self, node: "Node") -> List["Relationship"]:
+    def create_node_relationships(self, node: "Node", tree_sitter_helper: TreeSitterHelper) -> List["Relationship"]:
         references = self.lsp_query_helper.get_paths_where_node_is_referenced(node)
         print(f"References found for {node.name}: {len(references)}")
         print(f"References: {references}")
         relationships = RelationshipCreator.create_relationships_from_paths_where_node_is_referenced(
-            references=references, node=node, graph=self.graph, tree_sitter_helper=self.tree_sitter_helper
+            references=references, node=node, graph=self.graph, tree_sitter_helper=tree_sitter_helper
         )
 
         return relationships

@@ -16,6 +16,8 @@ class RelationshipCreator:
         relationships = []
         for reference in references:
             file_node_reference = graph.get_file_node_by_path(path=reference.uri)
+            if file_node_reference is None:
+                continue
 
             node_referenced = file_node_reference.reference_search(reference=reference)
             if node_referenced is None or node.id == node_referenced.id:

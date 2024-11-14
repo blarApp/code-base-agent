@@ -7,7 +7,26 @@ from tree_sitter import Node
 from typing import Optional, Dict
 
 
+class BodyNodeNotFound(Exception):
+    pass
+
+
+class IdentifierNodeNotFound(Exception):
+    pass
+
+
 class LanguageDefinitions(ABC):
+    @staticmethod
+    @abstractmethod
+    def get_language_name() -> str:
+        """
+        This method should return the language name.
+
+        This name MUST match the LSP specification
+        https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocumentItem
+        """
+        pass
+
     @staticmethod
     @abstractmethod
     def should_create_node(node: Node) -> bool:
@@ -25,7 +44,9 @@ class LanguageDefinitions(ABC):
         if identifier := node.child_by_field_name("name"):
             return identifier
 
-        raise Exception("No identifier node found")
+        raise IdentifierNodeNotFound(
+            f"No identifier node found for node type {node.type} at {node.start_point} - {node.end_point}"
+        )
 
     @staticmethod
     @abstractmethod
@@ -35,7 +56,8 @@ class LanguageDefinitions(ABC):
         """
         if body := node.child_by_field_name("body"):
             return body
-        raise Exception("No body node found")
+
+        raise BodyNodeNotFound(f"No body node found for node type {node.type} at {node.start_point} - {node.end_point}")
 
     @staticmethod
     @abstractmethod

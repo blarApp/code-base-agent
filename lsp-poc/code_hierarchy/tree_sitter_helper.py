@@ -2,11 +2,10 @@ from tree_sitter import Tree, Parser
 
 from graph.node import NodeFactory
 from code_references.types import Reference, Range, Point
-from .languages import LanguageDefinitions, FallbackDefinitions
+from .languages import LanguageDefinitions, BodyNodeNotFound, FallbackDefinitions
 from graph.node import NodeLabels
 from project_file_explorer import File
-
-from typing import List, TYPE_CHECKING
+from typing import List, TYPE_CHECKING, Tuple
 from graph.relationship import RelationshipType
 
 if TYPE_CHECKING:
@@ -57,7 +56,7 @@ class TreeSitterHelper:
         return [file_node]
 
     def _does_path_have_valid_extension(self, path: str) -> bool:
-        if isinstance(self.language_definitions, FallbackDefinitions):
+        if self.language_definitions == FallbackDefinitions:
             return False
         return any(path.endswith(extension) for extension in self.language_definitions.get_language_file_extensions())
 
@@ -113,7 +112,7 @@ class TreeSitterHelper:
             self.created_nodes.append(node)
             context_stack.append(node)
 
-        for child in tree_sitter_node.children:
+        for child in tree_sitter_node.named_children:
             self._traverse(child, context_stack)
 
         if node_was_created:
@@ -121,25 +120,19 @@ class TreeSitterHelper:
 
     def _handle_definition_node(self, tree_sitter_node: "TreeSitterNode", context_stack: List["Node"]) -> "Node":
         """Handle the printing of node information for class and function definitions."""
-        identifier_node = self.language_definitions.get_identifier_node(tree_sitter_node)
-        identifier_def_range = self._get_reference_from_node(node=identifier_node)
-        identifier_name = self.get_identifier_name(identifier_node=identifier_node)
+        identifier_name, identifier_reference = self._process_identifier_node(node=tree_sitter_node)
 
-        node_reference = self._get_reference_from_node(node=tree_sitter_node)
-        code_snippet = self._get_code_snippet_from_base_file(node_reference.range)
-
-        body_node = self.language_definitions.get_body_node(tree_sitter_node)
-        node_reference = self._get_reference_from_node(node=body_node)
-        body_snippet = self._get_code_snippet_from_base_file(node_reference.range)
-
+        node_snippet, node_reference = self._process_node_snippet(tree_sitter_node)
+        body_snippet, _ = self._try_process_body_node_snippet(tree_sitter_node)
         parent_node = self.get_parent_node(context_stack)
+
         node = NodeFactory.create_node_based_on_label(
             kind=self._get_label_from_node(tree_sitter_node),
             name=identifier_name,
             path=self.current_path,
-            definition_range=identifier_def_range,
+            definition_range=identifier_reference,
             node_range=node_reference,
-            code_text=code_snippet,
+            code_text=node_snippet,
             body_text=body_snippet,
             level=parent_node.level + 1,
             parent=parent_node,
@@ -149,7 +142,13 @@ class TreeSitterHelper:
         parent_node.relate_node_as_define_relationship(node)
         return node
 
-    def get_identifier_name(self, identifier_node: str) -> str:
+    def _process_identifier_node(self, node: "TreeSitterNode") -> Tuple[str, "Reference"]:
+        identifier_node = self.language_definitions.get_identifier_node(node)
+        identifier_reference = self._get_reference_from_node(node=identifier_node)
+        identifier_name = self._get_identifier_name(identifier_node=identifier_node)
+        return identifier_name, identifier_reference
+
+    def _get_identifier_name(self, identifier_node: str) -> str:
         identifier_name = identifier_node.text.decode("utf-8")
         return identifier_name
 
@@ -168,6 +167,23 @@ class TreeSitterHelper:
             ),
             uri=self.current_path,
         )
+
+    def _process_node_snippet(self, node: "TreeSitterNode") -> Tuple[str, "Reference"]:
+        node_reference = self._get_reference_from_node(node)
+        node_snippet = self._get_code_snippet_from_base_file(node_reference.range)
+        return node_snippet, node_reference
+
+    def _try_process_body_node_snippet(self, node: "TreeSitterNode") -> Tuple[str, "Reference"]:
+        try:
+            return self._process_body_node_snippet(node)
+        except BodyNodeNotFound:
+            return "", self._empty_reference()
+
+    def _process_body_node_snippet(self, node: "TreeSitterNode") -> Tuple[str, "Reference"]:
+        body_node = self.language_definitions.get_body_node(node)
+        body_reference = self._get_reference_from_node(node=body_node)
+        body_snippet = self._get_code_snippet_from_base_file(body_reference.range)
+        return body_snippet, body_reference
 
     def _get_label_from_node(self, node: "TreeSitterNode") -> NodeLabels:
         return self.language_definitions.get_node_label_from_type(node.type)

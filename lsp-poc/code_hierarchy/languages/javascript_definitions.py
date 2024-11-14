@@ -10,7 +10,10 @@ import tree_sitter_javascript as tsjavascript
 from typing import Dict
 
 
-class JavascripDefinitions(LanguageDefinitions):
+class JavascriptDefinitions(LanguageDefinitions):
+    def get_language_name() -> str:
+        return "javascript"
+
     def get_parsers_for_extensions() -> Dict[str, Parser]:
         return {
             ".js": Parser(Language(tsjavascript.language())),
@@ -25,7 +28,7 @@ class JavascripDefinitions(LanguageDefinitions):
         if node.type == "method_definition":
             return True
         if node.type == "variable_declarator":
-            return JavascripDefinitions._is_variable_declaration_arrow_function(node)
+            return JavascriptDefinitions._is_variable_declaration_arrow_function(node)
         return False
 
     def _is_variable_declaration_arrow_function(node: Node) -> bool:
@@ -36,7 +39,7 @@ class JavascripDefinitions(LanguageDefinitions):
         return LanguageDefinitions.get_identifier_node(node)
 
     def get_relationship_type(node: GraphNode, node_in_point_reference: Node) -> Optional[RelationshipType]:
-        return JavascripDefinitions._find_relationship_type(
+        return JavascriptDefinitions._find_relationship_type(
             node_label=node.label,
             node_in_point_reference=node_in_point_reference,
         )
@@ -44,11 +47,11 @@ class JavascripDefinitions(LanguageDefinitions):
     def _find_relationship_type(node_label: str, node_in_point_reference: Node) -> Optional[RelationshipType]:
         # Traverse up to find the named parent
         named_parent = node_in_point_reference
-        rel_types = JavascripDefinitions._get_relationships_group_types()
+        rel_types = JavascriptDefinitions._get_relationships_group_types()
         type_found = None
 
         while named_parent is not None and type_found is None:
-            type_found = JavascripDefinitions._get_tree_sitter_node_relationship_type(
+            type_found = JavascriptDefinitions._get_tree_sitter_node_relationship_type(
                 tree_sitter_node=named_parent, relationships_types=rel_types[node_label]
             )
             named_parent = named_parent.parent
@@ -63,7 +66,7 @@ class JavascripDefinitions(LanguageDefinitions):
         return relationships_types.get(tree_sitter_node.type, None)
 
     def get_body_node(node: Node) -> Node:
-        if JavascripDefinitions._is_variable_declaration_arrow_function(node):
+        if JavascriptDefinitions._is_variable_declaration_arrow_function(node):
             return node.child_by_field_name("value").child_by_field_name("body")
 
         return LanguageDefinitions.get_body_node(node)

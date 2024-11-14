@@ -1,9 +1,10 @@
 from typing import List, TYPE_CHECKING
 from hashlib import md5
+import os
 
 if TYPE_CHECKING:
-    from Graph.Relationship import Relationship
-    from Graph.Node import NodeLabels
+    from graph.relationship import Relationship
+    from graph.node import NodeLabels
 
 
 class Node:
@@ -42,6 +43,10 @@ class Node:
     def pure_path(self) -> str:
         return self.path.replace("file://", "")
 
+    @property
+    def extension(self) -> str:
+        return os.path.splitext(self.pure_path)[1]
+
     def as_object(self) -> dict:
         return {
             "node_id": self.id,
@@ -56,7 +61,7 @@ class Node:
             },
         }
 
-    def get_relationships(self) -> List["relationship"]:
+    def get_relationships(self) -> List["Relationship"]:
         return []
 
     def __str__(self) -> str:

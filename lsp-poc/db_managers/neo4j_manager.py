@@ -5,7 +5,6 @@ from typing import Any, List
 from dotenv import load_dotenv
 from neo4j import Driver, GraphDatabase, exceptions
 
-
 load_dotenv()
 
 
@@ -14,13 +13,7 @@ class Neo4jManager:
     repoId: str
     driver: Driver
 
-    def __init__(
-        self,
-        repoId: str = None,
-        entityId: str = None,
-        max_connections: int = 50,
-        create_index=False,
-    ):
+    def __init__(self, repoId: str = None, entityId: str = None, max_connections: int = 50, create_index=False):
         uri = os.getenv("NEO4J_URI")
         user = os.getenv("NEO4J_USERNAME")
         password = os.getenv("NEO4J_PASSWORD")
@@ -50,58 +43,13 @@ class Neo4jManager:
     def query(self, query: str, query_params: dict = {}, result_format: str = "data"):
         with self.driver.session() as session:
             result = session.run(query, query_params)
-            if result_format == "Graph":
+            if result_format == "graph":
                 return result.graph()
             return result.data()
 
     def save_graph(self, nodes: List[Any], edges: List[Any]):
         self.create_nodes(nodes)
         self.create_edges(edges)
-
-    def merge_and_save_graph(self, nodes: List[Any], edges: List[Any]):
-        self.merge_nodes(nodes)
-        self.create_edges(edges)
-
-    def merge_nodes(self, nodeList: List[Any]):
-        # Function to merge nodes in the Neo4j database
-        with self.driver.session() as session:
-            session.write_transaction(
-                self._merge_nodes_txn,
-                nodeList,
-                3000,
-                repoId=self.repoId,
-                entityId=self.entityId,
-            )
-
-    @staticmethod
-    def _merge_nodes_txn(tx, nodeList: List[Any], batch_size: int, repoId: str, entityId: str):
-        merge_query = """
-        CALL apoc.periodic.iterate(
-            "UNWIND $nodeList AS node RETURN node",
-            "MERGE (n {node_id: node.attributes.node_id})
-            SET n += apoc.map.merge(node.attributes, {repoId: $repoId, entityId: $entityId})
-            WITH n, node.type AS nodeType
-            CALL apoc.create.addLabels(n, [nodeType, 'NODE']) YIELD node as node_with_labels
-            RETURN count(node_with_labels) as count",
-            {batchSize: $batchSize, parallel: false, iterateList: true, params: {nodeList: $nodeList, repoId: $repoId, entityId: $entityId}}
-        )
-        YIELD batches, total, errorMessages, updateStatistics
-        RETURN batches, total, errorMessages, updateStatistics
-        """
-
-        result = tx.run(
-            merge_query,
-            nodeList=nodeList,
-            batchSize=batch_size,
-            repoId=repoId,
-            entityId=entityId,
-        )
-
-        # Fetch the result
-        for record in result:
-            print(f"Merged {record['total']} nodes")
-            if record["errorMessages"]:
-                print(f"Error messages: {record['errorMessages']}")
 
     def create_function_name_index(self):
         # Creates a fulltext index on the name and path properties of the nodes
@@ -140,18 +88,12 @@ class Neo4jManager:
     def create_nodes(self, nodeList: List[Any]):
         # Function to create nodes in the Neo4j database
         with self.driver.session() as session:
-            session.write_transaction(
-                self._create_nodes_txn,
-                nodeList,
-                3000,
-                repoId=self.repoId,
-                entityId=self.entityId,
-            )
+            session.write_transaction(self._create_nodes_txn, nodeList, 10, repoId=self.repoId, entityId=self.entityId)
 
     def create_edges(self, edgesList: List[Any]):
         # Function to create edges between nodes in the Neo4j database
         with self.driver.session() as session:
-            session.write_transaction(self._create_edges_txn, edgesList, 3000, entityId=self.entityId)
+            session.write_transaction(self._create_edges_txn, edgesList, 10, entityId=self.entityId)
 
     def format_query(self, query: str):
         # Function to format the query to be used in the fulltext index
@@ -180,7 +122,6 @@ class Neo4jManager:
             query = query.replace(character, f"\\{character}")
         return query
 
-    # TODO: This method may need to be removed
     def get_node_by_id(self, node_id: str):
         query = """
         MATCH (n)
@@ -201,40 +142,11 @@ class Neo4jManager:
             }
             return node_result, neighbours
 
-    def get_node_by_path(self, path: str):
-        query = """
-        MATCH (n)
-        WHERE n.path = $path
-        RETURN n, labels(n) AS labels
-        """
-        with self.driver.session() as session:
-            result = session.run(query, {"path": path})
-
-            # Check if result is empty
-            if result.peek() is None:
-                print(f"No node found for path: {path}")
-                return None, None
-
-            record = result.single()
-
-            node = record["n"]
-            labels = record["labels"]
-            node_result = {
-                "node_id": node.get("node_id"),
-                "node_name": node.get("name"),
-                "file_path": node.get("file_path"),
-                "start_line": node.get("start_line"),
-                "end_line": node.get("end_line"),
-                "text": node.get("text"),
-                "labels": labels,
-            }
-            return node_result
-
     def get_whole_graph(self, result_format: str = "data"):
         query = "match (n {repoId: $repoId})-[r]-(m) return n, m, r"
         with self.driver.session() as session:
             result = session.run(query, repoId=self.repoId)
-            if result_format == "Graph":
+            if result_format == "graph":
                 return result.graph()
             return result.data()
 
@@ -242,34 +154,9 @@ class Neo4jManager:
         query = "match (n {entityId: $entityId})-[r]-(m) return n, m, r"
         with self.driver.session() as session:
             result = session.run(query, entityId=self.entityId)
-            if result_format == "Graph":
+            if result_format == "graph":
                 return result.graph()
             return result.data()
-
-    def delete_all_outgoing_relationships_by_file_path(self, path):
-        query = """
-        MATCH (n {file_path: $path, entityId: $entityId})-[r]->(m)
-        DELETE r
-        """
-        with self.driver.session() as session:
-            session.run(query, {"path": path, "entityId": self.entityId})
-
-    def detach_all_node_relationships_by_file_path(self, path):
-        query = """
-        MATCH (n {file_path: $path, entityId: $entityId})-[r]-(m)
-        DELETE r
-        """
-        with self.driver.session() as session:
-            session.run(query, {"path": path, "entityId": self.entityId})
-
-    def delete_all_nodes_without_relationships(self):
-        query = """
-        MATCH (n {entityId: $entityId})
-        WHERE NOT (n)--()
-        DELETE n
-        """
-        with self.driver.session() as session:
-            session.run(query, {"entityId": self.entityId})
 
     def search_code(self, query: str):
         # Function to get code from the Neo4j database based on a keyword query
@@ -367,10 +254,7 @@ class Neo4jManager:
             return nodes_info
 
     def get_incoming_neighbours(
-        self,
-        node_id: str | None = None,
-        path: str | None = None,
-        relationship_types: list | None = None,
+        self, node_id: str | None = None, path: str | None = None, relationship_types: list | None = None
     ):
         with self.driver.session() as session:
             if path:
@@ -415,21 +299,14 @@ class Neo4jManager:
         node_creation_query = """
         CALL apoc.periodic.iterate(
             "UNWIND $nodeList AS node RETURN node",
-            "CALL apoc.create.node([node.type, 'NODE'], apoc.map.merge(node.attributes, {repoId: $repoId, entityId: $entityId}))
-            YIELD node as n RETURN count(n) as count",
+            "CALL apoc.create.node([node.type, 'NODE'], apoc.map.merge(node.attributes, {repoId: $repoId, entityId: $entityId})) YIELD node as n RETURN count(n) as count",
             {batchSize: $batchSize, parallel: false, iterateList: true, params: {nodeList: $nodeList, repoId: $repoId, entityId: $entityId}}
         )
         YIELD batches, total, errorMessages, updateStatistics
         RETURN batches, total, errorMessages, updateStatistics
         """
 
-        result = tx.run(
-            node_creation_query,
-            nodeList=nodeList,
-            batchSize=batch_size,
-            repoId=repoId,
-            entityId=entityId,
-        )
+        result = tx.run(node_creation_query, nodeList=nodeList, batchSize=batch_size, repoId=repoId, entityId=entityId)
 
         # Fetch the result
         for record in result:
@@ -441,28 +318,15 @@ class Neo4jManager:
         edge_creation_query = """
         CALL apoc.periodic.iterate(
             'WITH $edgesList AS edges UNWIND edges AS edgeObject RETURN edgeObject',
-            'MATCH (node1:NODE {node_id: edgeObject.sourceId, entityId: $entityId}) 
-            MATCH (node2:NODE {node_id: edgeObject.targetId, entityId: $entityId})
-            CALL apoc.merge.relationship(node1, edgeObject.type,
-            {},
-            {path: CASE WHEN edgeObject.path IS NOT NULL THEN edgeObject.path ELSE NULL END},
-            node2)
-            YIELD rel RETURN rel',
+            'MATCH (node1:NODE {node_id: edgeObject.sourceId, entityId: $entityId}) MATCH (node2:NODE {node_id: edgeObject.targetId, entityId: $entityId}) CALL apoc.create.relationship(node1, edgeObject.type, {}, node2) YIELD rel RETURN rel',
             {batchSize:$batchSize, parallel:false, iterateList: true, params:{edgesList: $edgesList, entityId: $entityId}}
         )
         YIELD batches, total, errorMessages, updateStatistics
         RETURN batches, total, errorMessages, updateStatistics
         """
         # Execute the query
-        result = tx.run(
-            edge_creation_query,
-            edgesList=edgesList,
-            batchSize=batch_size,
-            entityId=entityId,
-        )
+        result = tx.run(edge_creation_query, edgesList=edgesList, batchSize=batch_size, entityId=entityId)
 
         # Fetch the result
         for record in result:
             print(f"Created {record['total']} edges")
-            if record["errorMessages"]:
-                print(f"Error messages: {record['errorMessages']}")
