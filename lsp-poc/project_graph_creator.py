@@ -5,7 +5,7 @@ from graph.relationship import RelationshipCreator
 from code_hierarchy import TreeSitterHelper
 from code_hierarchy.languages import (
     PythonDefinitions,
-    JavascripDefinitions,
+    JavascriptDefinitions,
     TypescriptDefinitions,
     FallbackDefinitions,
     RubyDefinitions,
@@ -27,8 +27,8 @@ class ProjectGraphCreator:
     graph: Graph
     languages: dict = {
         ".py": PythonDefinitions,
-        ".js": JavascripDefinitions,
-        ".jsx": JavascripDefinitions,
+        ".js": JavascriptDefinitions,
+        ".jsx": JavascriptDefinitions,
         ".ts": TypescriptDefinitions,
         ".tsx": TypescriptDefinitions,
         ".rb": RubyDefinitions,
