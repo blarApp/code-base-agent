@@ -1,7 +1,7 @@
 from project_graph_creator import ProjectGraphCreator
 from project_file_explorer import ProjectFilesIterator
 from db_managers.neo4j_manager import Neo4jManager
-from code_references import LspQueryHelper, LspCaller
+from code_references import LspQueryHelper
 
 import dotenv
 import os
@@ -17,7 +17,7 @@ def main(root_uri: str = None, blarignore_path: str = None):
         blarignore_path=blarignore_path,
     )
 
-    repoId = "test"
+    repoId = "test-ruby"
     entity_id = "test"
     graph_manager = Neo4jManager(repoId, entity_id)
 
@@ -37,6 +37,6 @@ def main(root_uri: str = None, blarignore_path: str = None):
 
 if __name__ == "__main__":
     dotenv.load_dotenv()
-    root_path = os.getenv("ROOT_PATH")
+    root_path = "/Users/berrazuriz/Desktop/Blar/repositories/ruby-on-rails-sample-app/"
     blarignore_path = os.getenv("BLARIGNORE_PATH")
     main(root_uri=root_path, blarignore_path=blarignore_path)

@@ -86,7 +86,7 @@ class TreeSitterHelper:
             node_range=self._get_reference_from_node(module_node),
             definition_range=self._get_reference_from_node(module_node),
             code_text=self.base_node_source_code,
-            body_text=self.base_node_source_code,
+            body_node=module_node,
             parent=parent_folder,
             tree_sitter_node=module_node,
         )
@@ -122,8 +122,9 @@ class TreeSitterHelper:
         """Handle the printing of node information for class and function definitions."""
         identifier_name, identifier_reference = self._process_identifier_node(node=tree_sitter_node)
 
-        node_snippet, node_reference = self._process_node_snippet(tree_sitter_node)
-        body_snippet, _ = self._try_process_body_node_snippet(tree_sitter_node)
+        node_reference = self._get_reference_from_node(tree_sitter_node)
+        node_snippet = tree_sitter_node.text.decode("utf-8")
+        body_node = self._try_process_body_node_snippet(tree_sitter_node)
         parent_node = self.get_parent_node(context_stack)
 
         node = NodeFactory.create_node_based_on_label(
@@ -133,7 +134,7 @@ class TreeSitterHelper:
             definition_range=identifier_reference,
             node_range=node_reference,
             code_text=node_snippet,
-            body_text=body_snippet,
+            body_node=body_node,
             level=parent_node.level + 1,
             parent=parent_node,
             tree_sitter_node=tree_sitter_node,
@@ -177,13 +178,11 @@ class TreeSitterHelper:
         try:
             return self._process_body_node_snippet(node)
         except BodyNodeNotFound:
-            return "", self._empty_reference()
+            return None
 
     def _process_body_node_snippet(self, node: "TreeSitterNode") -> Tuple[str, "Reference"]:
         body_node = self.language_definitions.get_body_node(node)
-        body_reference = self._get_reference_from_node(node=body_node)
-        body_snippet = self._get_code_snippet_from_base_file(body_reference.range)
-        return body_snippet, body_reference
+        return body_node
 
     def _get_label_from_node(self, node: "TreeSitterNode") -> NodeLabels:
         return self.language_definitions.get_node_label_from_type(node.type)
@@ -199,7 +198,7 @@ class TreeSitterHelper:
             node_range=self._empty_reference(),
             definition_range=self._empty_reference(),
             code_text=self.base_node_source_code,
-            body_text=self.base_node_source_code,
+            body_node=None,
             parent=parent_folder,
             tree_sitter_node=None,
         )

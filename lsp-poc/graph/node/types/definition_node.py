@@ -1,4 +1,4 @@
-from typing import List, Union, TYPE_CHECKING
+from typing import List, Optional, Tuple, Union, TYPE_CHECKING
 from graph.relationship import RelationshipCreator
 from .node import Node
 
@@ -8,7 +8,6 @@ if TYPE_CHECKING:
     from graph.relationship import Relationship
     from code_references.types import Reference
     from tree_sitter import Node as TreeSitterNode
-    from code_hierarchy import Reference
 
 
 class DefinitionNode(Node):
@@ -16,17 +15,17 @@ class DefinitionNode(Node):
     definition_range: "Reference"
     node_range: "Reference"
     code_text: str
-    body_text: str
+    body_node: Optional["TreeSitterNode"]
     _tree_sitter_node: "TreeSitterNode"
 
     def __init__(
-        self, definition_range, node_range, code_text, body_text, tree_sitter_node: "TreeSitterNode", *args, **kwargs
+        self, definition_range, node_range, code_text, body_node, tree_sitter_node: "TreeSitterNode", *args, **kwargs
     ):
         self._defines: List[Union["ClassNode", "FunctionNode"]] = []
         self.definition_range = definition_range
         self.node_range = node_range
         self.code_text = code_text
-        self.body_text = body_text
+        self.body_node = body_node
         self._tree_sitter_node = tree_sitter_node
         super().__init__(*args, **kwargs)
 
@@ -74,13 +73,40 @@ class DefinitionNode(Node):
     def is_reference_end_before_scope_start(self, reference_end: int, scope_start: int) -> bool:
         return reference_end < scope_start
 
-    def skeletonize(self):
-        self._replace_code_of_children_for_id()
+    def skeletonize(self) -> None:
+        if self._tree_sitter_node is None:
+            return
 
-    def _replace_code_of_children_for_id(self):
+        parent_node = self._tree_sitter_node
+        text_bytes = parent_node.text
+        bytes_offset = 0
         for node in self._defines:
-            self.code_text = self.code_text.replace(node.body_text, node._get_text_for_skeleton())
+            if node.body_node is None:
+                continue
+
+            start_text, start_byte = node.get_start_text_bytes(parent_text_bytes=text_bytes, bytes_offset=bytes_offset)
+            end_text, end_byte = node.get_end_text_bytes(parent_text_bytes=text_bytes, bytes_offset=bytes_offset)
+            text_bytes = start_text + node._get_text_for_skeleton() + end_text
+
+            bytes_offset += len(node._get_text_for_skeleton()) - (end_byte - start_byte)
+
+            self.code_text = text_bytes.decode("utf-8")
+
             node.skeletonize()
 
-    def _get_text_for_skeleton(self):
-        return f""" # Code replaced for brevity, see node: {self.hashed_id} """
+    def remove_line_break_if_present(self, text: bytes, end_byte: int) -> Tuple[bytes, int]:
+        if text[0:1] == b"\n":
+            return text[1:], end_byte - 1
+
+        return text, end_byte
+
+    def get_start_text_bytes(self, parent_text_bytes: bytes, bytes_offset: int) -> Tuple[bytes, int]:
+        start_byte = self.body_node.start_byte - 1 + bytes_offset
+        return parent_text_bytes[:start_byte], start_byte
+
+    def get_end_text_bytes(self, parent_text_bytes: bytes, bytes_offset: int) -> Tuple[bytes, int]:
+        end_byte = self.body_node.end_byte + bytes_offset
+        return self.remove_line_break_if_present(text=parent_text_bytes[end_byte:], end_byte=end_byte)
+
+    def _get_text_for_skeleton(self) -> bytes:
+        return f"# Code replaced for brevity, see node: {self.hashed_id}\n".encode("utf-8")
