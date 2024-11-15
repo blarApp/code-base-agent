@@ -37,6 +37,6 @@ def main(root_uri: str = None, blarignore_path: str = None):
 
 if __name__ == "__main__":
     dotenv.load_dotenv()
-    root_path = "/Users/berrazuriz/Desktop/Blar/repositories/ruby-on-rails-sample-app/"
+    root_path = os.getenv("ROOT_PATH")
     blarignore_path = os.getenv("BLARIGNORE_PATH")
     main(root_uri=root_path, blarignore_path=blarignore_path)
