@@ -96,7 +96,7 @@ class DefinitionNode(Node):
 
     def remove_line_break_if_present(self, text: bytes, end_byte: int) -> Tuple[bytes, int]:
         if text[0:1] == b"\n":
-            return text[1:], end_byte - 1
+            return text[1:], end_byte
 
         return text, end_byte
 
