@@ -4,7 +4,7 @@ from ..folder_node import FolderNode
 from ..function_node import FunctionNode
 from ..types.node_labels import NodeLabels
 
-from typing import Union, TYPE_CHECKING
+from typing import Optional, Union, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from project_file_explorer import Folder
@@ -26,8 +26,8 @@ class NodeFactory:
         definition_range: "Reference",
         code_text: str,
         parent: FolderNode,
-        body_text: str,
         tree_sitter_node: "TreeSitterNode",
+        body_node: Optional["TreeSitterNode"] = None,
     ) -> FileNode:
         return FileNode(
             path=path,
@@ -37,7 +37,7 @@ class NodeFactory:
             definition_range=definition_range,
             code_text=code_text,
             parent=parent,
-            body_text=body_text,
+            body_node=body_node,
             tree_sitter_node=tree_sitter_node,
         )
 
@@ -48,7 +48,7 @@ class NodeFactory:
         definition_range: "Reference",
         node_range: "Reference",
         code_text: str,
-        body_text: str,
+        body_node: "TreeSitterNode",
         level: int,
         tree_sitter_node: "TreeSitterNode",
         parent: Union[FileNode, ClassNode, FunctionNode] = None,
@@ -61,7 +61,7 @@ class NodeFactory:
             code_text=code_text,
             level=level,
             tree_sitter_node=tree_sitter_node,
-            body_text=body_text,
+            body_node=body_node,
             parent=parent,
         )
 
@@ -72,7 +72,7 @@ class NodeFactory:
         definition_range: "Reference",
         node_range: "Reference",
         code_text: str,
-        body_text: str,
+        body_node: "TreeSitterNode",
         level: int,
         tree_sitter_node: "TreeSitterNode",
         parent: Union[FileNode, ClassNode, FunctionNode] = None,
@@ -85,7 +85,7 @@ class NodeFactory:
             code_text=code_text,
             level=level,
             tree_sitter_node=tree_sitter_node,
-            body_text=body_text,
+            body_node=body_node,
             parent=parent,
         )
 
@@ -97,7 +97,7 @@ class NodeFactory:
         definition_range: "Reference",
         node_range: "Reference",
         code_text: str,
-        body_text: str,
+        body_node: "TreeSitterNode",
         level: int,
         tree_sitter_node: "TreeSitterNode",
         parent: Union[FileNode, ClassNode, FunctionNode] = None,
@@ -109,7 +109,7 @@ class NodeFactory:
                 definition_range=definition_range,
                 node_range=node_range,
                 code_text=code_text,
-                body_text=body_text,
+                body_node=body_node,
                 level=level,
                 parent=parent,
                 tree_sitter_node=tree_sitter_node,
@@ -121,7 +121,7 @@ class NodeFactory:
                 definition_range=definition_range,
                 node_range=node_range,
                 code_text=code_text,
-                body_text=body_text,
+                body_node=body_node,
                 level=level,
                 parent=parent,
                 tree_sitter_node=tree_sitter_node,
