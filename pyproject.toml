@@ -1,6 +1,6 @@
 [tool.poetry]
-name = "blar-lsp-poc"
-version = "0.1.0"
+name = "blar"
+version = "0.1.2"
 description = "A simple graph builder based on LSP calls"
 authors = ["Juan Vargas <juan@blar.io>", "Benjamín Errazuriz <benjamin@blar.io>"]
 readme = "README.md"
@@ -10,7 +10,7 @@ license = "MIT"
 packages = [{include = "lsp-poc"}]
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = ">=3.10,<3.12"
 asyncio = "^3.4.3"
 websockets = "^13.1"
 neo4j = "^5.25.0"
