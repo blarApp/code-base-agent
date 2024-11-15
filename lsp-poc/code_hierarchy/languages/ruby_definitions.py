@@ -17,6 +17,8 @@ class RubyDefinitions(LanguageDefinitions):
             return True
         if node.type == "class":
             return True
+        if node.type == "singleton_method":
+            return True
         return False
 
     def get_identifier_node(node: Node) -> Node:
@@ -29,6 +31,8 @@ class RubyDefinitions(LanguageDefinitions):
         if type == "class":
             return NodeLabels.CLASS
         if type == "method":
+            return NodeLabels.FUNCTION
+        if type == "singleton_method":
             return NodeLabels.FUNCTION
 
     def get_relationship_type(node: GraphNode, node_in_point_reference: Node) -> Optional[RelationshipType]:
