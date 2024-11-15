@@ -47,8 +47,8 @@ class RubyDefinitions(LanguageDefinitions):
         rel_types = RubyDefinitions._get_relationships_group_types()
         type_found = None
 
-        if node_label == NodeLabels.CLASS:
-            pass
+        if node_label == NodeLabels.FUNCTION:
+            return RelationshipType.CALLS
 
         while named_parent is not None and type_found is None:
             if (
