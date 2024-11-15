@@ -4,3 +4,7 @@ This repo introduces a method to represent a local code repository as a graph st
 ```
 ./lsp-ws-proxy/target/debug/lsp-ws-proxy --listen 5000 -- solargraph stdio -- jedi-language-server  -- typescript-language-server --stdio
 ```
+
+# Example
+<img src="https://raw.githubusercontent.com/blarApp/lsp-poc/refs/heads/main/docs/visualisation.png"></img>
+This graph was generated from a Ruby on Rails project.
