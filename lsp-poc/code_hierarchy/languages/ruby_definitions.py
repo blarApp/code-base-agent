@@ -12,20 +12,15 @@ class RubyDefinitions(LanguageDefinitions):
         return "ruby"
 
     def should_create_node(node: Node) -> bool:
-        print(f"Node type: {node.type}")
-        if node.type == "method":
-            return True
-        if node.type == "class":
-            return True
-        if node.type == "singleton_method":
-            return True
-        return False
+        return LanguageDefinitions._should_create_node_base_implementation(
+            node, ["class", "method", "singleton_method"]
+        )
 
     def get_identifier_node(node: Node) -> Node:
-        return LanguageDefinitions.get_identifier_node(node)
+        return LanguageDefinitions._get_identifier_node_base_implementation(node)
 
     def get_body_node(node: Node) -> Node:
-        return LanguageDefinitions.get_body_node(node)
+        return LanguageDefinitions._get_body_node_base_implementation(node)
 
     def get_node_label_from_type(type: str) -> NodeLabels:
         if type == "class":
@@ -44,7 +39,7 @@ class RubyDefinitions(LanguageDefinitions):
     def _find_relationship_type(node_label: str, node_in_point_reference: Node) -> Optional[RelationshipType]:
         # Traverse up to find the named parent
         named_parent = node_in_point_reference
-        rel_types = RubyDefinitions._get_relationships_group_types()
+        rel_types = RubyDefinitions._get_relationship_types_by_label()
         type_found = None
 
         while named_parent is not None and type_found is None:
@@ -55,7 +50,7 @@ class RubyDefinitions(LanguageDefinitions):
             ):
                 return RelationshipType.INSTANTIATES
 
-            type_found = RubyDefinitions._get_tree_sitter_node_relationship_type(
+            type_found = RubyDefinitions._get_relationship_type_for_node(
                 tree_sitter_node=named_parent, relationships_types=rel_types[node_label]
             )
             named_parent = named_parent.parent
@@ -64,7 +59,7 @@ class RubyDefinitions(LanguageDefinitions):
     def _is_call_method_indentifier_new(node: Node) -> bool:
         return node.child_by_field_name("method").text == b"new"
 
-    def _get_relationships_group_types() -> Dict[str, Dict[str, RelationshipType]]:
+    def _get_relationship_types_by_label() -> Dict[str, Dict[str, RelationshipType]]:
         return {
             NodeLabels.CLASS: {"superclass": RelationshipType.INHERITS},
             NodeLabels.FUNCTION: {
@@ -72,7 +67,7 @@ class RubyDefinitions(LanguageDefinitions):
             },
         }
 
-    def _get_tree_sitter_node_relationship_type(
+    def _get_relationship_type_for_node(
         tree_sitter_node: Node, relationships_types: Dict[str, RelationshipType]
     ) -> Optional[RelationshipType]:
         if tree_sitter_node is None:

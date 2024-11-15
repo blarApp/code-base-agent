@@ -4,7 +4,7 @@ from typing import Set
 from graph.relationship import RelationshipType
 from graph.node import NodeLabels
 from tree_sitter import Node
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 
 
 class BodyNodeNotFound(Exception):
@@ -25,13 +25,14 @@ class LanguageDefinitions(ABC):
         This name MUST match the LSP specification
         https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocumentItem
         """
-        pass
 
     @staticmethod
     @abstractmethod
     def should_create_node(node: Node) -> bool:
         """This method should return a boolean indicating if a node should be created"""
-        pass
+
+    def _should_create_node_base_implementation(node: Node, node_labels_that_should_be_created: List[str]) -> bool:
+        return node.type in node_labels_that_should_be_created
 
     @staticmethod
     @abstractmethod
@@ -41,6 +42,9 @@ class LanguageDefinitions(ABC):
 
         This node should match the LSP document symbol range.
         """
+
+    @staticmethod
+    def _get_identifier_node_base_implementation(node: Node) -> Node:
         if identifier := node.child_by_field_name("name"):
             return identifier
 
@@ -54,6 +58,9 @@ class LanguageDefinitions(ABC):
         """This method should return the body node for a given node,
         this node should contain the code block for the node without any signatures.
         """
+
+    @staticmethod
+    def _get_body_node_base_implementation(node: Node) -> Node:
         if body := node.child_by_field_name("body"):
             return body
 
@@ -63,22 +70,36 @@ class LanguageDefinitions(ABC):
     @abstractmethod
     def get_relationship_type(node: Node, node_in_point_reference: Node) -> Optional[RelationshipType]:
         """This method should tell you how the node is being used in the node_in_point_reference"""
-        pass
+
+    @staticmethod
+    def _traverse_and_find_relationships(node: Node, relationship_mapping: dict) -> Optional[RelationshipType]:
+        while node is not None:
+            relationship_type = LanguageDefinitions._get_relationship_type_for_node(node, relationship_mapping)
+            if relationship_type:
+                return relationship_type
+            node = node.parent
+        return None
+
+    @staticmethod
+    def _get_relationship_type_for_node(
+        tree_sitter_node: Node, relationships_types: dict
+    ) -> Optional[RelationshipType]:
+        if tree_sitter_node is None:
+            return None
+
+        return relationships_types.get(tree_sitter_node.type, None)
 
     @staticmethod
     @abstractmethod
     def get_node_label_from_type(type: str) -> NodeLabels:
         """This method should return the node label for a given node type"""
-        pass
 
     @staticmethod
     @abstractmethod
     def get_language_file_extensions() -> Set[str]:
         """This method should return the file extensions for the language"""
-        pass
 
     @staticmethod
     @abstractmethod
     def get_parsers_for_extensions() -> Dict[str, Parser]:
         """This method should return the parsers for the language"""
-        pass

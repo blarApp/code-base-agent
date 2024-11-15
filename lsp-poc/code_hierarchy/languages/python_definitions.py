@@ -21,16 +21,15 @@ class PythonDefinitions(LanguageDefinitions):
         }
 
     def should_create_node(node: Node) -> bool:
-        return node.type in {
-            "class_definition",
-            "function_definition",
-        }
+        return LanguageDefinitions._should_create_node_base_implementation(
+            node, ["class_definition", "function_definition"]
+        )
 
     def get_identifier_node(node: Node) -> Node:
-        return LanguageDefinitions.get_identifier_node(node)
+        return LanguageDefinitions._get_identifier_node_base_implementation(node)
 
     def get_body_node(node: Node) -> Node:
-        return LanguageDefinitions.get_body_node(node)
+        return LanguageDefinitions._get_body_node_base_implementation(node)
 
     def get_relationship_type(node: GraphNode, node_in_point_reference: Node) -> Optional[RelationshipType]:
         return PythonDefinitions._find_relationship_type(
@@ -48,27 +47,14 @@ class PythonDefinitions(LanguageDefinitions):
         return {".py"}
 
     def _find_relationship_type(node_label: str, node_in_point_reference: Node) -> Optional[RelationshipType]:
-        # Traverse up to find the named parent
-        named_parent = node_in_point_reference
-        rel_types = PythonDefinitions._get_relationships_group_types()
-        type_found = None
+        relationship_types = PythonDefinitions._get_relationship_types_by_label()
+        relevant_relationship_types = relationship_types.get(node_label, {})
 
-        while named_parent is not None and type_found is None:
-            type_found = PythonDefinitions._get_tree_sitter_node_relationship_type(
-                tree_sitter_node=named_parent, relationships_types=rel_types[node_label]
-            )
-            named_parent = named_parent.parent
-        return type_found
+        return LanguageDefinitions._traverse_and_find_relationships(
+            node_in_point_reference, relevant_relationship_types
+        )
 
-    def _get_tree_sitter_node_relationship_type(
-        tree_sitter_node: Node, relationships_types: dict
-    ) -> Optional[RelationshipType]:
-        if tree_sitter_node is None:
-            return None
-
-        return relationships_types.get(tree_sitter_node.type, None)
-
-    def _get_relationships_group_types() -> dict[str, RelationshipType]:
+    def _get_relationship_types_by_label() -> dict[str, RelationshipType]:
         return {
             NodeLabels.CLASS: {
                 "import_from_statement": RelationshipType.IMPORTS,

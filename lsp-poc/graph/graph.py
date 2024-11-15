@@ -57,11 +57,11 @@ class Graph:
     def get_node_by_id(self, id: str) -> Node:
         return self.nodes[id]
 
-    def get_relationships_as_objects(self) -> Set[dict]:
+    def get_relationships_as_objects(self) -> List[dict]:
         internal_relationships = [relationship.as_object() for relationship in self.get_relationships()]
         reference_relationships = [relationship.as_object() for relationship in self.references_relationships]
 
-        return set(internal_relationships + reference_relationships)
+        return internal_relationships + reference_relationships
 
     def get_relationships(self) -> List["Relationship"]:
         relationships = []
