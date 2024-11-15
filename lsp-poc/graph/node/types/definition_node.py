@@ -83,22 +83,15 @@ class DefinitionNode(Node):
         for node in self._defines:
             if node.body_node is None:
                 continue
-
             start_text, start_byte = node.get_start_text_bytes(parent_text_bytes=text_bytes, bytes_offset=bytes_offset)
             end_text, end_byte = node.get_end_text_bytes(parent_text_bytes=text_bytes, bytes_offset=bytes_offset)
             text_bytes = start_text + node._get_text_for_skeleton() + end_text
-
-            bytes_offset += len(node._get_text_for_skeleton()) - (end_byte - start_byte)
-
+            bytes_offset += node.calculate_new_offset(start_byte=start_byte, end_byte=end_byte)
             self.code_text = text_bytes.decode("utf-8")
-
             node.skeletonize()
 
-    def remove_line_break_if_present(self, text: bytes, end_byte: int) -> Tuple[bytes, int]:
-        if text[0:1] == b"\n":
-            return text[1:], end_byte
-
-        return text, end_byte
+    def calculate_new_offset(self, start_byte: int, end_byte: int) -> int:
+        return len(self._get_text_for_skeleton()) - (end_byte - start_byte)
 
     def get_start_text_bytes(self, parent_text_bytes: bytes, bytes_offset: int) -> Tuple[bytes, int]:
         start_byte = self.body_node.start_byte - 1 + bytes_offset
@@ -106,7 +99,12 @@ class DefinitionNode(Node):
 
     def get_end_text_bytes(self, parent_text_bytes: bytes, bytes_offset: int) -> Tuple[bytes, int]:
         end_byte = self.body_node.end_byte + bytes_offset
-        return self.remove_line_break_if_present(text=parent_text_bytes[end_byte:], end_byte=end_byte)
+        return self.remove_line_break_if_present(text=parent_text_bytes[end_byte:]), end_byte
+
+    def remove_line_break_if_present(self, text: bytes) -> Tuple[bytes, int]:
+        if text[0:1] == b"\n":
+            return text[1:]
+        return text
 
     def _get_text_for_skeleton(self) -> bytes:
         return f"# Code replaced for brevity, see node: {self.hashed_id}\n".encode("utf-8")
