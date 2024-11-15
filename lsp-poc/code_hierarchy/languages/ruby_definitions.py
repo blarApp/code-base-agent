@@ -17,6 +17,8 @@ class RubyDefinitions(LanguageDefinitions):
             return True
         if node.type == "class":
             return True
+        if node.type == "singleton_method":
+            return True
         return False
 
     def get_identifier_node(node: Node) -> Node:
@@ -29,6 +31,8 @@ class RubyDefinitions(LanguageDefinitions):
         if type == "class":
             return NodeLabels.CLASS
         if type == "method":
+            return NodeLabels.FUNCTION
+        if type == "singleton_method":
             return NodeLabels.FUNCTION
 
     def get_relationship_type(node: GraphNode, node_in_point_reference: Node) -> Optional[RelationshipType]:
@@ -43,12 +47,25 @@ class RubyDefinitions(LanguageDefinitions):
         rel_types = RubyDefinitions._get_relationships_group_types()
         type_found = None
 
+        if node_label == NodeLabels.CLASS:
+            pass
+
         while named_parent is not None and type_found is None:
+            if (
+                named_parent.type == "call"
+                and node_label == NodeLabels.CLASS
+                and RubyDefinitions._is_call_method_indentifier_new(named_parent)
+            ):
+                return RelationshipType.INSTANTIATES
+
             type_found = RubyDefinitions._get_tree_sitter_node_relationship_type(
                 tree_sitter_node=named_parent, relationships_types=rel_types[node_label]
             )
             named_parent = named_parent.parent
         return type_found
+
+    def _is_call_method_indentifier_new(node: Node) -> bool:
+        return node.child_by_field_name("method").text == b"new"
 
     def _get_relationships_group_types() -> Dict[str, Dict[str, RelationshipType]]:
         return {
