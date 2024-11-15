@@ -1,8 +1,8 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from Graph.Node import Node
-    from Graph.Relationship import RelationshipType
+    from graph.node import Node
+    from graph.relationship import RelationshipType
 
 
 class Relationship:
@@ -21,8 +21,8 @@ class Relationship:
 
     def as_object(self) -> dict:
         return {
-            "sourceId": self.start_node.id,
-            "targetId": self.end_node.id,
+            "sourceId": self.start_node.hashed_id,
+            "targetId": self.end_node.hashed_id,
             "type": self.rel_type.name,
         }
 

@@ -27,6 +27,10 @@ class Node:
     def is_path_format_valid(self) -> bool:
         return self.path.startswith("file://")
 
+    @staticmethod
+    def hash_path_to_id(path: str) -> str:
+        return md5(path.encode()).hexdigest()
+
     @property
     def id(self) -> str:
         return self.__str__()
@@ -49,12 +53,12 @@ class Node:
 
     def as_object(self) -> dict:
         return {
-            "node_id": self.id,
             "type": self.label.name,
             "attributes": {
                 "label": self.label.name,
                 "path": self.path,
-                "node_id": self.id,
+                "node_id": self.hashed_id,
+                "node_path": self.id,
                 "name": self.name,
                 "level": self.level,
                 "hashed_id": self.hashed_id,
