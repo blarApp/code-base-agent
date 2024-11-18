@@ -1,16 +1,16 @@
 [tool.poetry]
-name = "blar-lsp-poc"
-version = "0.1.0"
+name = "blarify"
+version = "0.1.6"
 description = "A simple graph builder based on LSP calls"
 authors = ["Juan Vargas <juan@blar.io>", "Benjamín Errazuriz <benjamin@blar.io>"]
 readme = "README.md"
 homepage = "https://blar.io"
 repository = "https://github.com/blarApp/code-base-agent"
 license = "MIT"
-packages = [{include = "lsp-poc"}]
+packages = [{include = "blarify"}]
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = ">=3.10,<3.12"
 asyncio = "^3.4.3"
 websockets = "^13.1"
 neo4j = "^5.25.0"
@@ -19,6 +19,7 @@ tree-sitter = "^0.23.2"
 tree-sitter-python = "^0.23.2"
 tree-sitter-ruby = "^0.23.0"
 tree-sitter-javascript = "^0.23.0"
+tree-sitter-typescript = "^0.23.2"
 
 
 [build-system]

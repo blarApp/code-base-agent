@@ -1,12 +1,12 @@
 from typing import List, Optional, Tuple, Union, TYPE_CHECKING
-from graph.relationship import RelationshipCreator
+from blarify.graph.relationship import RelationshipCreator
 from .node import Node
 
 if TYPE_CHECKING:
     from ..class_node import ClassNode
     from ..function_node import FunctionNode
-    from graph.relationship import Relationship
-    from code_references.types import Reference
+    from blarify.graph.relationship import Relationship
+    from blarify.code_references.types import Reference
     from tree_sitter import Node as TreeSitterNode
 
 

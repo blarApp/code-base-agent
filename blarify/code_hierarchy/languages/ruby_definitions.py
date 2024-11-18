@@ -1,10 +1,10 @@
 from typing import Dict, Set, Optional
-from graph.node import Node as GraphNode, NodeLabels
-from graph.relationship import RelationshipType
+from blarify.graph.node import Node as GraphNode, NodeLabels
+from blarify.graph.relationship import RelationshipType
 
 from tree_sitter import Parser, Node, Language
 import tree_sitter_ruby as tsruby
-from .language_definitions import LanguageDefinitions, BodyNodeNotFound
+from .language_definitions import LanguageDefinitions
 
 
 class RubyDefinitions(LanguageDefinitions):

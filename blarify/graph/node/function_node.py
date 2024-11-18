@@ -1,24 +1,14 @@
-from graph.node import NodeLabels, DefinitionNode
-
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from LSP.types import Reference
+from blarify.graph.node import NodeLabels
+from .types.definition_node import DefinitionNode
 
 
-class ClassNode(DefinitionNode):
-    name: str
-    definition_range: "Reference"
-    node_range: "Reference"
-    code_text: str
-    level: int
-
+class FunctionNode(DefinitionNode):
     def __init__(self, **kwargs):
-        super().__init__(label=NodeLabels.CLASS, **kwargs)
+        super().__init__(label=NodeLabels.FUNCTION, **kwargs)
 
     @property
     def node_repr_for_identifier(self) -> str:
-        return "#" + self.name
+        return "." + self.name
 
     def as_object(self) -> dict:
         obj = super().as_object()

@@ -1,7 +1,7 @@
 from project_graph_creator import ProjectGraphCreator
-from project_file_explorer import ProjectFilesIterator
+from blarify.project_file_explorer import ProjectFilesIterator
 from db_managers.neo4j_manager import Neo4jManager
-from code_references import LspQueryHelper
+from blarify.code_references import LspQueryHelper
 
 import dotenv
 import os

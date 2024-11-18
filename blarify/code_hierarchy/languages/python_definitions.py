@@ -1,14 +1,14 @@
 from .language_definitions import LanguageDefinitions
-from graph.relationship import RelationshipType
+from blarify.graph.relationship import RelationshipType
 
 import tree_sitter_python as tspython
 from tree_sitter import Language, Parser
 
 from typing import Optional, Set, Dict
 
-from graph.node import NodeLabels
+from blarify.graph.node import NodeLabels
 from tree_sitter import Node
-from graph.node import Node as GraphNode
+from blarify.graph.node import Node as GraphNode
 
 
 class PythonDefinitions(LanguageDefinitions):

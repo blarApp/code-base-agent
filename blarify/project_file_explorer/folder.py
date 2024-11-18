@@ -1,7 +1,6 @@
 from typing import List
 
 from .file import File
-import os
 
 
 class Folder:

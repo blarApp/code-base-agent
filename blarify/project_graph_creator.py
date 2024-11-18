@@ -1,9 +1,10 @@
-from code_references import LspQueryHelper, FileExtensionNotSupported
-from project_file_explorer import ProjectFilesIterator
-from graph.node import NodeLabels, NodeFactory
-from graph.relationship import RelationshipCreator
-from code_hierarchy import TreeSitterHelper
-from code_hierarchy.languages import (
+from blarify.code_references import LspQueryHelper, FileExtensionNotSupported
+from blarify.project_file_explorer import ProjectFilesIterator
+from blarify.graph.node import NodeLabels, NodeFactory
+from blarify.graph.relationship import RelationshipCreator
+from blarify.graph.graph import Graph
+from blarify.code_hierarchy import TreeSitterHelper
+from blarify.code_hierarchy.languages import (
     PythonDefinitions,
     JavascriptDefinitions,
     TypescriptDefinitions,
@@ -11,13 +12,12 @@ from code_hierarchy.languages import (
     RubyDefinitions,
 )
 from typing import List, TYPE_CHECKING
-from graph.graph import Graph
 
 if TYPE_CHECKING:
-    from graph.node import FolderNode
-    from project_file_explorer import File, Folder
-    from graph.node import Node, FileNode
-    from graph.relationship import Relationship
+    from blarify.graph.node import FolderNode
+    from blarify.project_file_explorer import File, Folder
+    from blarify.graph.node import Node, FileNode
+    from blarify.graph.relationship import Relationship
 
 
 class ProjectGraphCreator:
