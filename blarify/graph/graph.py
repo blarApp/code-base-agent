@@ -37,7 +37,7 @@ class Graph:
         self.nodes_by_label[node.label].add(node)
 
         if node.label == NodeLabels.FILE:
-            print(node.path)
+            print("node path", node.path)
             self.file_nodes_by_path[node.path] = node
 
         if node.label == NodeLabels.FOLDER:
