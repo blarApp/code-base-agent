@@ -11,8 +11,8 @@ class LspCaller:
     lsp_server_name: str
 
     def __init__(self, root_uri: str, host="localhost", port=5000, log=False, lsp_server_name=""):
-        self.host = host
-        self.port = port
+        self.host = host or "localhost"
+        self.port = port or 5000
         self.root_uri = root_uri
         self.websocket = None
         self.unmatched_responses = {}

@@ -1,3 +1,4 @@
+from typing import Optional
 from .lsp_caller import LspCaller
 from .types.Reference import Reference
 from blarify.graph.node import DefinitionNode
@@ -20,14 +21,14 @@ class LspQueryHelper:
     root_uri: str
     lsp_callers: dict[ImplementedLsp, LspCaller]
 
-    def __init__(self, root_uri: str):
+    def __init__(self, root_uri: str, host: Optional[str] = None, port: Optional[int] = None):
         self.root_uri = root_uri
-        self.lsp_callers = self._create_lsp_callers()
+        self.lsp_callers = self._create_lsp_callers(host=host, port=port)
         self.extension_to_lsp_server = self._create_extensions_to_lsp_servers()
 
-    def _create_lsp_callers(self) -> dict[ImplementedLsp, LspCaller]:
+    def _create_lsp_callers(self, host: str, port: int) -> dict[ImplementedLsp, LspCaller]:
         return {
-            lsp_server: LspCaller(root_uri=self.root_uri, lsp_server_name=lsp_server.value)
+            lsp_server: LspCaller(root_uri=self.root_uri, lsp_server_name=lsp_server.value, host=host, port=port)
             for lsp_server in ImplementedLsp
         }
 
