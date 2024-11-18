@@ -17,10 +17,12 @@ class RelationshipCreator:
         for reference in references:
             file_node_reference = graph.get_file_node_by_path(path=reference.uri)
             if file_node_reference is None:
+                print("reference file not found ", reference.uri)
                 continue
 
             node_referenced = file_node_reference.reference_search(reference=reference)
             if node_referenced is None or node.id == node_referenced.id:
+                print("No node reference or reference to himself", node_referenced)
                 continue
 
             reference_type = tree_sitter_helper.get_reference_type(
