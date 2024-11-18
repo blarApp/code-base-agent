@@ -11,8 +11,6 @@ class LspCaller:
     lsp_server_name: str
 
     def __init__(self, root_uri: str, host="localhost", port=5000, log=False, lsp_server_name=""):
-        self.validate_uri(root_uri)
-
         self.host = host
         self.port = port
         self.root_uri = root_uri
@@ -26,10 +24,6 @@ class LspCaller:
     def id(self) -> int:
         self._id += 1
         return self._id
-
-    def validate_uri(self, uri: str) -> None:
-        if not uri.endswith("/"):
-            raise ValueError("URI must end with a slash")
 
     def connect(self) -> None:
         uri = f"ws://{self.host}:{self.port}"
