@@ -1,4 +1,4 @@
-from graph.node import NodeLabels
+from blarify.graph.node import NodeLabels
 from .types.definition_node import DefinitionNode
 
 

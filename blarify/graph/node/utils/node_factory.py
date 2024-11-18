@@ -7,8 +7,8 @@ from ..types.node_labels import NodeLabels
 from typing import Optional, Union, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from project_file_explorer import Folder
-    from code_references.types import Reference
+    from blarify.project_file_explorer import Folder
+    from blarify.code_references.types import Reference
     from tree_sitter import Node as TreeSitterNode
 
 

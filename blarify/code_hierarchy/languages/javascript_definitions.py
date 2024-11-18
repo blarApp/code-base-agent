@@ -1,9 +1,9 @@
 from typing import Set, Optional
-from graph.relationship import RelationshipType
-from graph.node import NodeLabels
+from blarify.graph.relationship import RelationshipType
+from blarify.graph.node import NodeLabels
 
 from tree_sitter import Node, Language, Parser
-from graph.node import Node as GraphNode
+from blarify.graph.node import Node as GraphNode
 
 from .language_definitions import LanguageDefinitions
 import tree_sitter_javascript as tsjavascript

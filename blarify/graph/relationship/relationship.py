@@ -1,8 +1,8 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from graph.node import Node
-    from graph.relationship import RelationshipType
+    from blarify.graph.node import Node
+    from blarify.graph.relationship import RelationshipType
 
 
 class Relationship:

@@ -3,8 +3,8 @@ from hashlib import md5
 import os
 
 if TYPE_CHECKING:
-    from graph.relationship import Relationship
-    from graph.node import NodeLabels
+    from blarify.graph.relationship import Relationship
+    from blarify.graph.node import NodeLabels
 
 
 class Node:

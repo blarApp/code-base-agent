@@ -1,11 +1,11 @@
 from typing import List, TYPE_CHECKING
-from graph.relationship import Relationship, RelationshipType
+from blarify.graph.relationship import Relationship, RelationshipType
 
 if TYPE_CHECKING:
-    from graph.graph import Graph
-    from graph.node import Node
-    from code_hierarchy import TreeSitterHelper
-    from code_references.types import Reference
+    from blarify.graph.graph import Graph
+    from blarify.graph.node import Node
+    from blarify.code_hierarchy import TreeSitterHelper
+    from blarify.code_references.types import Reference
 
 
 class RelationshipCreator:

@@ -1,7 +1,7 @@
-from graph.node import Node, NodeLabels
+from blarify.graph.node import Node, NodeLabels
 from .file_node import FileNode
 from typing import Union, List
-from graph.relationship import RelationshipCreator, Relationship
+from blarify.graph.relationship import RelationshipCreator, Relationship
 
 
 class FolderNode(Node):

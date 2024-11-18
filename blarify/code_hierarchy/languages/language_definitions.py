@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from tree_sitter import Parser
 from typing import Set
-from graph.relationship import RelationshipType
-from graph.node import NodeLabels
+from blarify.graph.relationship import RelationshipType
+from blarify.graph.node import NodeLabels
 from tree_sitter import Node
 from typing import Optional, Dict, List
 

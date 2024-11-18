@@ -1,17 +1,17 @@
 from tree_sitter import Tree, Parser
 
-from graph.node import NodeFactory
-from code_references.types import Reference, Range, Point
+from blarify.graph.node import NodeFactory
+from blarify.code_references.types import Reference, Range, Point
 from .languages import LanguageDefinitions, BodyNodeNotFound, FallbackDefinitions
-from graph.node import NodeLabels
-from project_file_explorer import File
+from blarify.graph.node import NodeLabels
+from blarify.project_file_explorer import File
 from typing import List, TYPE_CHECKING, Tuple
-from graph.relationship import RelationshipType
+from blarify.graph.relationship import RelationshipType
 
 if TYPE_CHECKING:
     from tree_sitter import Node as TreeSitterNode
-    from graph.node import DefinitionNode, Node, FolderNode
-    from code_references.types import Reference
+    from blarify.graph.node import DefinitionNode, Node, FolderNode
+    from blarify.code_references.types import Reference
 
 
 class TreeSitterHelper:

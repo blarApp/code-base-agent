@@ -1,6 +1,6 @@
 from .lsp_caller import LspCaller
 from .types.Reference import Reference
-from graph.node import DefinitionNode
+from blarify.graph.node import DefinitionNode
 from .implemented_lsp import ImplementedLsp
 from code_hierarchy.languages import (
     PythonDefinitions,
