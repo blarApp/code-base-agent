@@ -1,12 +1,12 @@
 from typing import List, Optional, Tuple, Union, TYPE_CHECKING
-from blarify.graph.relationship import RelationshipCreator
+from graph.relationship import RelationshipCreator
 from .node import Node
 
 if TYPE_CHECKING:
     from ..class_node import ClassNode
     from ..function_node import FunctionNode
-    from blarify.graph.relationship import Relationship
-    from blarify.code_references.types import Reference
+    from graph.relationship import Relationship
+    from code_references.types import Reference
     from tree_sitter import Node as TreeSitterNode
 
 
@@ -17,6 +17,7 @@ class DefinitionNode(Node):
     code_text: str
     body_node: Optional["TreeSitterNode"]
     _tree_sitter_node: "TreeSitterNode"
+    _is_diff: bool
 
     def __init__(
         self, definition_range, node_range, code_text, body_node, tree_sitter_node: "TreeSitterNode", *args, **kwargs
@@ -27,6 +28,7 @@ class DefinitionNode(Node):
         self.code_text = code_text
         self.body_node = body_node
         self._tree_sitter_node = tree_sitter_node
+        self._is_diff = False
         super().__init__(*args, **kwargs)
 
     def relate_node_as_define_relationship(self, node: Union["ClassNode", "FunctionNode"]) -> None:
@@ -108,3 +110,24 @@ class DefinitionNode(Node):
 
     def _get_text_for_skeleton(self) -> bytes:
         return f"# Code replaced for brevity, see node: {self.hashed_id}\n".encode("utf-8")
+
+    def get_all_definition_ranges(self) -> List["Reference"]:
+        definition_ranges = [self.definition_range]
+        for node in self._defines:
+            definition_ranges.extend(node.get_all_definition_ranges())
+        return definition_ranges
+
+    def mark_as_diff(self) -> None:
+        self._is_diff = True
+        for node in self._defines:
+            node.mark_as_diff()
+
+    def __str__(self):
+        if self._is_diff:
+            return "[DIFF]" + super().__str__()
+        return super().__str__()
+
+    def as_object(self):
+        obj = super().as_object()
+        obj["extra_labels"] = ["DIFF"] if self._is_diff else []
+        return obj

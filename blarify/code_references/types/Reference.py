@@ -2,17 +2,25 @@ from urllib.parse import unquote
 
 from dataclasses import dataclass
 
-
 @dataclass
 class Point:
     line: int
     character: int
 
+    def __eq__(self, value):
+        if not isinstance(value, Point):
+            return False
+        return self.line == value.line and self.character == value.character
 
 @dataclass
 class Range:
     start: Point
     end: Point
+
+    def __eq__(self, value):
+        if not isinstance(value, Range):
+            return False
+        return self.start == value.start and self.end == value.end
 
 
 @dataclass
@@ -52,3 +60,8 @@ class Reference:
     @property
     def end_dict(self) -> dict:
         return {"line": self.range.end.line, "character": self.range.end.character}
+
+    def __eq__(self, value):
+        if isinstance(value, Reference):
+            return self.range == value.range and self.uri == value.uri
+        return False

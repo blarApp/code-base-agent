@@ -54,6 +54,7 @@ class Node:
     def as_object(self) -> dict:
         return {
             "type": self.label.name,
+            "extra_labels": [],
             "attributes": {
                 "label": self.label.name,
                 "path": self.path,

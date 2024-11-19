@@ -10,7 +10,7 @@ from blarify.graph.relationship import RelationshipType
 
 if TYPE_CHECKING:
     from tree_sitter import Node as TreeSitterNode
-    from blarify.graph.node import DefinitionNode, Node, FolderNode
+    from blarify.graph.node import DefinitionNode, Node, FolderNode, FileNode
     from blarify.code_references.types import Reference
 
 
@@ -24,6 +24,22 @@ class TreeSitterHelper:
     def __init__(self, language_definitions: LanguageDefinitions):
         self.language_definitions = language_definitions
         self.parsers = self.language_definitions.get_parsers_for_extensions()
+
+    def get_all_identifiers(self, node: "FileNode") -> List["Reference"]:
+        self.current_path = node.path
+        return self._traverse_and_find_identifiers(node._tree_sitter_node)
+
+    def _traverse_and_find_identifiers(self, node: "TreeSitterNode") -> List["Reference"]:
+        identifiers = []
+
+        if node.type == "identifier":
+            reference = self._get_reference_from_node(node)
+            identifiers.append(reference)
+
+        for child in node.children:
+            identifiers.extend(self._traverse_and_find_identifiers(child))
+
+        return identifiers
 
     def get_reference_type(
         self, original_node: "DefinitionNode", reference: "Reference", node_referenced: "DefinitionNode"

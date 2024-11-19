@@ -19,7 +19,6 @@ if TYPE_CHECKING:
     from blarify.graph.node import Node, FileNode
     from blarify.graph.relationship import Relationship
 
-
 class ProjectGraphCreator:
     root_path: str
     lsp_query_helper: LspQueryHelper
@@ -48,7 +47,7 @@ class ProjectGraphCreator:
 
     def build(self) -> Graph:
         self.create_code_hierarchy()
-        self.create_relationships_from_references()
+        self.create_relationships_from_references_for_files()
         return self.graph
 
     def create_code_hierarchy(self):
@@ -125,9 +124,11 @@ class ProjectGraphCreator:
         document_symbols = tree_sitter_helper.create_nodes_and_relationships_in_file(file, parent_folder=parent_folder)
         return document_symbols
 
-    def create_relationships_from_references(self) -> None:
+    def create_relationships_from_references_for_files(self) -> None:
         file_nodes = self.graph.get_nodes_by_label(NodeLabels.FILE)
+        self.create_relationship_from_references(file_nodes)
 
+    def create_relationship_from_references(self, file_nodes: List["Node"]) -> None:
         references_relationships = []
         for file_node in file_nodes:
             nodes = self.graph.get_nodes_by_path(file_node.path)
