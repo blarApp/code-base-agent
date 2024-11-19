@@ -1,8 +1,9 @@
+from typing import Optional
 from .lsp_caller import LspCaller
 from .types.Reference import Reference
 from blarify.graph.node import DefinitionNode
 from .implemented_lsp import ImplementedLsp
-from code_hierarchy.languages import (
+from blarify.code_hierarchy.languages import (
     PythonDefinitions,
     JavascriptDefinitions,
     RubyDefinitions,
@@ -15,19 +16,18 @@ from collections import ChainMap
 class FileExtensionNotSupported(Exception):
     pass
 
-
 class LspQueryHelper:
     root_uri: str
     lsp_callers: dict[ImplementedLsp, LspCaller]
 
-    def __init__(self, root_uri: str):
+    def __init__(self, root_uri: str, host: Optional[str] = None, port: Optional[int] = None):
         self.root_uri = root_uri
-        self.lsp_callers = self._create_lsp_callers()
+        self.lsp_callers = self._create_lsp_callers(host=host, port=port)
         self.extension_to_lsp_server = self._create_extensions_to_lsp_servers()
 
-    def _create_lsp_callers(self) -> dict[ImplementedLsp, LspCaller]:
+    def _create_lsp_callers(self, host: str, port: int) -> dict[ImplementedLsp, LspCaller]:
         return {
-            lsp_server: LspCaller(root_uri=self.root_uri, lsp_server_name=lsp_server.value)
+            lsp_server: LspCaller(root_uri=self.root_uri, lsp_server_name=lsp_server.value, host=host, port=port)
             for lsp_server in ImplementedLsp
         }
 
@@ -71,6 +71,11 @@ class LspQueryHelper:
             print(f"No references found for {node.name}")
             return []
         return [Reference(reference) for reference in references]
+
+    def get_definition_path_for_reference(self, reference: Reference) -> str:
+        lsp_caller = self.get_lsp_caller_for_extension(".py")
+        definition = lsp_caller.get_definition(reference.uri, reference.start_dict)
+        return definition["uri"] if definition else ""
 
     def shutdown_exit_close(self) -> None:
         for lsp_caller in self.lsp_callers.values():
