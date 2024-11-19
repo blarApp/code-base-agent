@@ -64,7 +64,6 @@ class TreeSitterHelper:
         self.base_node_source_code = self._get_content_from_file(file)
 
         if self._does_path_have_valid_extension(file.uri_path):
-            print(f"Handling paths with valid extension for {file.uri_path}")
             self._handle_paths_with_valid_extension(file=file, parent_folder=parent_folder)
             return self.created_nodes
 
@@ -94,7 +93,6 @@ class TreeSitterHelper:
     def _create_file_node_from_module_node(
         self, module_node: "TreeSitterNode", file: File, parent_folder: "FolderNode" = None
     ) -> "Node":
-        print(f"Creating file node for {file.uri_path}")
         return NodeFactory.create_file_node(
             path=file.uri_path,
             name=file.name,

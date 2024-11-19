@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from blarify.graph.node import Node, FileNode
     from blarify.graph.relationship import Relationship
 
+
 class ProjectGraphCreator:
     root_path: str
     lsp_query_helper: LspQueryHelper
@@ -144,8 +145,6 @@ class ProjectGraphCreator:
 
     def create_node_relationships(self, node: "Node", tree_sitter_helper: TreeSitterHelper) -> List["Relationship"]:
         references = self.lsp_query_helper.get_paths_where_node_is_referenced(node)
-        print(f"References found for {node.name}: {len(references)}")
-        print(f"References: {references}")
         relationships = RelationshipCreator.create_relationships_from_paths_where_node_is_referenced(
             references=references, node=node, graph=self.graph, tree_sitter_helper=tree_sitter_helper
         )

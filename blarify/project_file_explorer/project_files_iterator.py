@@ -34,8 +34,6 @@ class ProjectFilesIterator:
             files = self._get_filtered_files(current_path, files, level + 1)
             folders = self.empty_folders_from_dirs(current_path, dirs, level + 1)
 
-            print(f"current_path: {current_path}")
-
             if not self._should_skip(current_path):
                 yield Folder(
                     name=self.get_base_name(current_path),
@@ -81,19 +79,3 @@ class ProjectFilesIterator:
 
     def get_base_name(self, current_path: str) -> str:
         return os.path.basename(current_path)
-
-
-if __name__ == "__main__":
-    for folder in ProjectFilesIterator(
-        "/home/juan/devel/blar/lsp-poc/",
-        paths_to_skip=[
-            "/home/juan/devel/blar/lsp-poc/__pycache__",
-            "/home/juan/devel/blar/lsp-poc/.git",
-            "/home/juan/devel/blar/lsp-poc/.venv",
-            "/home/juan/devel/blar/lsp-poc/graph/__pycache__",
-            "/home/juan/devel/blar/lsp-poc/graph/node/__pycache__",
-            "/home/juan/devel/blar/lsp-poc/graph/relationship/__pycache__",
-            "/home/juan/devel/blar/lsp-poc/code_references/__pycache__",
-        ],
-    ):
-        print(folder)
