@@ -16,6 +16,7 @@ from collections import ChainMap
 class FileExtensionNotSupported(Exception):
     pass
 
+
 class LspQueryHelper:
     root_uri: str
     lsp_callers: dict[ImplementedLsp, LspCaller]
@@ -68,7 +69,6 @@ class LspQueryHelper:
         lsp_caller = self.get_lsp_caller_for_extension(node.extension)
         references = lsp_caller.get_references(node.path, node.definition_range.start_dict)
         if not references:
-            print(f"No references found for {node.name}")
             return []
         return [Reference(reference) for reference in references]
 
