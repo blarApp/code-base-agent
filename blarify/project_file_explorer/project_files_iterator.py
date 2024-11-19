@@ -33,10 +33,11 @@ class ProjectFilesIterator:
             level = self.get_path_level_relative_to_root(current_path)
             files = self._get_filtered_files(current_path, files, level + 1)
             folders = self.empty_folders_from_dirs(current_path, dirs, level + 1)
+            name = self.get_base_name(current_path) if current_path == "/" else self.get_base_name(self.root_path)
 
             if not self._should_skip(current_path):
                 yield Folder(
-                    name=self.get_base_name(current_path),
+                    name=name,
                     path=current_path,
                     files=files,
                     folders=folders,
