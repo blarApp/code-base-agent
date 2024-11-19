@@ -1,6 +1,6 @@
 from typing import List, Optional, Tuple, Union, TYPE_CHECKING
 from graph.relationship import RelationshipCreator
-from .node import Node
+from blarify.graph.node.types.node import Node
 
 if TYPE_CHECKING:
     from ..class_node import ClassNode
@@ -18,6 +18,7 @@ class DefinitionNode(Node):
     body_node: Optional["TreeSitterNode"]
     _tree_sitter_node: "TreeSitterNode"
     _is_diff: bool
+    extra_labels = List[str]
 
     def __init__(
         self, definition_range, node_range, code_text, body_node, tree_sitter_node: "TreeSitterNode", *args, **kwargs
@@ -28,7 +29,7 @@ class DefinitionNode(Node):
         self.code_text = code_text
         self.body_node = body_node
         self._tree_sitter_node = tree_sitter_node
-        self._is_diff = False
+        self.extra_labels = []
         super().__init__(*args, **kwargs)
 
     def relate_node_as_define_relationship(self, node: Union["ClassNode", "FunctionNode"]) -> None:
@@ -117,17 +118,15 @@ class DefinitionNode(Node):
             definition_ranges.extend(node.get_all_definition_ranges())
         return definition_ranges
 
-    def mark_as_diff(self) -> None:
-        self._is_diff = True
+    def add_extra_label_to_self_and_children(self, label: str) -> None:
+        self.extra_labels.append(label)
         for node in self._defines:
-            node.mark_as_diff()
+            node.add_extra_label_to_self_and_children(label)
 
     def __str__(self):
-        if self._is_diff:
-            return "[DIFF]" + super().__str__()
-        return super().__str__()
+        return ' '.join(self.extra_labels) + super().__str__()
 
     def as_object(self):
         obj = super().as_object()
-        obj["extra_labels"] = ["DIFF"] if self._is_diff else []
+        obj["extra_labels"] = self.extra_labels
         return obj

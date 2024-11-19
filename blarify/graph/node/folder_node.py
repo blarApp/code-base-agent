@@ -1,5 +1,5 @@
 from blarify.graph.node import Node, NodeLabels
-from .file_node import FileNode
+from blarify.graph.node.file_node import FileNode
 from typing import Union, List
 from blarify.graph.relationship import RelationshipCreator, Relationship
 

@@ -1,4 +1,4 @@
-from ..class_node import ClassNode
+from blarify.graph.node.class_node import ClassNode
 from ..file_node import FileNode
 from ..folder_node import FolderNode
 from ..function_node import FunctionNode
