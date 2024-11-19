@@ -80,7 +80,7 @@ if __name__ == "__main__":
     main(root_uri=root_path, blarignore_path=blarignore_path)
     main_diff(
         paths_to_create=[
-            "file:///home/juan/devel/blar/lsp-poc/blarify/graph/node/utils/node_factory.py",
+           "file:///home/juan/devel/blar/lsp-poc/blarify/graph/node/utils/node_factory.py"
         ],
         root_uri=root_path,
         blarignore_path=blarignore_path,

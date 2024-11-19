@@ -298,7 +298,7 @@ class Neo4jManager:
         node_creation_query = """
         CALL apoc.periodic.iterate(
             "UNWIND $nodeList AS node RETURN node",
-            "CALL apoc.create.node([node.type, 'NODE'] + node.extra_labels, apoc.map.merge(node.attributes, {repoId: $repoId, entityId: $entityId})) YIELD node as n RETURN count(n) as count",
+            "CALL apoc.create.node(node.extra_labels + [node.type, 'NODE'], apoc.map.merge(node.attributes, {repoId: $repoId, entityId: $entityId})) YIELD node as n RETURN count(n) as count",
             {batchSize: $batchSize, parallel: false, iterateList: true, params: {nodeList: $nodeList, repoId: $repoId, entityId: $entityId}}
         )
         YIELD batches, total, errorMessages, updateStatistics

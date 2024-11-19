@@ -41,7 +41,7 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
 
     def mark_file_nodes_as_diff(self, file_nodes: List[FileNode]):
         for file_node in file_nodes:
-            file_node.mark_as_diff()
+            file_node.add_extra_label_to_self_and_children("DIFF")
 
     def remove_paths_to_create_from_paths_referenced(self, paths_referenced):
         return [path for path in paths_referenced if path not in self.paths_to_create]

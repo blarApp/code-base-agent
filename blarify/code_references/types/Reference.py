@@ -32,7 +32,6 @@ class Reference:
         if range and uri:
             self.range = range
             self.uri = self._desencode_uri(uri)
-            print("LSP desencoded uri ", self.uri)
 
         elif reference:
             self._initialize_from_dict(reference)
@@ -50,7 +49,6 @@ class Reference:
         self.uri = self._desencode_uri(uri)
 
     def _desencode_uri(self, uri: str) -> str:
-        print("LSP uri ", uri)
         return unquote(uri)
 
     @property
