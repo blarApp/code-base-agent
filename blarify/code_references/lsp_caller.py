@@ -1,6 +1,13 @@
 import websockets.sync.client as ws
 import json
 
+LANGUAGES_ID_MAP = {
+    "tsx": "typescriptreact",
+    "ts": "typescript",
+    "jsx": "javascriptreact",
+    "js": "javascript",
+}
+
 
 class LspCaller:
     root_uri: str
@@ -156,7 +163,8 @@ class LspCaller:
         }
         return self.send_request(document_link_request).get("result")
 
-    def did_open(self, document_uri: str, text: str) -> None:
+    def did_open(self, document_uri: str, text: str, extension: str) -> None:
+        language_id = LANGUAGES_ID_MAP.get(extension, "javascript")
         did_open_notification = {
             "jsonrpc": "2.0",
             "id": 400,
@@ -164,7 +172,7 @@ class LspCaller:
             "params": {
                 "textDocument": {
                     "uri": document_uri,
-                    "languageId": "javascript",
+                    "languageId": language_id,
                     "version": 1,
                     "text": text,
                 },

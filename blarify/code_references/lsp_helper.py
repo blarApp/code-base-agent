@@ -50,7 +50,7 @@ class LspQueryHelper:
 
     def initialize_directory(self, file) -> None:
         lsp_caller = self.get_lsp_caller_for_extension(file.extension)
-        lsp_caller.did_open(file.uri_path, self._read_file(file.path))
+        lsp_caller.did_open(document_uri=file.uri_path, text=self._read_file(file.path), extension=file.extension)
 
     def get_lsp_caller_for_extension(self, extension: str) -> LspCaller:
         try:
