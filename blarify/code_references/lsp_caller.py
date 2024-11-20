@@ -2,10 +2,10 @@ import websockets.sync.client as ws
 import json
 
 LANGUAGES_ID_MAP = {
-    "tsx": "typescriptreact",
-    "ts": "typescript",
-    "jsx": "javascriptreact",
-    "js": "javascript",
+    ".tsx": "typescriptreact",
+    ".ts": "typescript",
+    ".jsx": "javascriptreact",
+    ".js": "javascript",
 }
 
 
