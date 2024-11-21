@@ -1,8 +1,8 @@
-from project_graph_creator import ProjectGraphCreator
-from graph.graph import Graph
-from code_references.lsp_helper import LspQueryHelper
-from project_file_explorer import ProjectFilesIterator
-from graph.node import FileNode
+from blarify.project_graph_creator import ProjectGraphCreator
+from blarify.graph.graph import Graph
+from blarify.code_references.lsp_helper import LspQueryHelper
+from blarify.project_file_explorer import ProjectFilesIterator
+from blarify.graph.node import FileNode
 from typing import List
 
 
