@@ -1,3 +1,4 @@
+import time
 import websockets.sync.client as ws
 import json
 
@@ -16,14 +17,18 @@ class LspCaller:
     websocket: ws.ClientConnection
     unmatched_responses: dict
     lsp_server_name: str
+    connection_retries: int
 
-    def __init__(self, root_uri: str, host="localhost", port=5000, log=False, lsp_server_name=""):
+    def __init__(
+        self, root_uri: str, host="localhost", port=5000, log=False, lsp_server_name="", connection_retries: int = 3
+    ):
         self.host = host or "localhost"
         self.port = port or 5000
         self.root_uri = root_uri
         self.websocket = None
         self.unmatched_responses = {}
         self.lsp_server_name = lsp_server_name
+        self.connection_retries = connection_retries
 
         self._id = 0
 
@@ -32,10 +37,15 @@ class LspCaller:
         self._id += 1
         return self._id
 
-    def connect(self) -> None:
+    def connect(self, retries: int = 0) -> None:
         uri = f"ws://{self.host}:{self.port}"
         uri += self._get_query_params()
-        self.websocket = ws.connect(uri)
+        try:
+            self.websocket = ws.connect(uri)
+        except ConnectionRefusedError:
+            if retries < self.connection_retries:
+                time.sleep(1)
+                self.connect(retries + 1)
 
     def _get_query_params(self) -> str:
         if self.lsp_server_name:
