@@ -149,7 +149,6 @@ class LspCaller:
                 "workDoneToken": 1,
             },
         }
-        print("reference_request", reference_request)
         return self.send_request(reference_request).get("result")
 
     def get_selection_range(self, document_uri: str, position: dict) -> dict:
