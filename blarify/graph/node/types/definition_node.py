@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple, Union, TYPE_CHECKING
+from typing import List, Optional, Tuple, Union, TYPE_CHECKING, Dict
 from blarify.graph.relationship import RelationshipCreator
 from blarify.graph.node.types.node import Node
 
@@ -19,6 +19,7 @@ class DefinitionNode(Node):
     _tree_sitter_node: "TreeSitterNode"
     _is_diff: bool
     extra_labels = List[str]
+    extra_attributes = Dict[str, str]
 
     def __init__(
         self, definition_range, node_range, code_text, body_node, tree_sitter_node: "TreeSitterNode", *args, **kwargs
@@ -30,6 +31,7 @@ class DefinitionNode(Node):
         self.body_node = body_node
         self._tree_sitter_node = tree_sitter_node
         self.extra_labels = []
+        self.extra_attributes = {}
         super().__init__(*args, **kwargs)
 
     def relate_node_as_define_relationship(self, node: Union["ClassNode", "FunctionNode"]) -> None:
@@ -123,10 +125,16 @@ class DefinitionNode(Node):
         for node in self._defines:
             node.add_extra_label_to_self_and_children(label)
 
+    def add_extra_attribute_to_self_and_children(self, key: str, value: str) -> None:
+        self.extra_attributes[key] = value
+        for node in self._defines:
+            node.add_extra_attribute_to_self_and_children(key, value)
+
     def __str__(self):
         return " ".join(self.extra_labels) + super().__str__()
 
     def as_object(self):
         obj = super().as_object()
         obj["extra_labels"] = self.extra_labels
+        obj["attributes"] = {**obj["attributes"], **self.extra_attributes}
         return obj

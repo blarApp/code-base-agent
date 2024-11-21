@@ -1,7 +1,7 @@
-from project_graph_creator import ProjectGraphCreator
+from blarify.project_graph_creator import ProjectGraphCreator
 from blarify.project_file_explorer import ProjectFilesIterator
 from blarify.project_graph_diff_creator import ProjectGraphDiffCreator
-from db_managers.neo4j_manager import Neo4jManager
+from blarify.db_managers.neo4j_manager import Neo4jManager
 from blarify.code_references import LspQueryHelper
 
 import dotenv
@@ -35,6 +35,7 @@ def main(root_uri: str = None, blarignore_path: str = None):
 
     lsp_query_helper.shutdown_exit_close()
 
+
 def main_diff(paths_to_create: list, root_uri: str = None, blarignore_path: str = None):
     lsp_query_helper = LspQueryHelper(root_uri=root_uri)
     lsp_query_helper.start()
@@ -53,6 +54,7 @@ def main_diff(paths_to_create: list, root_uri: str = None, blarignore_path: str 
         lsp_query_helper=lsp_query_helper,
         project_files_iterator=project_files_iterator,
         paths_to_create=paths_to_create,
+        diff_identifier="PR-123",
     )
 
     graph = graph_diff_creator.build()
@@ -79,9 +81,7 @@ if __name__ == "__main__":
     blarignore_path = os.getenv("BLARIGNORE_PATH")
     main(root_uri=root_path, blarignore_path=blarignore_path)
     main_diff(
-        paths_to_create=[
-           "file:///home/juan/devel/blar/lsp-poc/blarify/graph/node/utils/node_factory.py"
-        ],
+        paths_to_create=["file:///home/juan/devel/blar/lsp-poc/blarify/graph/node/utils/node_factory.py"],
         root_uri=root_path,
         blarignore_path=blarignore_path,
     )

@@ -7,16 +7,20 @@ from typing import List
 
 
 class ProjectGraphDiffCreator(ProjectGraphCreator):
+    diff_identifier: str
+
     def __init__(
         self,
         root_path: str,
         lsp_query_helper: LspQueryHelper,
         project_files_iterator: ProjectFilesIterator,
         paths_to_create: list,
+        diff_identifier: str,
     ):
         super().__init__(root_path, lsp_query_helper, project_files_iterator)
         self.graph = Graph()
         self.paths_to_create = paths_to_create
+        self.diff_identifier = diff_identifier
 
     def build(self) -> Graph:
         self.create_code_hierarchy()
@@ -42,6 +46,7 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
     def mark_file_nodes_as_diff(self, file_nodes: List[FileNode]):
         for file_node in file_nodes:
             file_node.add_extra_label_to_self_and_children("DIFF")
+            file_node.add_extra_attribute_to_self_and_children("diff_identifier", self.diff_identifier)
 
     def remove_paths_to_create_from_paths_referenced(self, paths_referenced):
         return [path for path in paths_referenced if path not in self.paths_to_create]
