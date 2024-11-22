@@ -1,4 +1,3 @@
-import time
 from blarify.code_references import LspQueryHelper, FileExtensionNotSupported
 from blarify.project_file_explorer import ProjectFilesIterator
 from blarify.graph.node import NodeLabels, NodeFactory
@@ -49,7 +48,6 @@ class ProjectGraphCreator:
 
     def build(self) -> Graph:
         self.create_code_hierarchy()
-        time.sleep(10)
         self.create_relationships_from_references_for_files()
         return self.graph
 

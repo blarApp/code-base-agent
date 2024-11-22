@@ -22,9 +22,14 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
         self.paths_to_create = paths_to_create
         self.diff_identifier = diff_identifier
 
+    def keep_only_files_to_create(self):
+        self.graph.filter_graph_by_paths(self.paths_to_create)
+
     def build(self) -> Graph:
         self.create_code_hierarchy()
         self.create_relationship_from_references_for_paths_to_create()
+        self.keep_only_files_to_create()
+
         return self.graph
 
     def create_relationship_from_references_for_paths_to_create(self):

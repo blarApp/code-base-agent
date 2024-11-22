@@ -13,16 +13,16 @@ class Graph:
     file_nodes_by_path: Dict[str, FileNode]
     folder_nodes_by_path: Dict[str, Node]
     nodes_by_label: DefaultDict[str, Set[Node]]
-    nodes: Dict[str, Node]
-    references_relationships: List["Relationship"]
+    __nodes: Dict[str, Node]
+    __references_relationships: List["Relationship"]
 
     def __init__(self):
-        self.nodes = {}
+        self.__nodes = {}
+        self.__references_relationships = []
         self.nodes_by_path = defaultdict(set)
         self.file_nodes_by_path = {}
         self.folder_nodes_by_path = {}
         self.nodes_by_label = defaultdict(set)
-        self.references_relationships = []
 
     def has_folder_node_with_path(self, path: str) -> bool:
         return path in self.folder_nodes_by_path
@@ -32,7 +32,7 @@ class Graph:
             self.add_node(node)
 
     def add_node(self, node: Node) -> None:
-        self.nodes[node.id] = node
+        self.__nodes[node.id] = node
         self.nodes_by_path[node.path].add(node)
         self.nodes_by_label[node.label].add(node)
 
@@ -41,6 +41,17 @@ class Graph:
 
         if node.label == NodeLabels.FOLDER:
             self.folder_nodes_by_path[node.path] = node
+
+    def remove_node(self, node: Node) -> None:
+        del self.__nodes[node.id]
+        self.nodes_by_path[node.path].remove(node)
+        self.nodes_by_label[node.label].remove(node)
+
+        if node.label == NodeLabels.FILE:
+            del self.file_nodes_by_path[node.path]
+
+        if node.label == NodeLabels.FOLDER:
+            del self.folder_nodes_by_path[node.path]
 
     def get_nodes_by_path(self, path: str) -> set:
         return self.nodes_by_path[path]
@@ -55,34 +66,57 @@ class Graph:
         return self.nodes_by_label[label]
 
     def get_node_by_id(self, id: str) -> Node:
-        return self.nodes[id]
+        return self.__nodes[id]
 
     def get_relationships_as_objects(self) -> List[dict]:
         internal_relationships = [relationship.as_object() for relationship in self.get_relationships()]
-        reference_relationships = [relationship.as_object() for relationship in self.references_relationships]
+        reference_relationships = [relationship.as_object() for relationship in self.__references_relationships]
 
         return internal_relationships + reference_relationships
 
     def get_relationships(self) -> List["Relationship"]:
         relationships = []
-        for node in self.nodes.values():
+        for node in self.__nodes.values():
             relationships.extend(node.get_relationships())
 
         return relationships
 
     def add_references_relationships(self, references_relationships: List["Relationship"]) -> None:
-        self.references_relationships.extend(references_relationships)
+        self.__references_relationships.extend(references_relationships)
 
     def get_nodes_as_objects(self) -> List[dict]:
-        return [node.as_object() for node in self.nodes.values()]
+        return [node.as_object() for node in self.__nodes.values()]
+
+    def filter_references_relationships(self, references_relationships: List["Relationship"]) -> None:
+        self.__references_relationships = [
+            relationship
+            for relationship in self.__references_relationships
+            if relationship not in references_relationships
+        ]
+
+    def filter_nodes(self, nodes: List[Node]) -> None:
+        for node in self.__nodes.values():
+            if node not in nodes:
+                self.remove_node(node)
+
+    def filter_graph_by_paths(self, paths_to_keep: List[str]) -> None:
+        nodes = [node for path in paths_to_keep for node in self.nodes_by_path[path]]
+        references_relationships = [
+            reference
+            for reference in self.__references_relationships
+            if reference.start_node in nodes or reference.end_node in nodes
+        ]
+
+        self.filter_nodes(nodes)
+        self.filter_references_relationships(references_relationships)
 
     def __str__(self) -> str:
         to_return = ""
 
-        for node in self.nodes.values():
+        for node in self.__nodes.values():
             to_return += f"{node}\n"
 
-        for relationship in self.relationships.values():
+        for relationship in self.__references_relationships:
             to_return += f"{relationship}\n"
 
         return to_return
