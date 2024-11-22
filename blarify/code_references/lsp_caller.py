@@ -43,6 +43,8 @@ class LspCaller:
         try:
             self.websocket = ws.connect(uri)
         except ConnectionRefusedError:
+            print(f"Connection refused to {uri}")
+            print(f"Retrying {retries}/{self.connection_retries}")
             if retries < self.connection_retries:
                 time.sleep(1)
                 self.connect(retries + 1)
