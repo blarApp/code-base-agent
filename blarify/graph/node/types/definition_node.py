@@ -1,6 +1,7 @@
 from typing import List, Optional, Tuple, Union, TYPE_CHECKING, Dict
 from blarify.graph.relationship import RelationshipCreator
 from blarify.graph.node.types.node import Node
+from copy import copy
 
 if TYPE_CHECKING:
     from ..class_node import ClassNode
@@ -126,15 +127,28 @@ class DefinitionNode(Node):
             node.add_extra_label_to_self_and_children(label)
 
     def add_extra_attribute_to_self_and_children(self, key: str, value: str) -> None:
-        self.extra_attributes[key] = value
+        self.add_extra_attribute(key, value)
         for node in self._defines:
             node.add_extra_attribute_to_self_and_children(key, value)
 
-    def __str__(self):
-        return " ".join(self.extra_labels) + super().__str__()
+    def add_extra_attribute(self, key: str, value: str) -> None:
+        self.extra_attributes[key] = value
+
+    def __copy__(self):
+        cls = self.__class__
+        result = cls.__new__(cls)
+        result.__dict__.update(self.__dict__)
+        result.extra_labels = self.extra_labels.copy()
+        result.extra_attributes = self.extra_attributes.copy()
+        return result
 
     def as_object(self):
         obj = super().as_object()
         obj["extra_labels"] = self.extra_labels
         obj["attributes"] = {**obj["attributes"], **self.extra_attributes}
         return obj
+
+    def filter_children_by_path(self, paths_to_keep: List[str]) -> None:
+        self._defines = [node for node in self._defines if node.path in paths_to_keep]
+        for node in self._defines:
+            node.filter_children_by_path(paths_to_keep)

@@ -33,3 +33,6 @@ class FolderNode(Node):
             relationships.append(RelationshipCreator.create_contains_relationship(self, node))
 
         return relationships
+
+    def filter_children_by_path(self, paths: List[str]):
+        self._contains = [node for node in self._contains if node.path in paths]

@@ -1,11 +1,12 @@
 from collections import defaultdict
 from blarify.graph.node import Node, NodeLabels
 from blarify.graph.node import FileNode
+from blarify.graph.relationship import Relationship
 
 from typing import List, TYPE_CHECKING, Dict, Set, DefaultDict, Optional
 
 if TYPE_CHECKING:
-    from .relationship import Relationship
+    from .relationship import RelationshipType
 
 
 class Graph:
@@ -15,10 +16,12 @@ class Graph:
     nodes_by_label: DefaultDict[str, Set[Node]]
     __nodes: Dict[str, Node]
     __references_relationships: List["Relationship"]
+    __custom_relationships: List["Relationship"]
 
     def __init__(self):
         self.__nodes = {}
         self.__references_relationships = []
+        self.__custom_relationships = []
         self.nodes_by_path = defaultdict(set)
         self.file_nodes_by_path = {}
         self.folder_nodes_by_path = {}
@@ -42,17 +45,6 @@ class Graph:
         if node.label == NodeLabels.FOLDER:
             self.folder_nodes_by_path[node.path] = node
 
-    def remove_node(self, node: Node) -> None:
-        del self.__nodes[node.id]
-        self.nodes_by_path[node.path].remove(node)
-        self.nodes_by_label[node.label].remove(node)
-
-        if node.label == NodeLabels.FILE:
-            del self.file_nodes_by_path[node.path]
-
-        if node.label == NodeLabels.FOLDER:
-            del self.folder_nodes_by_path[node.path]
-
     def get_nodes_by_path(self, path: str) -> set:
         return self.nodes_by_path[path]
 
@@ -69,12 +61,13 @@ class Graph:
         return self.__nodes[id]
 
     def get_relationships_as_objects(self) -> List[dict]:
-        internal_relationships = [relationship.as_object() for relationship in self.get_relationships()]
+        internal_relationships = [relationship.as_object() for relationship in self.get_relationships_from_nodes()]
         reference_relationships = [relationship.as_object() for relationship in self.__references_relationships]
+        custom_relationships = [relationship.as_object() for relationship in self.__custom_relationships]
 
-        return internal_relationships + reference_relationships
+        return internal_relationships + reference_relationships + custom_relationships
 
-    def get_relationships(self) -> List["Relationship"]:
+    def get_relationships_from_nodes(self) -> List["Relationship"]:
         relationships = []
         for node in self.__nodes.values():
             relationships.extend(node.get_relationships())
@@ -87,28 +80,26 @@ class Graph:
     def get_nodes_as_objects(self) -> List[dict]:
         return [node.as_object() for node in self.__nodes.values()]
 
-    def filter_references_relationships(self, references_relationships: List["Relationship"]) -> None:
-        self.__references_relationships = [
-            relationship
-            for relationship in self.__references_relationships
-            if relationship not in references_relationships
-        ]
-
-    def filter_nodes(self, nodes: List[Node]) -> None:
+    def filtered_graph_by_paths(self, paths_to_keep: List[str]) -> "Graph":
+        graph = Graph()
         for node in self.__nodes.values():
-            if node not in nodes:
-                self.remove_node(node)
+            if node.path in paths_to_keep:
+                node.filter_children_by_path(paths_to_keep)
+                graph.add_node(node)
 
-    def filter_graph_by_paths(self, paths_to_keep: List[str]) -> None:
-        nodes = [node for path in paths_to_keep for node in self.nodes_by_path[path]]
-        references_relationships = [
-            reference
-            for reference in self.__references_relationships
-            if reference.start_node in nodes or reference.end_node in nodes
-        ]
+        for relationship in self.__references_relationships:
+            if relationship.start_node.path in paths_to_keep or relationship.end_node.path in paths_to_keep:
+                graph.add_references_relationships([relationship])
 
-        self.filter_nodes(nodes)
-        self.filter_references_relationships(references_relationships)
+        for relationship in self.__custom_relationships:
+            if relationship.start_node.path in paths_to_keep or relationship.end_node.path in paths_to_keep:
+                graph.add_custom_relationship(relationship.start_node, relationship.end_node, relationship.rel_type)
+
+        return graph
+
+    def add_custom_relationship(self, start_node: Node, end_node: Node, relationship_type: "RelationshipType") -> None:
+        relationship = Relationship(start_node, end_node, relationship_type)
+        self.__custom_relationships.append(relationship)
 
     def __str__(self) -> str:
         to_return = ""

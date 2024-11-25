@@ -32,16 +32,16 @@ class Node:
         return md5(path.encode()).hexdigest()
 
     @property
-    def id(self) -> str:
-        return self.__str__()
-
-    @property
     def hashed_id(self) -> str:
         return md5(self.id.encode()).hexdigest()
 
     @property
+    def id(self) -> str:
+        return self._identifier()
+
+    @property
     def node_repr_for_identifier(self) -> str:
-        return "." + self.name
+        raise NotImplementedError
 
     @property
     def pure_path(self) -> str:
@@ -69,11 +69,17 @@ class Node:
     def get_relationships(self) -> List["Relationship"]:
         return []
 
-    def __str__(self) -> str:
+    def filter_children_by_path(self, paths: List[str]) -> None:
+        pass
+
+    def _identifier(self) -> str:
         identifier = ""
 
         if self.parent:
-            identifier += self.parent.id
+            identifier += self.parent._identifier()
         identifier += self.node_repr_for_identifier
 
         return identifier
+
+    def __str__(self) -> str:
+        return self._identifier()
