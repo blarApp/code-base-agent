@@ -142,12 +142,6 @@ class DefinitionNode(Node):
         result.extra_attributes = self.extra_attributes.copy()
         return result
 
-    def _identifier(self):
-        if not self.extra_labels:
-            return super()._identifier()
-
-        return " ".join(self.extra_labels) + " & " + super()._identifier()
-
     def as_object(self):
         obj = super().as_object()
         obj["extra_labels"] = self.extra_labels

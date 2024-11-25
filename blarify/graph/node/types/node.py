@@ -76,7 +76,7 @@ class Node:
         identifier = ""
 
         if self.parent:
-            identifier += self.parent.id
+            identifier += self.parent._identifier()
         identifier += self.node_repr_for_identifier
 
         return identifier
