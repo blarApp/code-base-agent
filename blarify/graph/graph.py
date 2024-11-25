@@ -81,9 +81,6 @@ class Graph:
         return [node.as_object() for node in self.__nodes.values()]
 
     def filtered_graph_by_paths(self, paths_to_keep: List[str]) -> "Graph":
-        print("paths_to_keep", paths_to_keep)
-        print("nodes", self.__nodes)
-        print("references", self.__references_relationships)
         graph = Graph()
         for node in self.__nodes.values():
             if node.path in paths_to_keep:
@@ -97,7 +94,7 @@ class Graph:
         for relationship in self.__custom_relationships:
             if relationship.start_node.path in paths_to_keep or relationship.end_node.path in paths_to_keep:
                 graph.add_custom_relationship(relationship.start_node, relationship.end_node, relationship.rel_type)
-        print("filtered graph", graph)
+
         return graph
 
     def add_custom_relationship(self, start_node: Node, end_node: Node, relationship_type: "RelationshipType") -> None:
