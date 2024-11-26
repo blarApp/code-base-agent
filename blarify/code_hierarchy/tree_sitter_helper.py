@@ -5,13 +5,14 @@ from blarify.code_references.types import Reference, Range, Point
 from .languages import LanguageDefinitions, BodyNodeNotFound, FallbackDefinitions
 from blarify.graph.node import NodeLabels
 from blarify.project_file_explorer import File
-from typing import List, TYPE_CHECKING, Tuple
+from typing import List, TYPE_CHECKING, Tuple, Optional
 from blarify.graph.relationship import RelationshipType
 
 if TYPE_CHECKING:
     from tree_sitter import Node as TreeSitterNode
     from blarify.graph.node import DefinitionNode, Node, FolderNode, FileNode
     from blarify.code_references.types import Reference
+    from blarify.graph.graph_enviroment import GraphEnviroment
 
 
 class TreeSitterHelper:
@@ -20,10 +21,12 @@ class TreeSitterHelper:
     current_path: str
     base_node_source_code: str
     created_nodes: List["Node"]
+    graph_enviroment: Optional["GraphEnviroment"]
 
-    def __init__(self, language_definitions: LanguageDefinitions):
+    def __init__(self, language_definitions: LanguageDefinitions, graph_enviroment: Optional["GraphEnviroment"] = None):
         self.language_definitions = language_definitions
         self.parsers = self.language_definitions.get_parsers_for_extensions()
+        self.graph_enviroment = graph_enviroment
 
     def get_all_identifiers(self, node: "FileNode") -> List["Reference"]:
         self.current_path = node.path
@@ -103,6 +106,7 @@ class TreeSitterHelper:
             body_node=module_node,
             parent=parent_folder,
             tree_sitter_node=module_node,
+            graph_enviroment=self.graph_enviroment,
         )
 
     def _get_content_from_file(self, file: File) -> str:
@@ -152,6 +156,7 @@ class TreeSitterHelper:
             level=parent_node.level + 1,
             parent=parent_node,
             tree_sitter_node=tree_sitter_node,
+            graph_enviroment=self.graph_enviroment,
         )
 
         parent_node.relate_node_as_define_relationship(node)
@@ -215,6 +220,7 @@ class TreeSitterHelper:
             body_node=None,
             parent=parent_folder,
             tree_sitter_node=None,
+            graph_enviroment=self.graph_enviroment,
         )
 
     def _empty_reference(self) -> "Reference":

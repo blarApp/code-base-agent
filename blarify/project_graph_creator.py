@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from blarify.project_file_explorer import File, Folder
     from blarify.graph.node import Node, FileNode
     from blarify.graph.relationship import Relationship
+    from blarify.graph.graph_enviroment import GraphEnviroment
 
 
 class ProjectGraphCreator:
@@ -39,10 +40,12 @@ class ProjectGraphCreator:
         root_path: str,
         lsp_query_helper: LspQueryHelper,
         project_files_iterator: ProjectFilesIterator,
+        graph_enviroment: "GraphEnviroment" = None,
     ):
         self.root_path = root_path
         self.lsp_query_helper = lsp_query_helper
         self.project_files_iterator = project_files_iterator
+        self.graph_enviroment = graph_enviroment
 
         self.graph = Graph()
 
@@ -69,7 +72,9 @@ class ProjectGraphCreator:
         if self.graph.has_folder_node_with_path(folder.uri_path):
             return self.graph.get_folder_node_by_path(folder.uri_path)
         else:
-            folder_node = NodeFactory.create_folder_node(folder, parent=parent_folder)
+            folder_node = NodeFactory.create_folder_node(
+                folder, parent=parent_folder, graph_enviroment=self.graph_enviroment
+            )
             self.graph.add_node(folder_node)
             return folder_node
 
@@ -106,7 +111,7 @@ class ProjectGraphCreator:
 
     def _get_tree_sitter_for_file_extension(self, file_extension: str) -> TreeSitterHelper:
         language = self._get_language_definition(file_extension=file_extension)
-        return TreeSitterHelper(language_definitions=language)
+        return TreeSitterHelper(language_definitions=language, graph_enviroment=self.graph_enviroment)
 
     def _get_language_definition(self, file_extension: str):
         return self.languages.get(file_extension, FallbackDefinitions)

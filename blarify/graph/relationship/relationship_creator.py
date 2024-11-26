@@ -1,5 +1,6 @@
 from typing import List, TYPE_CHECKING
 from blarify.graph.relationship import Relationship, RelationshipType
+from blarify.graph.node import NodeLabels
 
 if TYPE_CHECKING:
     from blarify.graph.graph import Graph
@@ -37,16 +38,21 @@ class RelationshipCreator:
 
     @staticmethod
     def create_defines_relationship(node: "Node", defined_node: "Node") -> Relationship:
-        rel_type = (
-            RelationshipType.FUNCTION_DEFINITION
-            if defined_node.label == "FUNCTION"
-            else RelationshipType.CLASS_DEFINITION
-        )
+        rel_type = RelationshipCreator._get_relationship_type(defined_node)
         return Relationship(
             node,
             defined_node,
             rel_type,
         )
+
+    @staticmethod
+    def _get_relationship_type(defined_node: "Node") -> RelationshipType:
+        if defined_node.label == NodeLabels.FUNCTION:
+            return RelationshipType.FUNCTION_DEFINITION
+        elif defined_node.label == NodeLabels.CLASS:
+            return RelationshipType.CLASS_DEFINITION
+        else:
+            raise ValueError(f"Node {defined_node.label} is not a valid definition node")
 
     @staticmethod
     def create_contains_relationship(folder_node: "Node", contained_node: "Node") -> Relationship:

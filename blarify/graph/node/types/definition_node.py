@@ -134,6 +134,11 @@ class DefinitionNode(Node):
     def add_extra_attribute(self, key: str, value: str) -> None:
         self.extra_attributes[key] = value
 
+    def update_graph_enviroment_to_self_and_children(self, graph_enviroment: "GraphEnviroment") -> None:
+        self.update_graph_enviroment(graph_enviroment)
+        for node in self._defines:
+            node.update_graph_enviroment_to_self_and_children(graph_enviroment)
+
     def __copy__(self):
         cls = self.__class__
         result = cls.__new__(cls)

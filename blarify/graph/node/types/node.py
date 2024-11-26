@@ -5,6 +5,7 @@ import os
 if TYPE_CHECKING:
     from blarify.graph.relationship import Relationship
     from blarify.graph.node import NodeLabels
+    from blarify.graph.graph_enviroment import GraphEnviroment
 
 
 class Node:
@@ -13,13 +14,23 @@ class Node:
     name: str
     level: int
     parent: "Node"
+    graph_enviroment: "GraphEnviroment"
 
-    def __init__(self, label: "NodeLabels", path: str, name: str, level: int, parent: "Node" = None):
+    def __init__(
+        self,
+        label: "NodeLabels",
+        path: str,
+        name: str,
+        level: int,
+        parent: "Node" = None,
+        graph_enviroment: "GraphEnviroment" = None,
+    ):
         self.label = label
         self.path = path
         self.name = name
         self.level = level
         self.parent = parent
+        self.graph_enviroment = graph_enviroment
 
         if not self.is_path_format_valid():
             raise ValueError(f"Path format is not valid: {self.path}")
@@ -37,7 +48,7 @@ class Node:
 
     @property
     def id(self) -> str:
-        return self._identifier()
+        return str(self.graph_enviroment or "") + self._identifier()
 
     @property
     def node_repr_for_identifier(self) -> str:
@@ -80,6 +91,9 @@ class Node:
         identifier += self.node_repr_for_identifier
 
         return identifier
+
+    def update_graph_enviroment(self, enviroment: "GraphEnviroment") -> None:
+        self.graph_enviroment = enviroment
 
     def __str__(self) -> str:
         return self._identifier()
