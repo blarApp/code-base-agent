@@ -8,7 +8,9 @@ class FileNode(DefinitionNode):
 
     @property
     def node_repr_for_identifier(self):
-        return "/" + self.name
+        if self.parent:
+            return "/" + self.name
+        return self.pure_paths
 
     def as_object(self):
         obj = super().as_object()
