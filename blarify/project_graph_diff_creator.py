@@ -1,6 +1,7 @@
 from blarify.project_graph_creator import ProjectGraphCreator
 from blarify.graph.relationship import RelationshipType
 from blarify.graph.graph import Graph
+from blarify.graph.graph_environment import GraphEnvironment
 from blarify.code_references.lsp_helper import LspQueryHelper
 from blarify.project_file_explorer import ProjectFilesIterator
 from blarify.graph.node import FileNode
@@ -8,8 +9,6 @@ from typing import List
 from dataclasses import dataclass
 from enum import Enum
 from copy import copy
-
-from graph.graph_environment import GraphEnvironment
 
 
 class ChangeType(Enum):
