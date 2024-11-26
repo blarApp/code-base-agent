@@ -3,6 +3,7 @@ from blarify.project_file_explorer import ProjectFilesIterator
 from blarify.project_graph_diff_creator import ProjectGraphDiffCreator, FileDiff, ChangeType
 from blarify.db_managers.neo4j_manager import Neo4jManager
 from blarify.code_references import LspQueryHelper
+from blarify.graph.graph_enviroment import GraphEnviroment
 
 import dotenv
 import os
@@ -22,7 +23,9 @@ def main(root_uri: str = None, blarignore_path: str = None):
     entity_id = "test"
     graph_manager = Neo4jManager(repoId, entity_id)
 
-    graph_creator = ProjectGraphCreator("Test", lsp_query_helper, project_files_iterator)
+    graph_creator = ProjectGraphCreator(
+        "Test", lsp_query_helper, project_files_iterator, GraphEnviroment("dev", "MAIN")
+    )
 
     graph = graph_creator.build()
 
@@ -54,7 +57,8 @@ def main_diff(file_diffs: list, root_uri: str = None, blarignore_path: str = Non
         lsp_query_helper=lsp_query_helper,
         project_files_iterator=project_files_iterator,
         file_diffs=file_diffs,
-        diff_identifier="PR-123",
+        graph_enviroment=GraphEnviroment("dev", "MAIN"),
+        pr_enviroment=GraphEnviroment("dev", "pr-123"),
     )
 
     graph = graph_diff_creator.build()

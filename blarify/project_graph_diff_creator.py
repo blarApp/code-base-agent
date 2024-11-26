@@ -9,6 +9,8 @@ from dataclasses import dataclass
 from enum import Enum
 from copy import copy
 
+from blarify.graph.graph_enviroment import GraphEnviroment
+
 
 class ChangeType(Enum):
     ADDED = "ADDED"
@@ -27,6 +29,7 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
     diff_identifier: str
     added_and_modified_paths: List[str]
     file_diffs: List[FileDiff]
+    pr_enviroment: GraphEnviroment
 
     def __init__(
         self,
@@ -34,12 +37,13 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
         lsp_query_helper: LspQueryHelper,
         project_files_iterator: ProjectFilesIterator,
         file_diffs: List[FileDiff],
-        diff_identifier: str,
+        graph_enviroment: "GraphEnviroment" = None,
+        pr_enviroment: "GraphEnviroment" = None,
     ):
-        super().__init__(root_path, lsp_query_helper, project_files_iterator)
+        super().__init__(root_path, lsp_query_helper, project_files_iterator, graph_enviroment=graph_enviroment)
         self.graph = Graph()
-        self.diff_identifier = diff_identifier
         self.file_diffs = file_diffs
+        self.pr_enviroment = pr_enviroment
 
         self.added_and_modified_paths = self.get_added_and_modified_paths()
 
@@ -86,8 +90,10 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
             file_node.add_extra_label_to_self_and_children("DIFF")
             file_node.add_extra_label_to_self_and_children(diff.change_type.value)
 
-            file_node.add_extra_attribute_to_self_and_children("diff_identifier", self.diff_identifier)
+            file_node.add_extra_attribute_to_self_and_children("diff_identifier", self.pr_enviroment.pr_id)
             file_node.add_extra_attribute("diff_text", diff.diff_text)
+
+            file_node.update_graph_enviroment_to_self_and_children(self.pr_enviroment)
 
             if diff.change_type == ChangeType.MODIFIED:
                 self.graph.add_custom_relationship(file_node, clone_node, RelationshipType.MODIFIED)
