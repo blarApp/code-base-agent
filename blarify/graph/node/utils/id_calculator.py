@@ -3,5 +3,9 @@ from hashlib import md5
 
 class IdCalculator:
     @staticmethod
-    def hash_path_to_id(path: str) -> str:
-        return md5(path.encode()).hexdigest()
+    def generate_hashed_file_id(enviroment: str, pr_id: str, path: str) -> str:
+        return md5(IdCalculator.generate_file_id(enviroment, pr_id, path).encode()).hexdigest()
+
+    @staticmethod
+    def generate_file_id(enviroment: str, pr_id: str, path: str) -> str:
+        return f"{enviroment}/{pr_id}/{path}"
