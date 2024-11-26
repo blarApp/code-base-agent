@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from tree_sitter import Node as TreeSitterNode
     from blarify.graph.node import DefinitionNode, Node, FolderNode, FileNode
     from blarify.code_references.types import Reference
-    from blarify.graph.graph_enviroment import GraphEnviroment
+    from graph.graph_environment import GraphEnvironment
 
 
 class TreeSitterHelper:
@@ -21,12 +21,14 @@ class TreeSitterHelper:
     current_path: str
     base_node_source_code: str
     created_nodes: List["Node"]
-    graph_enviroment: Optional["GraphEnviroment"]
+    graph_environment: Optional["GraphEnvironment"]
 
-    def __init__(self, language_definitions: LanguageDefinitions, graph_enviroment: Optional["GraphEnviroment"] = None):
+    def __init__(
+        self, language_definitions: LanguageDefinitions, graph_environment: Optional["GraphEnvironment"] = None
+    ):
         self.language_definitions = language_definitions
         self.parsers = self.language_definitions.get_parsers_for_extensions()
-        self.graph_enviroment = graph_enviroment
+        self.graph_environment = graph_environment
 
     def get_all_identifiers(self, node: "FileNode") -> List["Reference"]:
         self.current_path = node.path
@@ -106,7 +108,7 @@ class TreeSitterHelper:
             body_node=module_node,
             parent=parent_folder,
             tree_sitter_node=module_node,
-            graph_enviroment=self.graph_enviroment,
+            graph_environment=self.graph_environment,
         )
 
     def _get_content_from_file(self, file: File) -> str:
@@ -156,7 +158,7 @@ class TreeSitterHelper:
             level=parent_node.level + 1,
             parent=parent_node,
             tree_sitter_node=tree_sitter_node,
-            graph_enviroment=self.graph_enviroment,
+            graph_environment=self.graph_environment,
         )
 
         parent_node.relate_node_as_define_relationship(node)
@@ -220,7 +222,7 @@ class TreeSitterHelper:
             body_node=None,
             parent=parent_folder,
             tree_sitter_node=None,
-            graph_enviroment=self.graph_enviroment,
+            graph_environment=self.graph_environment,
         )
 
     def _empty_reference(self) -> "Reference":

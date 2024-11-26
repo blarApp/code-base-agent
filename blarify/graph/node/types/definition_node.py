@@ -1,7 +1,6 @@
 from typing import List, Optional, Tuple, Union, TYPE_CHECKING, Dict
 from blarify.graph.relationship import RelationshipCreator
 from blarify.graph.node.types.node import Node
-from copy import copy
 
 if TYPE_CHECKING:
     from ..class_node import ClassNode
@@ -134,10 +133,10 @@ class DefinitionNode(Node):
     def add_extra_attribute(self, key: str, value: str) -> None:
         self.extra_attributes[key] = value
 
-    def update_graph_enviroment_to_self_and_children(self, graph_enviroment: "GraphEnviroment") -> None:
-        self.update_graph_enviroment(graph_enviroment)
+    def update_graph_environment_to_self_and_children(self, graph_environment: "GraphEnvironment") -> None:
+        self.update_graph_environment(graph_environment)
         for node in self._defines:
-            node.update_graph_enviroment_to_self_and_children(graph_enviroment)
+            node.update_graph_environment_to_self_and_children(graph_environment)
 
     def __copy__(self):
         cls = self.__class__
