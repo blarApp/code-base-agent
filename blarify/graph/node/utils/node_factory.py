@@ -1,4 +1,5 @@
 from blarify.graph.node.class_node import ClassNode
+from blarify.graph.node.deleted_node import DeletedNode
 from ..file_node import FileNode
 from ..folder_node import FolderNode
 from ..function_node import FunctionNode
@@ -142,3 +143,21 @@ class NodeFactory:
             )
         else:
             raise ValueError(f"Kind {kind} is not supported")
+
+    @staticmethod
+    def create_deleted_node(
+        label: "NodeLabels",
+        path: str,
+        name: str,
+        level: int,
+        parent: "Node" = None,
+        graph_enviroment: "GraphEnviroment" = None,
+    ):
+        return DeletedNode(
+            label=label,
+            path=path,
+            name=name,
+            level=level,
+            parent=parent,
+            graph_enviroment=graph_enviroment,
+        )

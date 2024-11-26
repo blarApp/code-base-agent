@@ -127,3 +127,6 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
             if file_node:
                 file_nodes.append(file_node)
         return file_nodes
+
+    def add_deleted_relationships(self):
+        pass
