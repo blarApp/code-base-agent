@@ -15,7 +15,10 @@ class FolderNode(Node):
 
     @property
     def node_repr_for_identifier(self) -> str:
-        return "/" + self.name
+        if self.parent:
+            return "/" + self.name
+        else:
+            return self.pure_path
 
     def relate_node_as_contain_relationship(self, node: Union[FileNode, "FolderNode"]) -> None:
         if isinstance(node, FileNode) or isinstance(node, FolderNode):
