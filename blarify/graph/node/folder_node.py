@@ -15,10 +15,7 @@ class FolderNode(Node):
 
     @property
     def node_repr_for_identifier(self) -> str:
-        if self.parent:
-            return "/" + self.name
-        else:
-            return self._remove_trailing_slash(self.pure_path)
+        return "/" + self.name
 
     def _remove_trailing_slash(self, path: str) -> str:
         if path.endswith("/"):
