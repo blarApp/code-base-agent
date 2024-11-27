@@ -9,13 +9,13 @@ import dotenv
 import os
 
 
-def main(root_uri: str = None, blarignore_path: str = None):
-    lsp_query_helper = LspQueryHelper(root_uri=root_uri)
+def main(root_path: str = None, blarignore_path: str = None):
+    lsp_query_helper = LspQueryHelper(root_uri=root_path)
 
     lsp_query_helper.start()
 
     project_files_iterator = ProjectFilesIterator(
-        root_path=root_uri,
+        root_path=root_path,
         blarignore_path=blarignore_path,
     )
 
@@ -24,7 +24,7 @@ def main(root_uri: str = None, blarignore_path: str = None):
     graph_manager = Neo4jManager(repoId, entity_id)
 
     graph_creator = ProjectGraphCreator(
-        "Test", lsp_query_helper, project_files_iterator, GraphEnvironment("dev", "MAIN")
+        "Test", lsp_query_helper, project_files_iterator, GraphEnvironment("dev", "MAIN", root_path)
     )
 
     graph = graph_creator.build()
@@ -57,8 +57,8 @@ def main_diff(file_diffs: list, root_uri: str = None, blarignore_path: str = Non
         lsp_query_helper=lsp_query_helper,
         project_files_iterator=project_files_iterator,
         file_diffs=file_diffs,
-        graph_environment=GraphEnvironment("dev", "MAIN"),
-        pr_environment=GraphEnvironment("dev", "pr-123"),
+        graph_environment=GraphEnvironment("dev", "MAIN", root_uri),
+        pr_environment=GraphEnvironment("dev", "pr-123", root_uri),
     )
 
     graph = graph_diff_creator.build()
@@ -76,7 +76,7 @@ if __name__ == "__main__":
     dotenv.load_dotenv()
     root_path = os.getenv("ROOT_PATH")
     blarignore_path = os.getenv("BLARIGNORE_PATH")
-    main(root_uri=root_path, blarignore_path=blarignore_path)
+    main(root_path=root_path, blarignore_path=blarignore_path)
     main_diff(
         file_diffs=[
             FileDiff(

@@ -1,11 +1,12 @@
 from typing import List, TYPE_CHECKING
 from hashlib import md5
+from blarify.format_verifier import FormatVerifier
 import os
 
 if TYPE_CHECKING:
     from blarify.graph.relationship import Relationship
     from blarify.graph.node import NodeLabels
-    from graph.graph_environment import GraphEnvironment
+    from blarify.graph.graph_environment import GraphEnvironment
 
 
 class Node:
@@ -36,7 +37,7 @@ class Node:
             raise ValueError(f"Path format is not valid: {self.path}")
 
     def is_path_format_valid(self) -> bool:
-        return self.path.startswith("file://")
+        return FormatVerifier.is_path_uri(self.path)
 
     @staticmethod
     def hash_path_to_id(path: str) -> str:
