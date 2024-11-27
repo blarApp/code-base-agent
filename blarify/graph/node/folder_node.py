@@ -18,7 +18,12 @@ class FolderNode(Node):
         if self.parent:
             return "/" + self.name
         else:
-            return self.pure_path
+            return self._remove_trailing_slash(self.pure_path)
+
+    def _remove_trailing_slash(self, path: str) -> str:
+        if path.endswith("/"):
+            return path[:-1]
+        return path
 
     def relate_node_as_contain_relationship(self, node: Union[FileNode, "FolderNode"]) -> None:
         if isinstance(node, FileNode) or isinstance(node, FolderNode):

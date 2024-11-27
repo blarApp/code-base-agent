@@ -15,10 +15,6 @@ class Relationship:
         self.end_node = end_node
         self.rel_type = rel_type
 
-    @property
-    def id(self) -> str:
-        return self.__str__()
-
     def as_object(self) -> dict:
         return {
             "sourceId": self.start_node.hashed_id,

@@ -17,6 +17,7 @@ class Graph:
     __nodes: Dict[str, Node]
     __references_relationships: List["Relationship"]
     __custom_relationships: List["Relationship"]
+    __custom_relationship_objects: List[dict]
 
     def __init__(self):
         self.__nodes = {}
@@ -100,6 +101,20 @@ class Graph:
     def add_custom_relationship(self, start_node: Node, end_node: Node, relationship_type: "RelationshipType") -> None:
         relationship = Relationship(start_node, end_node, relationship_type)
         self.__custom_relationships.append(relationship)
+
+    def add_custom_relationship_object(
+        self, start_node_id: str, end_node_id: str, relationship_type: "RelationshipType"
+    ) -> None:
+        """
+        Warning: custom relationship objects will be deleted if graph is filtered
+        """
+        self.__custom_relationship_objects.append(
+            {
+                "sourceId": start_node_id,
+                "targetId": end_node_id,
+                "type": relationship_type.name,
+            }
+        )
 
     def __str__(self) -> str:
         to_return = ""
