@@ -4,10 +4,10 @@ from dataclasses import dataclass
 @dataclass
 class GraphEnvironment:
     environment: str
-    pr_id: str
+    diff_identifier: str
 
     def __str__(self):
-        return f"/{self.environment}/{self.pr_id}"
+        return f"/{self.environment}/{self.diff_identifier}"
 
 
 if __name__ == "__main__":
