@@ -134,17 +134,17 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
     def add_deleted_relationships(self):
         for diff in self.file_diffs:
             if diff.change_type == ChangeType.DELETED:
-                deleted_node = NodeFactory.create_deleted_node(
+                deleted_node_pr_env = NodeFactory.create_deleted_node(
                     path=diff.path,
-                    graph_enviroment=self.pr_enviroment,
+                    graph_environment=self.pr_environment,
                     label=NodeLabels.DELETED,
                 )
 
-                deleted_node2 = NodeFactory.create_deleted_node(
+                deleted_file_node = NodeFactory.create_deleted_node(
                     path=diff.path,
-                    graph_enviroment=self.graph_enviroment,
+                    graph_environment=self.graph_environment,
                     label=NodeLabels.FILE,
                 )
 
-                self.graph.add_node(deleted_node)
-                self.graph.add_custom_relationship(deleted_node, deleted_node2, RelationshipType.DELETED)
+                self.graph.add_node(deleted_node_pr_env)
+                self.graph.add_custom_relationship(deleted_file_node, deleted_node_pr_env, RelationshipType.DELETED)

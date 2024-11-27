@@ -9,7 +9,7 @@ from typing import Optional, Union, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from blarify.project_file_explorer import Folder
-    from graph.graph_environment import GraphEnvironment
+    from blarify.graph.graph_environment import GraphEnvironment
     from blarify.code_references.types import Reference
     from tree_sitter import Node as TreeSitterNode
 
@@ -152,12 +152,12 @@ class NodeFactory:
     def create_deleted_node(
         label: "NodeLabels",
         path: str,
-        graph_enviroment: "GraphEnviroment" = None,
+        graph_environment: "GraphEnvironment" = None,
     ):
         return DeletedNode(
             label=label,
             path=path,
-            name="",
+            name="DELETED",
             level=0,
-            graph_enviroment=graph_enviroment,
+            graph_environment=graph_environment,
         )

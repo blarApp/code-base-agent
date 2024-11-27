@@ -92,8 +92,8 @@ class Node:
 
         return identifier
 
-    def update_graph_environment(self, enviroment: "GraphEnvironment") -> None:
-        self.graph_environment = enviroment
+    def update_graph_environment(self, environment: "GraphEnvironment") -> None:
+        self.graph_environment = environment
 
     def __str__(self) -> str:
         return self._identifier()
