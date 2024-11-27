@@ -5,6 +5,7 @@ from dataclasses import dataclass
 class GraphEnvironment:
     environment: str
     diff_identifier: str
+    root_path: str
 
     def __str__(self):
         return f"/{self.environment}/{self.diff_identifier}"
