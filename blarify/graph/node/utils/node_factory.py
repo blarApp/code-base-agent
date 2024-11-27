@@ -9,7 +9,7 @@ from typing import Optional, Union, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from blarify.project_file_explorer import Folder
-    from blarify.graph.graph_enviroment import GraphEnviroment
+    from graph.graph_environment import GraphEnvironment
     from blarify.code_references.types import Reference
     from tree_sitter import Node as TreeSitterNode
 
@@ -17,10 +17,14 @@ if TYPE_CHECKING:
 class NodeFactory:
     @staticmethod
     def create_folder_node(
-        folder: "Folder", parent: FolderNode = None, graph_enviroment: "GraphEnviroment" = None
+        folder: "Folder", parent: FolderNode = None, graph_environment: "GraphEnvironment" = None
     ) -> FolderNode:
         return FolderNode(
-            path=folder.uri_path, name=folder.name, level=folder.level, parent=parent, graph_enviroment=graph_enviroment
+            path=folder.uri_path,
+            name=folder.name,
+            level=folder.level,
+            parent=parent,
+            graph_environment=graph_environment,
         )
 
     @staticmethod
@@ -34,7 +38,7 @@ class NodeFactory:
         parent: FolderNode,
         tree_sitter_node: "TreeSitterNode",
         body_node: Optional["TreeSitterNode"] = None,
-        graph_enviroment: "GraphEnviroment" = None,
+        graph_environment: "GraphEnvironment" = None,
     ) -> FileNode:
         return FileNode(
             path=path,
@@ -46,7 +50,7 @@ class NodeFactory:
             parent=parent,
             body_node=body_node,
             tree_sitter_node=tree_sitter_node,
-            graph_enviroment=graph_enviroment,
+            graph_environment=graph_environment,
         )
 
     @staticmethod
@@ -60,7 +64,7 @@ class NodeFactory:
         level: int,
         tree_sitter_node: "TreeSitterNode",
         parent: Union[FileNode, ClassNode, FunctionNode] = None,
-        graph_enviroment: "GraphEnviroment" = None,
+        graph_environment: "GraphEnvironment" = None,
     ) -> ClassNode:
         return ClassNode(
             name=class_name,
@@ -72,7 +76,7 @@ class NodeFactory:
             tree_sitter_node=tree_sitter_node,
             body_node=body_node,
             parent=parent,
-            graph_enviroment=graph_enviroment,
+            graph_environment=graph_environment,
         )
 
     @staticmethod
@@ -86,7 +90,7 @@ class NodeFactory:
         level: int,
         tree_sitter_node: "TreeSitterNode",
         parent: Union[FileNode, ClassNode, FunctionNode] = None,
-        graph_enviroment: "GraphEnviroment" = None,
+        graph_environment: "GraphEnvironment" = None,
     ) -> FunctionNode:
         return FunctionNode(
             name=function_name,
@@ -98,7 +102,7 @@ class NodeFactory:
             tree_sitter_node=tree_sitter_node,
             body_node=body_node,
             parent=parent,
-            graph_enviroment=graph_enviroment,
+            graph_environment=graph_environment,
         )
 
     @staticmethod
@@ -113,7 +117,7 @@ class NodeFactory:
         level: int,
         tree_sitter_node: "TreeSitterNode",
         parent: Union[FileNode, ClassNode, FunctionNode] = None,
-        graph_enviroment: "GraphEnviroment" = None,
+        graph_environment: "GraphEnvironment" = None,
     ) -> Union[ClassNode, FunctionNode]:
         if kind == NodeLabels.CLASS:
             return NodeFactory.create_class_node(
@@ -126,7 +130,7 @@ class NodeFactory:
                 level=level,
                 parent=parent,
                 tree_sitter_node=tree_sitter_node,
-                graph_enviroment=graph_enviroment,
+                graph_environment=graph_environment,
             )
         elif kind == NodeLabels.FUNCTION:
             return NodeFactory.create_function_node(
@@ -139,7 +143,7 @@ class NodeFactory:
                 level=level,
                 parent=parent,
                 tree_sitter_node=tree_sitter_node,
-                graph_enviroment=graph_enviroment,
+                graph_environment=graph_environment,
             )
         else:
             raise ValueError(f"Kind {kind} is not supported")

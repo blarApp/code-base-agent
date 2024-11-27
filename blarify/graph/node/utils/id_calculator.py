@@ -8,4 +8,4 @@ class IdCalculator:
 
     @staticmethod
     def generate_file_id(enviroment: str, pr_id: str, path: str) -> str:
-        return f"{enviroment}/{pr_id}/{path}"
+        return f"/{enviroment}/{pr_id}/{path}"

@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 
 @dataclass
-class GraphEnviroment:
+class GraphEnvironment:
     enviroment: str
     pr_id: str
 
@@ -11,4 +11,4 @@ class GraphEnviroment:
 
 
 if __name__ == "__main__":
-    print(GraphEnviroment("dev", None))
+    print(GraphEnvironment("dev", None))

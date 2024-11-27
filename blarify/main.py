@@ -3,7 +3,7 @@ from blarify.project_file_explorer import ProjectFilesIterator
 from blarify.project_graph_diff_creator import ProjectGraphDiffCreator, FileDiff, ChangeType
 from blarify.db_managers.neo4j_manager import Neo4jManager
 from blarify.code_references import LspQueryHelper
-from blarify.graph.graph_enviroment import GraphEnviroment
+from blarify.graph.graph_environment import GraphEnvironment
 
 import dotenv
 import os
@@ -24,7 +24,7 @@ def main(root_uri: str = None, blarignore_path: str = None):
     graph_manager = Neo4jManager(repoId, entity_id)
 
     graph_creator = ProjectGraphCreator(
-        "Test", lsp_query_helper, project_files_iterator, GraphEnviroment("dev", "MAIN")
+        "Test", lsp_query_helper, project_files_iterator, GraphEnvironment("dev", "MAIN")
     )
 
     graph = graph_creator.build()
@@ -57,22 +57,14 @@ def main_diff(file_diffs: list, root_uri: str = None, blarignore_path: str = Non
         lsp_query_helper=lsp_query_helper,
         project_files_iterator=project_files_iterator,
         file_diffs=file_diffs,
-        graph_enviroment=GraphEnviroment("dev", "MAIN"),
-        pr_enviroment=GraphEnviroment("dev", "pr-123"),
+        graph_environment=GraphEnvironment("dev", "MAIN"),
+        pr_environment=GraphEnvironment("dev", "pr-123"),
     )
 
     graph = graph_diff_creator.build()
 
     relationships = graph.get_relationships_as_objects()
     nodes = graph.get_nodes_as_objects()
-
-    # nodes = [node for node in nodes if node["attributes"]["path"] in [file_diff.path for file_diff in file_diffs]]
-    # relationships = [
-    #     relationship
-    #     for relationship in relationships
-    #     if relationship["sourceId"] in [node["attributes"]["node_id"] for node in nodes]
-    #     or relationship["targetId"] in [node["attributes"]["node_id"] for node in nodes]
-    # ]
 
     print(f"Saving graph with {len(nodes)} nodes and {len(relationships)} relationships")
     graph_manager.save_graph(nodes, relationships)
