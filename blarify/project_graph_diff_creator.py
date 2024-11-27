@@ -28,6 +28,7 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
     diff_identifier: str
     added_and_modified_paths: List[str]
     file_diffs: List[FileDiff]
+    pr_environment: GraphEnvironment
 
     def __init__(
         self,
@@ -36,10 +37,13 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
         project_files_iterator: ProjectFilesIterator,
         file_diffs: List[FileDiff],
         graph_environment: "GraphEnvironment" = None,
+        pr_environment: "GraphEnvironment" = None,
     ):
         super().__init__(root_path, lsp_query_helper, project_files_iterator, graph_environment=graph_environment)
         self.graph = Graph()
         self.file_diffs = file_diffs
+        self.graph_environment = graph_environment
+        self.pr_environment = pr_environment
 
         self.added_and_modified_paths = self.get_added_and_modified_paths()
 
@@ -86,10 +90,10 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
             file_node.add_extra_label_to_self_and_children("DIFF")
             file_node.add_extra_label_to_self_and_children(diff.change_type.value)
 
-            file_node.add_extra_attribute_to_self_and_children("diff_identifier", self.graph_environment.pr_id)
+            file_node.add_extra_attribute_to_self_and_children("diff_identifier", self.pr_environment.pr_id)
             file_node.add_extra_attribute("diff_text", diff.diff_text)
 
-            file_node.update_graph_environment_to_self_and_children(self.graph_environment)
+            file_node.update_graph_environment_to_self_and_children(self.pr_environment)
 
             if diff.change_type == ChangeType.MODIFIED:
                 self.graph.add_custom_relationship(file_node, clone_node, RelationshipType.MODIFIED)

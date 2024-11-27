@@ -57,21 +57,14 @@ def main_diff(file_diffs: list, root_uri: str = None, blarignore_path: str = Non
         lsp_query_helper=lsp_query_helper,
         project_files_iterator=project_files_iterator,
         file_diffs=file_diffs,
-        graph_environment=GraphEnvironment("dev", "0"),
+        graph_environment=GraphEnvironment("dev", "MAIN"),
+        pr_environment=GraphEnvironment("dev", "pr-123"),
     )
 
     graph = graph_diff_creator.build()
 
     relationships = graph.get_relationships_as_objects()
     nodes = graph.get_nodes_as_objects()
-
-    # nodes = [node for node in nodes if node["attributes"]["path"] in [file_diff.path for file_diff in file_diffs]]
-    # relationships = [
-    #     relationship
-    #     for relationship in relationships
-    #     if relationship["sourceId"] in [node["attributes"]["node_id"] for node in nodes]
-    #     or relationship["targetId"] in [node["attributes"]["node_id"] for node in nodes]
-    # ]
 
     print(f"Saving graph with {len(nodes)} nodes and {len(relationships)} relationships")
     graph_manager.save_graph(nodes, relationships)
@@ -83,13 +76,24 @@ if __name__ == "__main__":
     dotenv.load_dotenv()
     root_path = os.getenv("ROOT_PATH")
     blarignore_path = os.getenv("BLARIGNORE_PATH")
+    main(root_uri=root_path, blarignore_path=blarignore_path)
     main_diff(
         file_diffs=[
             FileDiff(
-                path="file:///Users/berrazuriz/Desktop/Blar/repositories/code-base-agent/src/blar_graph/run.py",
+                path="file:///home/juan/devel/blar/lsp-poc/blarify/graph/node/utils/node_factory.py",
                 diff_text="diff+++",
                 change_type=ChangeType.MODIFIED,
-            )
+            ),
+            FileDiff(
+                path="file:///home/juan/devel/blar/lsp-poc/blarify/graph/relationship/relationship_type.py",
+                diff_text="diff+++",
+                change_type=ChangeType.MODIFIED,
+            ),
+            FileDiff(
+                path="file:///home/juan/devel/blar/lsp-poc/blarify/graph/relationship/relationship_creator.py",
+                diff_text="diff+++",
+                change_type=ChangeType.DELETED,
+            ),
         ],
         root_uri=root_path,
         blarignore_path=blarignore_path,
