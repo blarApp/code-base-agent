@@ -148,16 +148,12 @@ class NodeFactory:
     def create_deleted_node(
         label: "NodeLabels",
         path: str,
-        name: str,
-        level: int,
-        parent: "Node" = None,
         graph_enviroment: "GraphEnviroment" = None,
     ):
         return DeletedNode(
             label=label,
             path=path,
-            name=name,
-            level=level,
-            parent=parent,
+            name="",
+            level=0,
             graph_enviroment=graph_enviroment,
         )

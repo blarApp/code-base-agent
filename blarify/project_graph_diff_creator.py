@@ -1,3 +1,5 @@
+from blarify.graph.node.utils.node_factory import NodeFactory
+from blarify.graph.node.types.node_labels import NodeLabels
 from blarify.project_graph_creator import ProjectGraphCreator
 from blarify.graph.relationship import RelationshipType
 from blarify.graph.graph import Graph
@@ -58,6 +60,7 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
         self.create_code_hierarchy()
         self.create_relationship_from_references_for_modified_and_added_files()
         self.keep_only_files_to_create()
+        self.add_deleted_relationships()
 
         return self.graph
 
@@ -129,4 +132,19 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
         return file_nodes
 
     def add_deleted_relationships(self):
-        pass
+        for diff in self.file_diffs:
+            if diff.change_type == ChangeType.DELETED:
+                deleted_node = NodeFactory.create_deleted_node(
+                    path=diff.path,
+                    graph_enviroment=self.pr_enviroment,
+                    label=NodeLabels.DELETED,
+                )
+
+                deleted_node2 = NodeFactory.create_deleted_node(
+                    path=diff.path,
+                    graph_enviroment=self.graph_enviroment,
+                    label=NodeLabels.FILE,
+                )
+
+                self.graph.add_node(deleted_node)
+                self.graph.add_custom_relationship(deleted_node, deleted_node2, RelationshipType.DELETED)

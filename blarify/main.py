@@ -100,7 +100,7 @@ if __name__ == "__main__":
             FileDiff(
                 path="file:///home/juan/devel/blar/lsp-poc/blarify/graph/relationship/relationship_creator.py",
                 diff_text="diff+++",
-                change_type=ChangeType.ADDED,
+                change_type=ChangeType.DELETED,
             ),
         ],
         root_uri=root_path,
