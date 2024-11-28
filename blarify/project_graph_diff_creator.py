@@ -94,7 +94,7 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
             file_node.add_extra_label_to_self_and_children(diff.change_type.value)
 
             file_node.add_extra_attribute_to_self_and_children("diff_identifier", self.pr_environment.diff_identifier)
-            file_node.add_extra_attribute("diff_text", diff.diff_text)
+            file_node.add_extra_attribute_to_self_and_children("diff_text", diff.diff_text)
 
             file_node.update_graph_environment_to_self_and_children(self.pr_environment)
 
