@@ -81,8 +81,16 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
     def get_paths_referenced_by_file_nodes(self, file_nodes):
         paths = set()
         for file in file_nodes:
+            if self.is_file_node_raw(file):
+                # Raw files can't be parsed, so we can't get references from them
+                continue
+
             paths.update(self.get_paths_referenced_by_file_node(file))
+
         return paths
+
+    def is_file_node_raw(self, file_node: FileNode):
+        return not file_node.has_tree_sitter_node()
 
     def mark_file_nodes_as_diff(self, file_nodes: List[FileNode]):
         for file_node in file_nodes:

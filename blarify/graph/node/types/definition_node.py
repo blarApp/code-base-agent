@@ -156,3 +156,6 @@ class DefinitionNode(Node):
         self._defines = [node for node in self._defines if node.path in paths_to_keep]
         for node in self._defines:
             node.filter_children_by_path(paths_to_keep)
+
+    def has_tree_sitter_node(self):
+        return self._tree_sitter_node is not None
