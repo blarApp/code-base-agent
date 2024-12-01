@@ -1,4 +1,3 @@
-from tqdm import tqdm
 from blarify.code_references import LspQueryHelper, FileExtensionNotSupported
 from blarify.project_file_explorer import ProjectFilesIterator
 from blarify.graph.node import NodeLabels, NodeFactory
@@ -137,7 +136,13 @@ class ProjectGraphCreator:
 
     def create_relationship_from_references(self, file_nodes: List["Node"]) -> None:
         references_relationships = []
-        for file_node in tqdm(file_nodes, desc="Processing file nodes"):
+        total_files = len(file_nodes)
+        progress_intervals = [int(total_files * 0.25), int(total_files * 0.5), int(total_files * 0.75), total_files]
+
+        for index, file_node in enumerate(file_nodes):
+            if index in progress_intervals:
+                print(f"Processing file nodes: {index}/{total_files} completed")
+
             nodes = self.graph.get_nodes_by_path(file_node.path)
             for node in nodes:
                 if node.label == NodeLabels.FILE:
