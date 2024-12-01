@@ -1,3 +1,4 @@
+from tqdm import tqdm
 from blarify.code_references import LspQueryHelper, FileExtensionNotSupported
 from blarify.project_file_explorer import ProjectFilesIterator
 from blarify.graph.node import NodeLabels, NodeFactory
@@ -106,8 +107,8 @@ class ProjectGraphCreator:
     def try_initialize_directory(self, file: "File") -> None:
         try:
             self.lsp_query_helper.initialize_directory(file)
-        except FileExtensionNotSupported as e:
-            print(f"Error initializing directory: {e}")
+        except FileExtensionNotSupported:
+            pass
 
     def _get_tree_sitter_for_file_extension(self, file_extension: str) -> TreeSitterHelper:
         language = self._get_language_definition(file_extension=file_extension)
@@ -136,7 +137,7 @@ class ProjectGraphCreator:
 
     def create_relationship_from_references(self, file_nodes: List["Node"]) -> None:
         references_relationships = []
-        for file_node in file_nodes:
+        for file_node in tqdm(file_nodes, desc="Processing file nodes"):
             nodes = self.graph.get_nodes_by_path(file_node.path)
             for node in nodes:
                 if node.label == NodeLabels.FILE:
