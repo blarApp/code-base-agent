@@ -1,3 +1,4 @@
+import time
 from blarify.code_references import LspQueryHelper, FileExtensionNotSupported
 from blarify.project_file_explorer import ProjectFilesIterator
 from blarify.graph.node import NodeLabels, NodeFactory
@@ -55,8 +56,14 @@ class ProjectGraphCreator:
         return self.graph
 
     def create_code_hierarchy(self):
+        start_time = time.time()
+
         for folder in self.project_files_iterator:
             self.process_folder(folder)
+
+        end_time = time.time()
+        execution_time = end_time - start_time
+        print(f"Execution time of create_code_hierarchy: {execution_time:.2f} seconds")
 
     def process_folder(self, folder: "Folder") -> None:
         folder_node = self.add_or_get_folder_node(folder)
@@ -139,6 +146,7 @@ class ProjectGraphCreator:
         total_files = len(file_nodes)
         progress_intervals = [int(total_files * 0.25), int(total_files * 0.5), int(total_files * 0.75), total_files]
 
+        print(f"Processing file nodes: 0/{total_files} completed")
         for index, file_node in enumerate(file_nodes):
             if index in progress_intervals:
                 print(f"Processing file nodes: {index}/{total_files} completed")
