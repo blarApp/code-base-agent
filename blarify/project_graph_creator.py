@@ -144,12 +144,11 @@ class ProjectGraphCreator:
     def create_relationship_from_references(self, file_nodes: List["Node"]) -> None:
         references_relationships = []
         total_files = len(file_nodes)
-        progress_intervals = [int(total_files * 0.25), int(total_files * 0.5), int(total_files * 0.75), total_files]
 
         print(f"Processing file nodes: 0/{total_files} completed")
         for index, file_node in enumerate(file_nodes):
-            if index in progress_intervals:
-                print(f"Processing file nodes: {index}/{total_files} completed")
+            print(f"Processing file nodes: {index}/{total_files}")
+            print(f"File: {file_node.name}")
 
             nodes = self.graph.get_nodes_by_path(file_node.path)
             for node in nodes:
