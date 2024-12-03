@@ -103,6 +103,7 @@ class LspCaller:
                 retries += 1
                 print(f"Connection lost. Retrying ({retries}/{self.connection_retries})...")
                 self.connect()
+                self.websocket.send(json.dumps(request))
                 if retries > self.connection_retries:
                     raise ConnectionClosedError("Failed to reconnect after maximum retries.")
 
