@@ -1,4 +1,5 @@
 import time
+from websockets import ConnectionClosedError
 import websockets.sync.client as ws
 import json
 
@@ -73,31 +74,37 @@ class LspCaller:
         # Send the request
         self.websocket.send(json.dumps(request))
 
-        return self.get_response(request_id)
+        return self.get_response(request_id, request)
 
     def send_notification(self, notification: dict) -> None:
         self.websocket.send(json.dumps(notification))
 
-    def get_response(self, request_id: str) -> dict:
+    def get_response(self, request_id: str, request: dict) -> dict:
         # Check the response cache first
         if request_id in self.unmatched_responses:
-            response = self.unmatched_responses.pop(request_id)
-            return response
+            return self.unmatched_responses.pop(request_id)
 
-        # Wait for the correct response ID
-        while True:
-            response = self.websocket.recv()
-            response = json.loads(response)
+        retries = 0
+        while retries <= self.connection_retries:
+            try:
+                response = self.websocket.recv()
+                response = json.loads(response)
 
-            if response.get("method") == "window/logMessage":
-                self.log(response)
+                if response.get("method") == "window/logMessage":
+                    self.log(response)
 
-            response_id = response.get("id")
+                response_id = response.get("id")
 
-            if response_id == request_id:
-                return response
-            else:
-                self.unmatched_responses[response_id] = response
+                if response_id == request_id:
+                    return response
+                else:
+                    self.unmatched_responses[response_id] = response
+            except ConnectionClosedError:
+                retries += 1
+                print(f"Connection lost. Retrying ({retries}/{self.connection_retries})...")
+                self.connect()
+                if retries > self.connection_retries:
+                    raise ConnectionClosedError("Failed to reconnect after maximum retries.")
 
     def get_document_symbols(self, document_uri: str) -> dict:
         document_symbol_request = {
