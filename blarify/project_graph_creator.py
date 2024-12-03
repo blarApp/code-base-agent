@@ -147,8 +147,9 @@ class ProjectGraphCreator:
 
         print(f"Processing file nodes: 0/{total_files} completed")
         for index, file_node in enumerate(file_nodes):
-            print(f"Processing file nodes: {index}/{total_files}")
-            print(f"File: {file_node.name}")
+            if index % 100 == 0:
+                print(f"Processing file nodes: {index}/{total_files}")
+                print(f"File: {file_node.name}")
 
             nodes = self.graph.get_nodes_by_path(file_node.path)
             for node in nodes:
