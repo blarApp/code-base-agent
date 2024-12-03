@@ -145,16 +145,14 @@ class ProjectGraphCreator:
         references_relationships = []
         total_files = len(file_nodes)
 
-        print(f"Processing file nodes: 0/{total_files} completed")
+        print(f"Processing files: 0/{total_files}")
         for index, file_node in enumerate(file_nodes):
             if index % 100 == 0:
-                print(f"Processing file nodes: {index}/{total_files}")
-                print(f"File: {file_node.name}")
+                print(f"Processing files: {index}/{total_files}")
 
             nodes = self.graph.get_nodes_by_path(file_node.path)
             for node in nodes:
                 if node.label == NodeLabels.FILE:
-                    print("File node ignored for references")
                     continue
 
                 tree_sitter_helper = self._get_tree_sitter_for_file_extension(node.extension)
@@ -165,7 +163,6 @@ class ProjectGraphCreator:
 
     def create_node_relationships(self, node: "Node", tree_sitter_helper: TreeSitterHelper) -> List["Relationship"]:
         references = self.lsp_query_helper.get_paths_where_node_is_referenced(node)
-        print(f"{len(references)} references found")
         relationships = RelationshipCreator.create_relationships_from_paths_where_node_is_referenced(
             references=references, node=node, graph=self.graph, tree_sitter_helper=tree_sitter_helper
         )
