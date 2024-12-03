@@ -26,7 +26,7 @@ class JavascriptDefinitions(LanguageDefinitions):
             return JavascriptDefinitions._is_variable_declaration_arrow_function(node)
 
         return LanguageDefinitions._should_create_node_base_implementation(
-            node, ["class_declaration, function_declaration, method_definition"]
+            node, ["class_declaration", "function_declaration", "method_definition"]
         )
 
     @staticmethod
