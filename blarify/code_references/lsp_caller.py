@@ -162,7 +162,7 @@ class LspCaller:
         result = self.send_request(reference_request).get("result")
         end_time = time.time()
         execution_time = end_time - start_time
-        print(f"Execution time of get_response: {execution_time:.2f} seconds")
+        print(f"Execution time of get_references: {execution_time:.2f} seconds")
         return result
 
     def get_selection_range(self, document_uri: str, position: dict) -> dict:
