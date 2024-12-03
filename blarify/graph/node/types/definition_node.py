@@ -92,7 +92,10 @@ class DefinitionNode(Node):
             end_text, end_byte = node.get_end_text_bytes(parent_text_bytes=text_bytes, bytes_offset=bytes_offset)
             text_bytes = start_text + node._get_text_for_skeleton() + end_text
             bytes_offset += node.calculate_new_offset(start_byte=start_byte, end_byte=end_byte)
-            self.code_text = text_bytes.decode("utf-8")
+
+            # TODO: This is a workaround to avoid decoding errors. We should find a better solution.
+            self.code_text = text_bytes.decode("utf-8", errors="ignore")
+
             node.skeletonize()
 
     def calculate_new_offset(self, start_byte: int, end_byte: int) -> int:

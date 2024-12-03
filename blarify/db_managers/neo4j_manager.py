@@ -7,6 +7,7 @@ from neo4j import Driver, GraphDatabase, exceptions
 
 load_dotenv()
 
+
 class Neo4jManager:
     entityId: str
     repoId: str

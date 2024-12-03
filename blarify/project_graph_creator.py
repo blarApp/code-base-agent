@@ -154,8 +154,10 @@ class ProjectGraphCreator:
             nodes = self.graph.get_nodes_by_path(file_node.path)
             for node in nodes:
                 if node.label == NodeLabels.FILE:
-                    print("File node ignored for references")
+                    print(f"File node '{node.name}' ignored for references")
                     continue
+
+                print(f"Processing node: {node.name}, of type: {node.label}")
 
                 tree_sitter_helper = self._get_tree_sitter_for_file_extension(node.extension)
                 references_relationships.extend(
