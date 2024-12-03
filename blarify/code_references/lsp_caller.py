@@ -147,7 +147,6 @@ class LspCaller:
         return None
 
     def get_references(self, document_uri: str, position: dict) -> dict:
-        start_time = time.time()
         reference_request = {
             "jsonrpc": "2.0",
             "id": self.id,
@@ -159,11 +158,7 @@ class LspCaller:
                 "workDoneToken": 1,
             },
         }
-        result = self.send_request(reference_request).get("result")
-        end_time = time.time()
-        execution_time = end_time - start_time
-        print(f"Execution time of get_references: {execution_time:.2f} seconds")
-        return result
+        return self.send_request(reference_request).get("result")
 
     def get_selection_range(self, document_uri: str, position: dict) -> dict:
         selection_range_request = {

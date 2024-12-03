@@ -66,6 +66,7 @@ class LspQueryHelper:
             return ""
 
     def get_paths_where_node_is_referenced(self, node: DefinitionNode) -> list[Reference]:
+        print("get_paths_where_node_is_referenced")
         lsp_caller = self.get_lsp_caller_for_extension(node.extension)
         references = lsp_caller.get_references(node.path, node.definition_range.start_dict)
         if not references:

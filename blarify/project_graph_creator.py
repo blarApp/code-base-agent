@@ -163,6 +163,7 @@ class ProjectGraphCreator:
         self.graph.add_references_relationships(references_relationships=references_relationships)
 
     def create_node_relationships(self, node: "Node", tree_sitter_helper: TreeSitterHelper) -> List["Relationship"]:
+        print("create_node_relationships")
         references = self.lsp_query_helper.get_paths_where_node_is_referenced(node)
         relationships = RelationshipCreator.create_relationships_from_paths_where_node_is_referenced(
             references=references, node=node, graph=self.graph, tree_sitter_helper=tree_sitter_helper
