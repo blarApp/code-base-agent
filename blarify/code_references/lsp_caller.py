@@ -79,13 +79,9 @@ class LspCaller:
         self.websocket.send(json.dumps(notification))
 
     def get_response(self, request_id: str) -> dict:
-        start_time = time.time()
         # Check the response cache first
         if request_id in self.unmatched_responses:
             response = self.unmatched_responses.pop(request_id)
-            end_time = time.time()
-            execution_time = end_time - start_time
-            print(f"Execution time of get_response: {execution_time:.2f} seconds")
             return response
 
         # Wait for the correct response ID
@@ -99,9 +95,6 @@ class LspCaller:
             response_id = response.get("id")
 
             if response_id == request_id:
-                end_time = time.time()
-                execution_time = end_time - start_time
-                print(f"Execution time of get_response: {execution_time:.2f} seconds")
                 return response
             else:
                 self.unmatched_responses[response_id] = response
