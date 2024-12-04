@@ -8,6 +8,7 @@ if TYPE_CHECKING:
     from blarify.graph.relationship import Relationship
     from blarify.code_references.types import Reference
     from tree_sitter import Node as TreeSitterNode
+    from blarify.graph.graph_environment import GraphEnvironment
 
 
 class DefinitionNode(Node):
