@@ -12,8 +12,8 @@ class RelationshipType(Enum):
     CALLS = "CALLS"
     INHERITS = "INHERITS"
     INSTANTIATES = "INSTANTIATES"
-    TYPING = "TYPING"
-    ASSIGNMENT = "ASSIGNMENT"
+    TYPES = "TYPES"
+    ASSIGNS = "ASSIGNS"
     USES = "USES"
 
     # Code diff

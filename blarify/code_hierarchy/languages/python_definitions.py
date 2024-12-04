@@ -60,13 +60,13 @@ class PythonDefinitions(LanguageDefinitions):
                 "import_from_statement": RelationshipType.IMPORTS,
                 "superclasses": RelationshipType.INHERITS,
                 "call": RelationshipType.INSTANTIATES,
-                "typing": RelationshipType.TYPING,
-                "assignment": RelationshipType.ASSIGNMENT,
+                "typing": RelationshipType.TYPES,
+                "assignment": RelationshipType.TYPES,
             },
             NodeLabels.FUNCTION: {
                 "call": RelationshipType.CALLS,
                 "interpolation": RelationshipType.CALLS,
                 "import_from_statement": RelationshipType.IMPORTS,
-                "assignment": RelationshipType.ASSIGNMENT,
+                "assignment": RelationshipType.ASSIGNS,
             },
         }
