@@ -62,11 +62,13 @@ class JavascriptDefinitions(LanguageDefinitions):
                 "import_clause": RelationshipType.IMPORTS,
                 "new_expression": RelationshipType.INSTANTIATES,
                 "class_heritage": RelationshipType.INHERITS,
+                "variable_declarator": RelationshipType.ASSIGNS,
             },
             NodeLabels.FUNCTION: {
                 "import_specifier": RelationshipType.IMPORTS,
                 "import_clause": RelationshipType.IMPORTS,
                 "call_expression": RelationshipType.CALLS,
+                "variable_declarator": RelationshipType.ASSIGNS,
             },
         }
 
