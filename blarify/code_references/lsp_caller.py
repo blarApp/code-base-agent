@@ -200,9 +200,14 @@ class LspCaller:
         self.send_notification(did_open_notification)
 
     def shutdown_exit_close(self) -> None:
-        self.shutdown()
-        self.exit()
-        self.close()
+        try:
+            self.shutdown()
+            self.exit()
+            self.close()
+        except ConnectionClosedError:
+            pass
+        except Exception as e:
+            print(f"Error closing connection {e}")
 
     def shutdown(self) -> None:
         shutdown_request = {
