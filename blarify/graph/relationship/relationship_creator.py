@@ -29,21 +29,12 @@ class RelationshipCreator:
             )
 
             relationship = Relationship(
-                start_node=node,
-                end_node=node_referenced,
+                start_node=node_referenced,
+                end_node=node,
                 rel_type=reference_type,
             )
             relationships.append(relationship)
         return relationships
-
-    @staticmethod
-    def create_defines_relationship(node: "Node", defined_node: "Node") -> Relationship:
-        rel_type = RelationshipCreator._get_relationship_type(defined_node)
-        return Relationship(
-            node,
-            defined_node,
-            rel_type,
-        )
 
     @staticmethod
     def _get_relationship_type(defined_node: "Node") -> RelationshipType:
@@ -53,6 +44,15 @@ class RelationshipCreator:
             return RelationshipType.CLASS_DEFINITION
         else:
             raise ValueError(f"Node {defined_node.label} is not a valid definition node")
+
+    @staticmethod
+    def create_defines_relationship(node: "Node", defined_node: "Node") -> Relationship:
+        rel_type = RelationshipCreator._get_relationship_type(defined_node)
+        return Relationship(
+            node,
+            defined_node,
+            rel_type,
+        )
 
     @staticmethod
     def create_contains_relationship(folder_node: "Node", contained_node: "Node") -> Relationship:
