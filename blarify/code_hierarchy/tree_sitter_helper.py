@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from tree_sitter import Node as TreeSitterNode
     from blarify.graph.node import DefinitionNode, Node, FolderNode, FileNode
     from blarify.code_references.types import Reference
-    from graph.graph_environment import GraphEnvironment
+    from blarify.graph.graph_environment import GraphEnvironment
 
 
 class TreeSitterHelper:

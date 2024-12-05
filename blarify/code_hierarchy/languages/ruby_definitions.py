@@ -50,9 +50,13 @@ class RubyDefinitions(LanguageDefinitions):
             ):
                 return RelationshipType.INSTANTIATES
 
+            if named_parent.type == "assignment":
+                return RelationshipType.ASSIGNS
+
             type_found = RubyDefinitions._get_relationship_type_for_node(
                 tree_sitter_node=named_parent, relationships_types=rel_types[node_label]
             )
+
             named_parent = named_parent.parent
         return type_found
 
