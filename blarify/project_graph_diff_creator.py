@@ -70,7 +70,7 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
         self.keep_only_files_to_create()
 
         self.add_deleted_relationships_and_nodes()
-        self.add_relation_to_parent_folder_for_modified_paths()
+        self.add_relation_to_parent_folder_for_modified_and_added_paths()
 
         return GraphUpdate(self.graph, self.external_relationship_store)
 
@@ -179,16 +179,10 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
 
         return original_file_node_id
 
-    def add_relation_to_parent_folder_for_modified_paths(self):
-        file_nodes = self.get_file_nodes_from_path_list(self.modified_paths)
+    def add_relation_to_parent_folder_for_modified_and_added_paths(self):
+        file_nodes = self.get_file_nodes_from_path_list(self.added_and_modified_paths)
 
         for file_node in file_nodes:
-            # parent_folder = NodeFactory.create_deleted_node(
-            #     path=self.get_folder_path_from_file_path(file_node.path),
-            #     graph_environment=self.graph_environment,
-            #     label=NodeLabels.FOLDER,
-            # )
-
             parent_folder_path = PathCalculator.get_folder_path_from_file_path(file_node.pure_path)
             parent_folder_path = PathCalculator.compute_relative_path_with_prefix(
                 parent_folder_path, self.graph_environment.root_path
