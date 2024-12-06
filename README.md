@@ -7,7 +7,7 @@ This repo introduces a method to represent a local code repository as a graph st
 
 # Example
 <img src="https://raw.githubusercontent.com/blarApp/lsp-poc/refs/heads/main/docs/visualisation.png"></img>
-This graph was generated from a Ruby on Rails project.
+This graph was generated from the code in this repository.
 
 
 # Notes
