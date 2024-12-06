@@ -65,7 +65,6 @@ class LspCaller:
                 "processId": None,
                 "rootUri": self.root_uri,
                 "capabilities": {},
-                "workspaceFolders": [{"uri": self.root_uri, "name": "root"}],
             },
         }
         self.send_request(initialize_request)
