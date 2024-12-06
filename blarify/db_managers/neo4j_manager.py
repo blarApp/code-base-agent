@@ -330,3 +330,14 @@ class Neo4jManager:
         # Fetch the result
         for record in result:
             print(f"Created {record['total']} edges")
+
+    def detatch_delete_nodes_with_path(self, path: str):
+        with self.driver.session() as session:
+            result = session.run(
+                """
+                MATCH (n {path: $path})
+                DETACH DELETE n
+                """,
+                path=path,
+            )
+            return result.data()

@@ -8,4 +8,5 @@ class IdCalculator:
 
     @staticmethod
     def generate_file_id(environment: str, pr_id: str, path: str) -> str:
-        return f"/{environment}/{pr_id}/{path}"
+        path_with_removed_first_slash = path[1:] if path.startswith("/") else path
+        return f"/{environment}/{pr_id}/{path_with_removed_first_slash}"

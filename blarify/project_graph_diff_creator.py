@@ -7,10 +7,14 @@ from blarify.graph.graph_environment import GraphEnvironment
 from blarify.code_references.lsp_helper import LspQueryHelper
 from blarify.project_file_explorer import ProjectFilesIterator
 from blarify.graph.node import FileNode
-from typing import List
+from typing import List, Tuple
 from dataclasses import dataclass
 from enum import Enum
 from copy import copy
+from blarify.graph.external_relationship_store import ExternalRelationshipStore
+from blarify.graph.graph_update import GraphUpdate
+from blarify.graph.node.utils.id_calculator import IdCalculator
+from blarify.utils.path_calculator import PathCalculator
 
 
 class ChangeType(Enum):
@@ -43,34 +47,41 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
     ):
         super().__init__(root_path, lsp_query_helper, project_files_iterator, graph_environment=graph_environment)
         self.graph = Graph()
+        self.external_relationship_store = ExternalRelationshipStore()
+
         self.file_diffs = file_diffs
         self.graph_environment = graph_environment
         self.pr_environment = pr_environment
 
-        self.added_and_modified_paths = self.get_added_and_modified_paths()
+        self.added_paths = self.get_added_paths()
+        self.modified_paths = self.get_modified_paths()
 
-    def get_added_and_modified_paths(self) -> List[str]:
-        return [
-            file_diff.path
-            for file_diff in self.file_diffs
-            if file_diff.change_type in [ChangeType.ADDED, ChangeType.MODIFIED]
-        ]
+        self.added_and_modified_paths = self.added_paths + self.modified_paths
 
-    def build(self) -> Graph:
+    def get_added_paths(self) -> List[str]:
+        return [file_diff.path for file_diff in self.file_diffs if file_diff.change_type == ChangeType.ADDED]
+
+    def get_modified_paths(self) -> List[str]:
+        return [file_diff.path for file_diff in self.file_diffs if file_diff.change_type == ChangeType.MODIFIED]
+
+    def build(self) -> GraphUpdate:
         self.create_code_hierarchy()
+        self.mark_updated_and_added_nodes_as_diff()
         self.create_relationship_from_references_for_modified_and_added_files()
         self.keep_only_files_to_create()
-        self.add_deleted_relationships()
+        self.add_relation_to_parent_folder_for_modified_and_added_paths()
+        self.add_deleted_relationships_and_nodes()
 
-        return self.graph
+        return GraphUpdate(self.graph, self.external_relationship_store)
+
+    def mark_updated_and_added_nodes_as_diff(self):
+        self.mark_file_nodes_as_diff(self.get_file_nodes_from_path_list(self.added_and_modified_paths))
 
     def keep_only_files_to_create(self):
         self.graph = self.graph.filtered_graph_by_paths(self.added_and_modified_paths)
 
     def create_relationship_from_references_for_modified_and_added_files(self):
         file_nodes = self.get_file_nodes_from_path_list(self.added_and_modified_paths)
-
-        self.mark_file_nodes_as_diff(file_nodes)
 
         paths = self.get_paths_referenced_by_file_nodes(file_nodes)
         paths = self.remove_paths_to_create_from_paths_referenced(paths)
@@ -106,7 +117,11 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
             file_node.update_graph_environment_to_self_and_children(self.pr_environment)
 
             if diff.change_type == ChangeType.MODIFIED:
-                self.graph.add_custom_relationship(file_node, clone_node, RelationshipType.MODIFIED)
+                self.external_relationship_store.create_and_add_relationship(
+                    start_node_id=file_node.hashed_id,
+                    end_node_id=clone_node.hashed_id,
+                    rel_type=RelationshipType.MODIFIED,
+                )
 
     def get_file_diff_for_path(self, path):
         for file_diff in self.file_diffs:
@@ -138,7 +153,7 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
                 file_nodes.append(file_node)
         return file_nodes
 
-    def add_deleted_relationships(self):
+    def add_deleted_relationships_and_nodes(self):
         for diff in self.file_diffs:
             if diff.change_type == ChangeType.DELETED:
                 deleted_node_pr_env = NodeFactory.create_deleted_node(
@@ -147,11 +162,48 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
                     label=NodeLabels.DELETED,
                 )
 
-                deleted_file_node = NodeFactory.create_deleted_node(
-                    path=diff.path,
-                    graph_environment=self.graph_environment,
-                    label=NodeLabels.FILE,
-                )
+                path = PathCalculator.uri_to_path(diff.path)
+                original_file_node_id = self.generate_file_id_from_path(path)
 
                 self.graph.add_node(deleted_node_pr_env)
-                self.graph.add_custom_relationship(deleted_file_node, deleted_node_pr_env, RelationshipType.DELETED)
+                self.external_relationship_store.create_and_add_relationship(
+                    start_node_id=original_file_node_id,
+                    end_node_id=deleted_node_pr_env.hashed_id,
+                    rel_type=RelationshipType.DELETED,
+                )
+
+    def generate_file_id_from_path(self, path):
+        relative_path = PathCalculator.compute_relative_path_with_prefix(path, self.graph_environment.root_path)
+        original_file_node_id = IdCalculator.generate_hashed_file_id(
+            self.graph_environment.environment, self.graph_environment.diff_identifier, relative_path
+        )
+
+        return original_file_node_id
+
+    def add_relation_to_parent_folder_for_modified_and_added_paths(self):
+        file_nodes = self.get_file_nodes_from_path_list(self.added_and_modified_paths)
+
+        for file_node in file_nodes:
+            parent_folder_path = PathCalculator.get_folder_path_from_file_path(file_node.pure_path)
+            parent_folder_path = PathCalculator.compute_relative_path_with_prefix(
+                parent_folder_path, self.graph_environment.root_path
+            )
+
+            parent_folder_id = IdCalculator.generate_hashed_file_id(
+                self.graph_environment.environment, self.graph_environment.diff_identifier, parent_folder_path
+            )
+
+            print(
+                IdCalculator.generate_file_id(
+                    self.graph_environment.environment, self.graph_environment.diff_identifier, parent_folder_path
+                ),
+                "<=",
+                file_node.id,
+            )
+
+            self.external_relationship_store.create_and_add_relationship(
+                start_node_id=parent_folder_id, end_node_id=file_node.hashed_id, rel_type=RelationshipType.CONTAINS
+            )
+
+    def get_folder_path_from_file_path(self, file_path):
+        return "/".join(file_path.split("/")[:-1])
