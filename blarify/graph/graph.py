@@ -16,13 +16,10 @@ class Graph:
     nodes_by_label: DefaultDict[str, Set[Node]]
     __nodes: Dict[str, Node]
     __references_relationships: List["Relationship"]
-    __custom_relationships: List["Relationship"]
-    __custom_relationship_objects: List[dict]
 
     def __init__(self):
         self.__nodes = {}
         self.__references_relationships = []
-        self.__custom_relationships = []
         self.nodes_by_path = defaultdict(set)
         self.file_nodes_by_path = {}
         self.folder_nodes_by_path = {}
@@ -64,9 +61,8 @@ class Graph:
     def get_relationships_as_objects(self) -> List[dict]:
         internal_relationships = [relationship.as_object() for relationship in self.get_relationships_from_nodes()]
         reference_relationships = [relationship.as_object() for relationship in self.__references_relationships]
-        custom_relationships = [relationship.as_object() for relationship in self.__custom_relationships]
 
-        return internal_relationships + reference_relationships + custom_relationships
+        return internal_relationships + reference_relationships
 
     def get_relationships_from_nodes(self) -> List["Relationship"]:
         relationships = []
@@ -92,29 +88,7 @@ class Graph:
             if relationship.start_node.path in paths_to_keep or relationship.end_node.path in paths_to_keep:
                 graph.add_references_relationships([relationship])
 
-        for relationship in self.__custom_relationships:
-            if relationship.start_node.path in paths_to_keep or relationship.end_node.path in paths_to_keep:
-                graph.add_custom_relationship(relationship.start_node, relationship.end_node, relationship.rel_type)
-
         return graph
-
-    def add_custom_relationship(self, start_node: Node, end_node: Node, relationship_type: "RelationshipType") -> None:
-        relationship = Relationship(start_node, end_node, relationship_type)
-        self.__custom_relationships.append(relationship)
-
-    def add_custom_relationship_object(
-        self, start_node_id: str, end_node_id: str, relationship_type: "RelationshipType"
-    ) -> None:
-        """
-        Warning: custom relationship objects will be deleted if graph is filtered
-        """
-        self.__custom_relationship_objects.append(
-            {
-                "sourceId": start_node_id,
-                "targetId": end_node_id,
-                "type": relationship_type.name,
-            }
-        )
 
     def __str__(self) -> str:
         to_return = ""
