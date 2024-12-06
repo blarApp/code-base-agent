@@ -66,21 +66,22 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
 
     def build(self) -> GraphUpdate:
         self.create_code_hierarchy()
+        self.mark_updated_and_added_nodes_as_diff()
         self.create_relationship_from_references_for_modified_and_added_files()
         self.keep_only_files_to_create()
-
-        self.add_deleted_relationships_and_nodes()
         self.add_relation_to_parent_folder_for_modified_and_added_paths()
+        self.add_deleted_relationships_and_nodes()
 
         return GraphUpdate(self.graph, self.external_relationship_store)
+
+    def mark_updated_and_added_nodes_as_diff(self):
+        self.mark_file_nodes_as_diff(self.get_file_nodes_from_path_list(self.added_and_modified_paths))
 
     def keep_only_files_to_create(self):
         self.graph = self.graph.filtered_graph_by_paths(self.added_and_modified_paths)
 
     def create_relationship_from_references_for_modified_and_added_files(self):
         file_nodes = self.get_file_nodes_from_path_list(self.added_and_modified_paths)
-
-        self.mark_file_nodes_as_diff(file_nodes)
 
         paths = self.get_paths_referenced_by_file_nodes(file_nodes)
         paths = self.remove_paths_to_create_from_paths_referenced(paths)
