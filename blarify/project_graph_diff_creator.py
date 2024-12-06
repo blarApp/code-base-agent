@@ -193,14 +193,6 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
                 self.graph_environment.environment, self.graph_environment.diff_identifier, parent_folder_path
             )
 
-            print(
-                IdCalculator.generate_file_id(
-                    self.graph_environment.environment, self.graph_environment.diff_identifier, parent_folder_path
-                ),
-                "<=",
-                file_node.id,
-            )
-
             self.external_relationship_store.create_and_add_relationship(
                 start_node_id=parent_folder_id, end_node_id=file_node.hashed_id, rel_type=RelationshipType.CONTAINS
             )

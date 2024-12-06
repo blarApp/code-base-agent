@@ -2,6 +2,7 @@ import time
 from websockets import ConnectionClosedError
 import websockets.sync.client as ws
 import json
+from blarify.logger import Logger
 
 LANGUAGES_ID_MAP = {
     ".tsx": "typescriptreact",
@@ -238,4 +239,4 @@ class LspCaller:
 
     def pretty_print(self, message: dict) -> None:
         ## print formatted json
-        print(json.dumps(message, indent=2))
+        Logger.log(json.dumps(message, indent=2))

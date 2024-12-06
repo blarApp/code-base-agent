@@ -13,6 +13,7 @@ from blarify.code_hierarchy.languages import (
     RubyDefinitions,
 )
 from typing import List, TYPE_CHECKING
+from blarify.logger import Logger
 
 if TYPE_CHECKING:
     from blarify.graph.node import FolderNode
@@ -63,7 +64,7 @@ class ProjectGraphCreator:
 
         end_time = time.time()
         execution_time = end_time - start_time
-        print(f"Execution time of create_code_hierarchy: {execution_time:.2f} seconds")
+        Logger.log(f"Execution time of create_code_hierarchy: {execution_time:.2f} seconds")
 
     def process_folder(self, folder: "Folder") -> None:
         folder_node = self.add_or_get_folder_node(folder)
@@ -147,7 +148,7 @@ class ProjectGraphCreator:
 
         for index, file_node in enumerate(file_nodes):
             start_time = time.time()
-            print(f"Processing file {file_node.name}: {index+1}/{total_files}")
+            Logger.log(f"Processing file {file_node.name}: {index+1}/{total_files}")
 
             nodes = self.graph.get_nodes_by_path(file_node.path)
             for node in nodes:
@@ -161,7 +162,7 @@ class ProjectGraphCreator:
             end_time = time.time()
 
             execution_time = end_time - start_time
-            print(
+            Logger.log(
                 f"Execution time for {file_node.name}: {execution_time:.2f} seconds, relationship count: {len(references_relationships)}"
             )
         self.graph.add_references_relationships(references_relationships=references_relationships)
