@@ -11,7 +11,6 @@ from blarify.graph.graph_environment import GraphEnvironment
 
 @dataclass
 class UpdatedFile:
-    graph_environment: GraphEnvironment
     path: str
 
 

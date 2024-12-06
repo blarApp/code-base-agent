@@ -141,11 +141,9 @@ if __name__ == "__main__":
     main_update(
         updated_files=[
             UpdatedFile(
-                graph_environment=GraphEnvironment("dev", "MAIN", root_path),
                 path="file:///home/juan/devel/blar/lsp-poc/blarify/graph/node/utils/node_factory.py",
             ),
             UpdatedFile(
-                graph_environment=GraphEnvironment("dev", "MAIN", root_path),
                 path="file:///home/juan/devel/blar/lsp-poc/blarify/graph/relationship/relationship_type.py",
             ),
         ],
