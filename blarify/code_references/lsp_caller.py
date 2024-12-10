@@ -3,6 +3,9 @@ from websockets import ConnectionClosedError
 import websockets.sync.client as ws
 import json
 from blarify.logger import Logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 LANGUAGES_ID_MAP = {
     ".tsx": "typescriptreact",
@@ -45,8 +48,8 @@ class LspCaller:
         try:
             self.websocket = ws.connect(uri)
         except ConnectionRefusedError:
-            print(f"Connection refused to {uri}")
-            print(f"Retrying {retries}/{self.connection_retries}")
+            logger.info(f"Connection refused to {uri}")
+            logger.info(f"Retrying {retries}/{self.connection_retries}")
             if retries < self.connection_retries:
                 time.sleep(1)
                 self.connect(retries + 1)
@@ -102,7 +105,7 @@ class LspCaller:
                     self.unmatched_responses[response_id] = response
             except ConnectionClosedError:
                 retries += 1
-                print(f"Connection lost. Retrying ({retries}/{self.connection_retries})...")
+                logger.info(f"Connection lost. Retrying ({retries}/{self.connection_retries})...")
                 self.connect()
                 self.websocket.send(json.dumps(request))
                 if retries > self.connection_retries:
@@ -208,7 +211,7 @@ class LspCaller:
         except ConnectionClosedError:
             pass
         except Exception as e:
-            print(f"Error closing connection {e}")
+            logger.info(f"Error closing connection {e}")
 
     def shutdown(self) -> None:
         shutdown_request = {
