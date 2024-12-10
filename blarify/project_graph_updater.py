@@ -1,9 +1,6 @@
 from dataclasses import dataclass
 from blarify.project_graph_diff_creator import ProjectGraphDiffCreator, FileDiff, ChangeType
 from typing import List
-from blarify.graph.graph import Graph
-from blarify.graph.external_relationship_store import ExternalRelationshipStore
-from blarify.graph.node import FileNode
 from blarify.graph.graph_update import GraphUpdate
 
 from blarify.graph.graph_environment import GraphEnvironment
