@@ -1,6 +1,6 @@
 from blarify.project_graph_creator import ProjectGraphCreator
 from blarify.project_file_explorer import ProjectFilesIterator
-from blarify.project_graph_updater import ProjectGraphUpdater
+from blarify.project_graph_updater import ProjectGraphUpdater, UpdatedFile
 from blarify.project_graph_diff_creator import ProjectGraphDiffCreator, FileDiff, ChangeType
 from blarify.db_managers.neo4j_manager import Neo4jManager
 from blarify.code_references import LspQueryHelper
@@ -9,11 +9,6 @@ from blarify.utils.file_remover import FileRemover
 
 import dotenv
 import os
-import logging
-
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-
-logger = logging.getLogger(__name__)
 
 
 def main(root_path: str = None, blarignore_path: str = None):
@@ -41,7 +36,7 @@ def main(root_path: str = None, blarignore_path: str = None):
     relationships = graph.get_relationships_as_objects()
     nodes = graph.get_nodes_as_objects()
 
-    logger.info(f"Saving graph with {len(nodes)} nodes and {len(relationships)} relationships")
+    print(f"Saving graph with {len(nodes)} nodes and {len(relationships)} relationships")
     graph_manager.save_graph(nodes, relationships)
     graph_manager.close()
 
@@ -75,7 +70,7 @@ def main_diff(file_diffs: list, root_uri: str = None, blarignore_path: str = Non
     relationships = graph.get_relationships_as_objects()
     nodes = graph.get_nodes_as_objects()
 
-    logger.info(f"Saving graph with {len(nodes)} nodes and {len(relationships)} relationships")
+    print(f"Saving graph with {len(nodes)} nodes and {len(relationships)} relationships")
     graph_manager.save_graph(nodes, relationships)
     graph_manager.close()
     lsp_query_helper.shutdown_exit_close()
@@ -109,7 +104,7 @@ def main_update(updated_files: list, root_uri: str = None, blarignore_path: str 
     relationships = graph.get_relationships_as_objects()
     nodes = graph.get_nodes_as_objects()
 
-    logger.info(f"Saving graph with {len(nodes)} nodes and {len(relationships)} relationships")
+    print(f"Saving graph with {len(nodes)} nodes and {len(relationships)} relationships")
     graph_manager.save_graph(nodes, relationships)
     graph_manager.close()
     lsp_query_helper.shutdown_exit_close()
@@ -124,12 +119,35 @@ if __name__ == "__main__":
     dotenv.load_dotenv()
     root_path = os.getenv("ROOT_PATH")
     blarignore_path = os.getenv("BLARIGNORE_PATH")
+    main(root_path=root_path, blarignore_path=blarignore_path)
     main_diff(
         file_diffs=[
             FileDiff(
-                path="file:///Users/berrazuriz/Desktop/Blar/repositories/lsp-poc/blarify/graph/node/utils/node_factory.py",
+                path="file:///home/juan/devel/blar/lsp-poc/blarify/graph/node/utils/node_factory.py",
                 diff_text="diff+++",
-                change_type=ChangeType.MODIFIED,
+                change_type=ChangeType.ADDED,
+            ),
+            FileDiff(
+                path="file:///home/juan/devel/blar/lsp-poc/blarify/graph/relationship/relationship_type.py",
+                diff_text="diff+++",
+                change_type=ChangeType.ADDED,
+            ),
+            FileDiff(
+                path="file:///home/juan/devel/blar/lsp-poc/blarify/graph/relationship/relationship_creator.py",
+                diff_text="diff+++",
+                change_type=ChangeType.DELETED,
+            ),
+        ],
+        root_uri=root_path,
+        blarignore_path=blarignore_path,
+    )
+    main_update(
+        updated_files=[
+            UpdatedFile(
+                path="file:///home/juan/devel/blar/lsp-poc/blarify/graph/node/utils/node_factory.py",
+            ),
+            UpdatedFile(
+                path="file:///home/juan/devel/blar/lsp-poc/blarify/graph/relationship/relationship_type.py",
             ),
         ],
         root_uri=root_path,
