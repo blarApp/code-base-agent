@@ -5,6 +5,7 @@ from blarify.project_graph_diff_creator import ProjectGraphDiffCreator, FileDiff
 from blarify.db_managers.neo4j_manager import Neo4jManager
 from blarify.code_references import LspQueryHelper
 from blarify.graph.graph_environment import GraphEnvironment
+from blarify.utils.file_remover import FileRemover
 
 import dotenv
 import os
@@ -19,6 +20,8 @@ def main(root_path: str = None, blarignore_path: str = None):
         root_path=root_path,
         blarignore_path=blarignore_path,
     )
+
+    FileRemover.soft_delete_if_exists(root_path, "Gemfile")
 
     repoId = "test-ruby"
     entity_id = "test"

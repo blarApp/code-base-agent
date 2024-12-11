@@ -1,5 +1,6 @@
 from tree_sitter import Tree, Parser
 
+from blarify.code_hierarchy.languages.FoundRelationshipScope import FoundRelationshipScope
 from blarify.graph.node import NodeFactory
 from blarify.code_references.types import Reference, Range, Point
 from .languages import LanguageDefinitions, BodyNodeNotFound, FallbackDefinitions
@@ -48,13 +49,18 @@ class TreeSitterHelper:
 
     def get_reference_type(
         self, original_node: "DefinitionNode", reference: "Reference", node_referenced: "DefinitionNode"
-    ) -> RelationshipType:
+    ) -> FoundRelationshipScope:
         node_in_point_reference = self._get_node_in_point_reference(node=node_referenced, reference=reference)
-        type_found = self.language_definitions.get_relationship_type(
+        found_relationship_scope = self.language_definitions.get_relationship_type(
             node=original_node, node_in_point_reference=node_in_point_reference
         )
 
-        return type_found if type_found is not None else RelationshipType.USES
+        if not found_relationship_scope:
+            found_relationship_scope = FoundRelationshipScope(
+                node_in_scope=None, relationship_type=RelationshipType.USES
+            )
+
+        return found_relationship_scope
 
     def _get_node_in_point_reference(self, node: "DefinitionNode", reference: "Reference") -> "TreeSitterNode":
         # Get the tree-sitter node for the reference

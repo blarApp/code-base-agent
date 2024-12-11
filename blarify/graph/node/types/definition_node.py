@@ -1,6 +1,7 @@
 from typing import List, Optional, Tuple, Union, TYPE_CHECKING, Dict
 from blarify.graph.relationship import RelationshipCreator
 from blarify.graph.node.types.node import Node
+from blarify.logger import Logger
 
 if TYPE_CHECKING:
     from ..class_node import ClassNode
@@ -95,6 +96,7 @@ class DefinitionNode(Node):
             bytes_offset += node.calculate_new_offset(start_byte=start_byte, end_byte=end_byte)
 
             # TODO: This is a workaround to avoid decoding errors. We should find a better solution.
+            Logger.log(f"Decoding text for node: {node.name}")
             self.code_text = text_bytes.decode("utf-8", errors="ignore")
 
             node.skeletonize()

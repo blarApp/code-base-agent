@@ -9,17 +9,20 @@ class Relationship:
     start_node: "Node"
     end_node: "Node"
     rel_type: "RelationshipType"
+    scope_text: str
 
-    def __init__(self, start_node: "Node", end_node: "Node", rel_type: "RelationshipType"):
+    def __init__(self, start_node: "Node", end_node: "Node", rel_type: "RelationshipType", scope_text: str = ""):
         self.start_node = start_node
         self.end_node = end_node
         self.rel_type = rel_type
+        self.scope_text = scope_text
 
     def as_object(self) -> dict:
         return {
             "sourceId": self.start_node.hashed_id,
             "targetId": self.end_node.hashed_id,
             "type": self.rel_type.name,
+            "scopeText": self.scope_text,
         }
 
     def __str__(self) -> str:

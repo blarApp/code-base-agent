@@ -1,4 +1,5 @@
 from typing import Set, Optional
+from blarify.code_hierarchy.languages.FoundRelationshipScope import FoundRelationshipScope
 from blarify.graph.relationship import RelationshipType
 from blarify.graph.node import NodeLabels
 
@@ -39,14 +40,14 @@ class JavascriptDefinitions(LanguageDefinitions):
         return LanguageDefinitions._get_identifier_node_base_implementation(node)
 
     @staticmethod
-    def get_relationship_type(node: GraphNode, node_in_point_reference: Node) -> Optional[RelationshipType]:
+    def get_relationship_type(node: GraphNode, node_in_point_reference: Node) -> Optional[FoundRelationshipScope]:
         return JavascriptDefinitions._find_relationship_type(
             node_label=node.label,
             node_in_point_reference=node_in_point_reference,
         )
 
     @staticmethod
-    def _find_relationship_type(node_label: str, node_in_point_reference: Node) -> Optional[RelationshipType]:
+    def _find_relationship_type(node_label: str, node_in_point_reference: Node) -> Optional[FoundRelationshipScope]:
         relationship_types = JavascriptDefinitions._get_relationship_types_by_label()
         relevant_relationship_types = relationship_types.get(node_label, {})
 

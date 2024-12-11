@@ -318,7 +318,7 @@ class Neo4jManager:
         edge_creation_query = """
         CALL apoc.periodic.iterate(
             'WITH $edgesList AS edges UNWIND edges AS edgeObject RETURN edgeObject',
-            'MATCH (node1:NODE {node_id: edgeObject.sourceId, entityId: $entityId}) MATCH (node2:NODE {node_id: edgeObject.targetId, entityId: $entityId}) CALL apoc.create.relationship(node1, edgeObject.type, {}, node2) YIELD rel RETURN rel',
+            'MATCH (node1:NODE {node_id: edgeObject.sourceId, entityId: $entityId}) MATCH (node2:NODE {node_id: edgeObject.targetId, entityId: $entityId}) CALL apoc.create.relationship(node1, edgeObject.type, {scopeText: edgeObject.scopeText}, node2) YIELD rel RETURN rel',
             {batchSize:$batchSize, parallel:false, iterateList: true, params:{edgesList: $edgesList, entityId: $entityId}}
         )
         YIELD batches, total, errorMessages, updateStatistics

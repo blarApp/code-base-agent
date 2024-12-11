@@ -10,3 +10,4 @@ README.md
 422.html
 .venv
 .ruff_cache
+node_modules

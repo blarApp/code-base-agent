@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from tree_sitter import Parser
 from typing import Set
+from blarify.code_hierarchy.languages.FoundRelationshipScope import FoundRelationshipScope
 from blarify.graph.relationship import RelationshipType
 from blarify.graph.node import NodeLabels
 from tree_sitter import Node
@@ -68,15 +69,15 @@ class LanguageDefinitions(ABC):
 
     @staticmethod
     @abstractmethod
-    def get_relationship_type(node: Node, node_in_point_reference: Node) -> Optional[RelationshipType]:
+    def get_relationship_type(node: Node, node_in_point_reference: Node) -> Optional[FoundRelationshipScope]:
         """This method should tell you how the node is being used in the node_in_point_reference"""
 
     @staticmethod
-    def _traverse_and_find_relationships(node: Node, relationship_mapping: dict) -> Optional[RelationshipType]:
+    def _traverse_and_find_relationships(node: Node, relationship_mapping: dict) -> Optional[FoundRelationshipScope]:
         while node is not None:
             relationship_type = LanguageDefinitions._get_relationship_type_for_node(node, relationship_mapping)
             if relationship_type:
-                return relationship_type
+                return FoundRelationshipScope(node_in_scope=node, relationship_type=relationship_type)
             node = node.parent
         return None
 

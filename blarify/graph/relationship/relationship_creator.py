@@ -24,15 +24,22 @@ class RelationshipCreator:
             if node_referenced is None or node.id == node_referenced.id:
                 continue
 
-            reference_type = tree_sitter_helper.get_reference_type(
+            found_relationship_scope = tree_sitter_helper.get_reference_type(
                 original_node=node, reference=reference, node_referenced=node_referenced
             )
+
+            if found_relationship_scope.node_in_scope is None:
+                scope_text = ""
+            else:
+                scope_text = found_relationship_scope.node_in_scope.text.decode("utf-8")
 
             relationship = Relationship(
                 start_node=node_referenced,
                 end_node=node,
-                rel_type=reference_type,
+                rel_type=found_relationship_scope.relationship_type,
+                scope_text=scope_text,
             )
+
             relationships.append(relationship)
         return relationships
 

@@ -1,3 +1,4 @@
+from blarify.code_hierarchy.languages.FoundRelationshipScope import FoundRelationshipScope
 from .language_definitions import LanguageDefinitions
 from blarify.graph.relationship import RelationshipType
 
@@ -31,7 +32,7 @@ class PythonDefinitions(LanguageDefinitions):
     def get_body_node(node: Node) -> Node:
         return LanguageDefinitions._get_body_node_base_implementation(node)
 
-    def get_relationship_type(node: GraphNode, node_in_point_reference: Node) -> Optional[RelationshipType]:
+    def get_relationship_type(node: GraphNode, node_in_point_reference: Node) -> Optional[FoundRelationshipScope]:
         return PythonDefinitions._find_relationship_type(
             node_label=node.label,
             node_in_point_reference=node_in_point_reference,
@@ -46,7 +47,7 @@ class PythonDefinitions(LanguageDefinitions):
     def get_language_file_extensions() -> Set[str]:
         return {".py"}
 
-    def _find_relationship_type(node_label: str, node_in_point_reference: Node) -> Optional[RelationshipType]:
+    def _find_relationship_type(node_label: str, node_in_point_reference: Node) -> Optional[FoundRelationshipScope]:
         relationship_types = PythonDefinitions._get_relationship_types_by_label()
         relevant_relationship_types = relationship_types.get(node_label, {})
 
