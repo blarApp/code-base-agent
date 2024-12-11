@@ -4,6 +4,9 @@ from typing import Any, List
 
 from dotenv import load_dotenv
 from neo4j import Driver, GraphDatabase, exceptions
+import logging
+
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
@@ -310,7 +313,7 @@ class Neo4jManager:
 
         # Fetch the result
         for record in result:
-            print(f"Created {record['total']} nodes")
+            logger.info(f"Created {record['total']} nodes")
 
     @staticmethod
     def _create_edges_txn(tx, edgesList: List[Any], batch_size: int, entityId: str):
@@ -329,7 +332,7 @@ class Neo4jManager:
 
         # Fetch the result
         for record in result:
-            print(f"Created {record['total']} edges")
+            logger.info(f"Created {record['total']} edges")
 
     def detatch_delete_nodes_with_path(self, path: str):
         with self.driver.session() as session:

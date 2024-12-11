@@ -1,5 +1,7 @@
 from dataclasses import dataclass
-from blarify.format_verifier import FormatVerifier
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -13,4 +15,4 @@ class GraphEnvironment:
 
 
 if __name__ == "__main__":
-    print(GraphEnvironment("dev", None))
+    logger.info(GraphEnvironment("dev", None))

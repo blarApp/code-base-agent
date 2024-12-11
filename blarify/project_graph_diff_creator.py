@@ -7,7 +7,7 @@ from blarify.graph.graph_environment import GraphEnvironment
 from blarify.code_references.lsp_helper import LspQueryHelper
 from blarify.project_file_explorer import ProjectFilesIterator
 from blarify.graph.node import FileNode
-from typing import List, Tuple
+from typing import List
 from dataclasses import dataclass
 from enum import Enum
 from copy import copy
@@ -122,6 +122,7 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
                     end_node_id=clone_node.hashed_id,
                     rel_type=RelationshipType.MODIFIED,
                 )
+            file_node.skeletonize()
 
     def get_file_diff_for_path(self, path):
         for file_diff in self.file_diffs:
