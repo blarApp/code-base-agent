@@ -34,7 +34,6 @@ class ProjectGraphUpdater(ProjectGraphDiffCreator):
         self.create_code_hierarchy()
         self.create_relationship_from_references_for_modified_and_added_files()
         self.keep_only_files_to_create()
-        self.add_relation_to_parent_folder_for_modified_and_added_paths()
 
         return GraphUpdate(
             graph=self.graph,

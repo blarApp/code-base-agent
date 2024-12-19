@@ -69,7 +69,6 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
         self.mark_updated_and_added_nodes_as_diff()
         self.create_relationship_from_references_for_modified_and_added_files()
         self.keep_only_files_to_create()
-        self.add_relation_to_parent_folder_for_modified_and_added_paths()
         self.add_deleted_relationships_and_nodes()
 
         return GraphUpdate(self.graph, self.external_relationship_store)
@@ -78,7 +77,35 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
         self.mark_file_nodes_as_diff(self.get_file_nodes_from_path_list(self.added_and_modified_paths))
 
     def keep_only_files_to_create(self):
-        self.graph = self.graph.filtered_graph_by_paths(self.added_and_modified_paths)
+        paths_to_keep = self.get_parent_paths_from_paths(self.added_and_modified_paths)
+        paths_to_keep.extend(self.added_and_modified_paths)
+
+        self.graph = self.graph.filtered_graph_by_paths(paths_to_keep)
+
+    def get_parent_paths_from_paths(self, paths):
+        parent_paths = []
+        for path in paths:
+            parent_paths.extend(self.get_parent_paths_from_path(path))
+
+        return parent_paths
+
+    def get_parent_paths_from_path(self, path):
+        parents = []
+
+        iterations = 0
+        while self.graph_environment.root_path in path:
+            path = PathCalculator.get_parent_folder_path(path)
+            parents.append(path)
+
+            self.raise_error_if_deeply_nested_file(iterations, path)
+            iterations += 1
+
+        return parents
+
+    def raise_error_if_deeply_nested_file(self, iteration, path):
+        MAX_ITERATIONS = 100000
+        if iteration > MAX_ITERATIONS:
+            raise ValueError(f"Deeply nested file, probably an infinite loop: {path}")
 
     def create_relationship_from_references_for_modified_and_added_files(self):
         file_nodes = self.get_file_nodes_from_path_list(self.added_and_modified_paths)
@@ -180,23 +207,3 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
         )
 
         return original_file_node_id
-
-    def add_relation_to_parent_folder_for_modified_and_added_paths(self):
-        file_nodes = self.get_file_nodes_from_path_list(self.added_and_modified_paths)
-
-        for file_node in file_nodes:
-            parent_folder_path = PathCalculator.get_folder_path_from_file_path(file_node.pure_path)
-            parent_folder_path = PathCalculator.compute_relative_path_with_prefix(
-                parent_folder_path, self.graph_environment.root_path
-            )
-
-            parent_folder_id = IdCalculator.generate_hashed_file_id(
-                self.graph_environment.environment, self.graph_environment.diff_identifier, parent_folder_path
-            )
-
-            self.external_relationship_store.create_and_add_relationship(
-                start_node_id=parent_folder_id, end_node_id=file_node.hashed_id, rel_type=RelationshipType.CONTAINS
-            )
-
-    def get_folder_path_from_file_path(self, file_path):
-        return "/".join(file_path.split("/")[:-1])

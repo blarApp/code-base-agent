@@ -302,7 +302,13 @@ class Neo4jManager:
         node_creation_query = """
         CALL apoc.periodic.iterate(
             "UNWIND $nodeList AS node RETURN node",
-            "CALL apoc.create.node(node.extra_labels + [node.type, 'NODE'], apoc.map.merge(node.attributes, {repoId: $repoId, entityId: $entityId})) YIELD node as n RETURN count(n) as count",
+            "CALL apoc.merge.node(
+            node.extra_labels + [node.type, 'NODE'],
+            apoc.map.merge(node.attributes, {repoId: $repoId, entityId: $entityId}),
+            {},
+            {}
+            )
+            YIELD node as n RETURN count(n) as count",
             {batchSize: $batchSize, parallel: false, iterateList: true, params: {nodeList: $nodeList, repoId: $repoId, entityId: $entityId}}
         )
         YIELD batches, total, errorMessages, updateStatistics
@@ -321,7 +327,17 @@ class Neo4jManager:
         edge_creation_query = """
         CALL apoc.periodic.iterate(
             'WITH $edgesList AS edges UNWIND edges AS edgeObject RETURN edgeObject',
-            'MATCH (node1:NODE {node_id: edgeObject.sourceId, entityId: $entityId}) MATCH (node2:NODE {node_id: edgeObject.targetId, entityId: $entityId}) CALL apoc.create.relationship(node1, edgeObject.type, {scopeText: edgeObject.scopeText}, node2) YIELD rel RETURN rel',
+            'MATCH (node1:NODE {node_id: edgeObject.sourceId, entityId: $entityId}) 
+            MATCH (node2:NODE {node_id: edgeObject.targetId, entityId: $entityId}) 
+            CALL apoc.merge.relationship(
+            node1, 
+            edgeObject.type, 
+            {scopeText: edgeObject.scopeText}, 
+            {}, 
+            node2, 
+            {}
+            ) 
+            YIELD rel RETURN rel',
             {batchSize:$batchSize, parallel:false, iterateList: true, params:{edgesList: $edgesList, entityId: $entityId}}
         )
         YIELD batches, total, errorMessages, updateStatistics

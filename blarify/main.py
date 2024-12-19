@@ -23,7 +23,7 @@ def main(root_path: str = None, blarignore_path: str = None):
 
     FileRemover.soft_delete_if_exists(root_path, "Gemfile")
 
-    repoId = "test-ruby"
+    repoId = "test"
     entity_id = "test"
     graph_manager = Neo4jManager(repoId, entity_id)
 
@@ -119,35 +119,34 @@ if __name__ == "__main__":
     dotenv.load_dotenv()
     root_path = os.getenv("ROOT_PATH")
     blarignore_path = os.getenv("BLARIGNORE_PATH")
-    main(root_path=root_path, blarignore_path=blarignore_path)
-    main_diff(
-        file_diffs=[
-            FileDiff(
-                path="file:///home/juan/devel/blar/lsp-poc/blarify/graph/node/utils/node_factory.py",
-                diff_text="diff+++",
-                change_type=ChangeType.ADDED,
-            ),
-            FileDiff(
-                path="file:///home/juan/devel/blar/lsp-poc/blarify/graph/relationship/relationship_type.py",
-                diff_text="diff+++",
-                change_type=ChangeType.ADDED,
-            ),
-            FileDiff(
-                path="file:///home/juan/devel/blar/lsp-poc/blarify/graph/relationship/relationship_creator.py",
-                diff_text="diff+++",
-                change_type=ChangeType.DELETED,
-            ),
-        ],
-        root_uri=root_path,
-        blarignore_path=blarignore_path,
-    )
+    # main(root_path=root_path, blarignore_path=blarignore_path)
+    # main_diff(
+    #     file_diffs=[
+    #         FileDiff(
+    #             path="file:///home/juan/devel/blar/lsp-poc/blarify/graph/node/utils/node_factory.py",
+    #             diff_text="diff+++",
+    #             change_type=ChangeType.ADDED,
+    #         ),
+    #         FileDiff(
+    #             path="file:///home/juan/devel/blar/lsp-poc/blarify/graph/relationship/relationship_type.py",
+    #             diff_text="diff+++",
+    #             change_type=ChangeType.ADDED,
+    #         ),
+    #         FileDiff(
+    #             path="file:///home/juan/devel/blar/lsp-poc/blarify/graph/relationship/relationship_creator.py",
+    #             diff_text="diff+++",
+    #             change_type=ChangeType.DELETED,
+    #         ),
+    #     ],
+    #     root_uri=root_path,
+    #     blarignore_path=blarignore_path,
+    # )
+
+    print("Updating")
     main_update(
         updated_files=[
             UpdatedFile(
-                path="file:///home/juan/devel/blar/lsp-poc/blarify/graph/node/utils/node_factory.py",
-            ),
-            UpdatedFile(
-                path="file:///home/juan/devel/blar/lsp-poc/blarify/graph/relationship/relationship_type.py",
+                path="file:///home/juan/devel/blar/git-webhook-tester/app/test/main.py",
             ),
         ],
         root_uri=root_path,

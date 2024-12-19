@@ -21,5 +21,5 @@ class PathCalculator:
         return f"{last_dir}{relative_path}"
 
     @staticmethod
-    def get_folder_path_from_file_path(file_path):
+    def get_parent_folder_path(file_path):
         return "/".join(file_path.split("/")[:-1])
