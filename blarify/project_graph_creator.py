@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from blarify.project_file_explorer import File, Folder
     from blarify.graph.node import Node, FileNode
     from blarify.graph.relationship import Relationship
-    from graph.graph_environment import GraphEnvironment
+    from blarify.graph.graph_environment import GraphEnvironment
 
 
 class ProjectGraphCreator:
