@@ -10,7 +10,7 @@ license = "MIT"
 packages = [{include = "blarify"}]
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.12"
+python = ">=3.10,<=3.12"
 asyncio = "^3.4.3"
 websockets = "^13.1"
 neo4j = "^5.25.0"
