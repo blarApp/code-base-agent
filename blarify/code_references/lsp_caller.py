@@ -67,7 +67,13 @@ class LspCaller:
             "params": {
                 "processId": None,
                 "rootUri": self.root_uri,
-                "capabilities": {},
+                "initializationOptions": {
+                    "completion": {"disableSnippets": False, "resolveEagerly": False, "ignorePatterns": []},
+                    "diagnostics": {"enable": False, "didOpen": True, "didChange": False, "didSave": False},
+                    "hover": {
+                        "enable": False,
+                    },
+                },
             },
         }
         self.send_request(initialize_request)
