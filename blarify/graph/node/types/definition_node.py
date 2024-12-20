@@ -86,17 +86,24 @@ class DefinitionNode(Node):
 
         parent_node = self._tree_sitter_node
         text_bytes = parent_node.text
-        bytes_offset = 0
+        bytes_offset = -self._tree_sitter_node.start_byte - 1
+        if self.name == "Range":
+            pass
         for node in self._defines:
             if node.body_node is None:
                 continue
+            if self.name == "Range":
+                pass
             start_text, start_byte = node.get_start_text_bytes(parent_text_bytes=text_bytes, bytes_offset=bytes_offset)
             end_text, end_byte = node.get_end_text_bytes(parent_text_bytes=text_bytes, bytes_offset=bytes_offset)
             text_bytes = start_text + node._get_text_for_skeleton() + end_text
+
             bytes_offset += node.calculate_new_offset(start_byte=start_byte, end_byte=end_byte)
 
             # TODO: This is a workaround to avoid decoding errors. We should find a better solution.
             Logger.log(f"Decoding text for node: {node.name}")
+            if node.name == "Range":
+                pass
             self.code_text = text_bytes.decode("utf-8", errors="ignore")
 
             node.skeletonize()
@@ -105,11 +112,11 @@ class DefinitionNode(Node):
         return len(self._get_text_for_skeleton()) - (end_byte - start_byte)
 
     def get_start_text_bytes(self, parent_text_bytes: bytes, bytes_offset: int) -> Tuple[bytes, int]:
-        start_byte = self.body_node.start_byte - 1 + bytes_offset
+        start_byte = self.body_node.start_byte + bytes_offset - 1
         return parent_text_bytes[:start_byte], start_byte
 
     def get_end_text_bytes(self, parent_text_bytes: bytes, bytes_offset: int) -> Tuple[bytes, int]:
-        end_byte = self.body_node.end_byte + bytes_offset
+        end_byte = self.body_node.end_byte + bytes_offset + 1
         return self.remove_line_break_if_present(text=parent_text_bytes[end_byte:]), end_byte
 
     def remove_line_break_if_present(self, text: bytes) -> Tuple[bytes, int]:

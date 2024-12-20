@@ -149,6 +149,7 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
                     end_node_id=clone_node.hashed_id,
                     rel_type=RelationshipType.MODIFIED,
                 )
+
             file_node.skeletonize()
 
     def get_file_diff_for_path(self, path):

@@ -7,5 +7,5 @@ logger = logging.getLogger(__name__)
 class Logger:
     @staticmethod
     def log(message: str) -> None:
-        if os.getenv("DEBUG"):
-            logger.debug(message)
+        # if os.getenv("DEBUG"):
+        logger.debug(message)
