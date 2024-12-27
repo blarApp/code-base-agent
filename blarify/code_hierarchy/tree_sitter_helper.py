@@ -72,9 +72,10 @@ class TreeSitterHelper:
     def create_nodes_and_relationships_in_file(self, file: File, parent_folder: "FolderNode" = None) -> List["Node"]:
         self.current_path = file.uri_path
         self.created_nodes = []
-        self.base_node_source_code = self._get_content_from_file(file)
+        self.base_node_source_code = ""
 
         if self._does_path_have_valid_extension(file.uri_path):
+            self.base_node_source_code = self._get_content_from_file(file)
             self._handle_paths_with_valid_extension(file=file, parent_folder=parent_folder)
             return self.created_nodes
 

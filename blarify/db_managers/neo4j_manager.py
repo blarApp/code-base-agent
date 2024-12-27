@@ -327,8 +327,8 @@ class Neo4jManager:
         edge_creation_query = """
         CALL apoc.periodic.iterate(
             'WITH $edgesList AS edges UNWIND edges AS edgeObject RETURN edgeObject',
-            'MATCH (node1:NODE {node_id: edgeObject.sourceId, entityId: $entityId}) 
-            MATCH (node2:NODE {node_id: edgeObject.targetId, entityId: $entityId}) 
+            'MATCH (node1:NODE {node_id: edgeObject.sourceId}) 
+            MATCH (node2:NODE {node_id: edgeObject.targetId}) 
             CALL apoc.merge.relationship(
             node1, 
             edgeObject.type, 

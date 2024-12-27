@@ -28,7 +28,7 @@ def main(root_path: str = None, blarignore_path: str = None):
     graph_manager = Neo4jManager(repoId, entity_id)
 
     graph_creator = ProjectGraphCreator(
-        "Test", lsp_query_helper, project_files_iterator, GraphEnvironment("dev", "MAIN", root_path)
+        root_path, lsp_query_helper, project_files_iterator, GraphEnvironment("dev", "MAIN", root_path)
     )
 
     graph = graph_creator.build()

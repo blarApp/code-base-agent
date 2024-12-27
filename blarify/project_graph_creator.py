@@ -53,6 +53,10 @@ class ProjectGraphCreator:
 
     def build(self) -> Graph:
         self.create_code_hierarchy()
+
+        # TODO: Implement a better way to wait for the lsp to finish
+        time.sleep(15)
+
         self.create_relationships_from_references_for_files()
         return self.graph
 
