@@ -15,6 +15,7 @@ class ProjectFilesIterator:
         paths_to_skip: List[str] = None,
         names_to_skip: List[str] = None,
         blarignore_path: str = None,
+        max_file_size_mb: int = 10,
     ):
         self.paths_to_skip = paths_to_skip or []
         self.root_path = root_path
@@ -74,13 +75,16 @@ class ProjectFilesIterator:
         ]
 
     def _should_skip(self, path: str) -> bool:
-        if path.find("Chat menu") != -1:
-            pass
         is_basename_in_names_to_skip = os.path.basename(path) in self.names_to_skip
 
         is_path_in_paths_to_skip = any(path.startswith(path_to_skip) for path_to_skip in self.paths_to_skip)
 
-        return is_basename_in_names_to_skip or is_path_in_paths_to_skip
+        is_file_size_too_big = os.path.getsize(path) > self._mb_to_bytes(10)
+
+        return is_basename_in_names_to_skip or is_path_in_paths_to_skip or is_file_size_too_big
+
+    def _mb_to_bytes(self, mb: int) -> int:
+        return 1024 * 1024 * mb
 
     def get_base_name(self, current_path: str) -> str:
         return os.path.basename(current_path)
