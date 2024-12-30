@@ -1,5 +1,6 @@
 from blarify.project_graph_creator import ProjectGraphCreator
 from blarify.project_file_explorer import ProjectFilesIterator
+from blarify.project_file_explorer import ProjectFileStats
 from blarify.project_graph_updater import ProjectGraphUpdater, UpdatedFile
 from blarify.project_graph_diff_creator import ProjectGraphDiffCreator, FileDiff, ChangeType
 from blarify.db_managers.neo4j_manager import Neo4jManager
@@ -20,6 +21,8 @@ def main(root_path: str = None, blarignore_path: str = None):
         root_path=root_path,
         blarignore_path=blarignore_path,
     )
+
+    ProjectFileStats(project_files_iterator).print(limit=10)
 
     FileRemover.soft_delete_if_exists(root_path, "Gemfile")
 

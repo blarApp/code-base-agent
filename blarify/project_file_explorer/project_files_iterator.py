@@ -74,8 +74,6 @@ class ProjectFilesIterator:
         ]
 
     def _should_skip(self, path: str) -> bool:
-        if path.find("Chat menu") != -1:
-            pass
         is_basename_in_names_to_skip = os.path.basename(path) in self.names_to_skip
 
         is_path_in_paths_to_skip = any(path.startswith(path_to_skip) for path_to_skip in self.paths_to_skip)
