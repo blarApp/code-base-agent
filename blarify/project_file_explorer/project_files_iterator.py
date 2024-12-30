@@ -8,6 +8,7 @@ class ProjectFilesIterator:
     root_path: str
     paths_to_skip: List[str]
     names_to_skip: List[str]
+    max_file_size_mb: int
 
     def __init__(
         self,
@@ -20,6 +21,7 @@ class ProjectFilesIterator:
         self.paths_to_skip = paths_to_skip or []
         self.root_path = root_path
         self.names_to_skip = names_to_skip or []
+        self.max_file_size_mb = max_file_size_mb
 
         if blarignore_path:
             self.names_to_skip.extend(self.get_ignore_files(blarignore_path))
@@ -79,7 +81,7 @@ class ProjectFilesIterator:
 
         is_path_in_paths_to_skip = any(path.startswith(path_to_skip) for path_to_skip in self.paths_to_skip)
 
-        is_file_size_too_big = os.path.getsize(path) > self._mb_to_bytes(10)
+        is_file_size_too_big = os.path.getsize(path) > self._mb_to_bytes(self.max_file_size_mb)
 
         return is_basename_in_names_to_skip or is_path_in_paths_to_skip or is_file_size_too_big
 
