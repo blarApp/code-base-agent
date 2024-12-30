@@ -1,6 +1,7 @@
 from blarify.project_file_explorer.project_files_iterator import ProjectFilesIterator
 import os
 from typing import Optional
+from blarify.logger import Logger
 
 
 class ProjectFileStats:
@@ -26,6 +27,8 @@ class ProjectFileStats:
         if limit:
             file_stats = file_stats[:limit]
 
+        print(f"Top {len(file_stats)} files by size:")
+        print(f"Total files: {len(self.file_stats)}")
         for file_stat in file_stats:
             print(f"{file_stat['name']} - {file_stat['lines_count']} lines - {file_stat['size']} bytes")
 
@@ -45,5 +48,5 @@ class ProjectFileStats:
             with open(file_path, "r") as file:
                 return file.readlines()
         except Exception as e:
-            print(f"Error reading file {file_path}: {e}")
+            Logger.log(f"Error reading file {file_path}: {e}")
             return []
