@@ -27,10 +27,10 @@ class ProjectFileStats:
         if limit:
             file_stats = file_stats[:limit]
 
-        print(f"Top {len(file_stats)} files by size:")
-        print(f"Total files: {len(self.file_stats)}")
+        Logger.log(f"Top {len(file_stats)} files by size:")
+        Logger.log(f"Total files: {len(self.file_stats)}")
         for file_stat in file_stats:
-            print(f"{file_stat['name']} - {file_stat['lines_count']} lines - {file_stat['size']} bytes")
+            Logger.log(f"{file_stat['name']} - {file_stat['lines_count']} lines - {file_stat['size']} bytes")
 
     def get_file_stats(self, file_path: str):
         file_lines = self._read_file(file_path)

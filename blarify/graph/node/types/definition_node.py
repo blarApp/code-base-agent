@@ -101,9 +101,6 @@ class DefinitionNode(Node):
             bytes_offset += node.calculate_new_offset(start_byte=start_byte, end_byte=end_byte)
 
             # TODO: This is a workaround to avoid decoding errors. We should find a better solution.
-            Logger.log(f"Decoding text for node: {node.name}")
-            if node.name == "Range":
-                pass
             self.code_text = text_bytes.decode("utf-8", errors="ignore")
 
             node.skeletonize()

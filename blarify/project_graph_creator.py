@@ -148,11 +148,17 @@ class ProjectGraphCreator:
 
     def create_relationship_from_references(self, file_nodes: List["Node"]) -> None:
         references_relationships = []
+
         total_files = len(file_nodes)
+        log_interval = max(1, total_files // 10)
 
         for index, file_node in enumerate(file_nodes):
             start_time = time.time()
-            Logger.log(f"Processing file {file_node.name}: {index+1}/{total_files}")
+            self._log_if_multiple_of_x(
+                index=index,
+                x=log_interval,
+                text=f"Processing file {file_node.name}: {index+1}/{total_files} -- {100*index/total_files:.2f}%",
+            )
 
             nodes = self.graph.get_nodes_by_path(file_node.path)
             for node in nodes:
@@ -166,10 +172,17 @@ class ProjectGraphCreator:
             end_time = time.time()
 
             execution_time = end_time - start_time
-            Logger.log(
-                f"Execution time for {file_node.name}: {execution_time:.2f} seconds, relationship count: {len(references_relationships)}"
+            self._log_if_multiple_of_x(
+                index=index,
+                x=log_interval,
+                text=f"Execution time for {file_node.name}: {execution_time:.2f} seconds, relationship count: {len(references_relationships)}",
             )
+
         self.graph.add_references_relationships(references_relationships=references_relationships)
+
+    def _log_if_multiple_of_x(self, index: int, x: int, text: str) -> None:
+        if index % x == 0:
+            Logger.log(text)
 
     def create_node_relationships(self, node: "Node", tree_sitter_helper: TreeSitterHelper) -> List["Relationship"]:
         references = self.lsp_query_helper.get_paths_where_node_is_referenced(node)
