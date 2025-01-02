@@ -55,7 +55,9 @@ class ProjectGraphCreator:
         self.create_code_hierarchy()
 
         # TODO: Implement a better way to wait for the lsp to finish
+        Logger.log("Waiting for LSP to finish")
         time.sleep(15)
+        Logger.log("LSP finished")
 
         self.create_relationships_from_references_for_files()
         return self.graph
