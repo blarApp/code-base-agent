@@ -140,27 +140,7 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
 
             file_node.add_extra_label_to_self_and_children("DIFF")
 
-            lines = UnidiffParser.get_modified_lines(diff.diff_text)
-
-            for line in lines:
-                file_node.add_label_to_children_in_reference(
-                    diff.change_type.value,
-                    Reference(
-                        reference={
-                            "uri": file_node.path,
-                            "range": {
-                                "start": {
-                                    "line": line,
-                                    "character": 0,
-                                },
-                                "end": {
-                                    "line": line,
-                                    "character": 0,
-                                },
-                            },
-                        }
-                    ),
-                )
+            self.label_modified_scope(file_node, diff)
 
             file_node.add_extra_label_to_self_and_children(diff.change_type.value)
 
@@ -176,6 +156,31 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
                 )
 
             file_node.skeletonize()
+
+    def label_modified_scope(self, file_node: FileNode, diff: FileDiff):
+        lines = UnidiffParser.get_modified_lines(diff.diff_text)
+        print("Changed lines", lines)
+
+        # THIS IS A TEMPORAL FIX, TO DO THIS THE RIGHT WAY WE NEED A SMALL REFACTOR OF THE WAY WE HANDLE DIFFS
+        for line in lines:
+            file_node.add_label_to_children_in_reference(
+                ChangeType.MODIFIED.value,
+                Reference(
+                    reference={
+                        "uri": file_node.path,
+                        "range": {
+                            "start": {
+                                "line": line,
+                                "character": 0,
+                            },
+                            "end": {
+                                "line": line,
+                                "character": 0,
+                            },
+                        },
+                    }
+                ),
+            )
 
     def get_file_diff_for_path(self, path):
         for file_diff in self.file_diffs:

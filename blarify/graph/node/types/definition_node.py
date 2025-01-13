@@ -139,7 +139,10 @@ class DefinitionNode(Node):
 
     def add_label_to_children_in_reference(self, label: str, reference: "Reference") -> None:
         node = self.reference_search(reference)
-        node.add_extra_label_to_self_and_children(label)
+        print("Found node", node.name, node.path)
+        node.add_extra_label(
+            label=label,
+        )
 
     def add_extra_attribute_to_self_and_children(self, key: str, value: str) -> None:
         self.add_extra_attribute(key, value)

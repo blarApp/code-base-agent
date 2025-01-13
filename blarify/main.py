@@ -123,27 +123,17 @@ if __name__ == "__main__":
     root_path = os.getenv("ROOT_PATH")
     blarignore_path = os.getenv("BLARIGNORE_PATH")
     main(root_path=root_path, blarignore_path=blarignore_path)
-    # main_diff(
-    #     file_diffs=[
-    #         FileDiff(
-    #             path="file:///home/juan/devel/blar/lsp-poc/blarify/graph/node/utils/node_factory.py",
-    #             diff_text="diff+++",
-    #             change_type=ChangeType.ADDED,
-    #         ),
-    #         FileDiff(
-    #             path="file:///home/juan/devel/blar/lsp-poc/blarify/graph/relationship/relationship_type.py",
-    #             diff_text="diff+++",
-    #             change_type=ChangeType.ADDED,
-    #         ),
-    #         FileDiff(
-    #             path="file:///home/juan/devel/blar/lsp-poc/blarify/graph/relationship/relationship_creator.py",
-    #             diff_text="diff+++",
-    #             change_type=ChangeType.DELETED,
-    #         ),
-    #     ],
-    #     root_uri=root_path,
-    #     blarignore_path=blarignore_path,
-    # )
+    main_diff(
+        file_diffs=[
+            FileDiff(
+                path="file:///home/juan/devel/blar/lsp-poc/blarify/graph/node/types/definition_node.py",
+                diff_text="""@@ -1,7 +1,6 @@\n from typing import List, Optional, Tuple, Union, TYPE_CHECKING, Dict\n from blarify.graph.relationship import RelationshipCreator\n from blarify.graph.node.types.node import Node\n-from blarify.logger import Logger\n \n if TYPE_CHECKING:\n     from ..class_node import ClassNode\n@@ -131,10 +130,17 @@ def get_all_definition_ranges(self) -> List["Reference"]:\n         return definition_ranges\n \n     def add_extra_label_to_self_and_children(self, label: str) -> None:\n-        self.extra_labels.append(label)\n+        self.add_extra_label(label)\n         for node in self._defines:\n             node.add_extra_label_to_self_and_children(label)\n \n+    def add_extra_label(self, label: str) -> None:\n+        self.extra_labels.append(label)\n+\n+    def add_label_to_children_in_reference(self, label: str, reference: "Reference") -> None:\n+        node = self.reference_search(reference)\n+        node.add_extra_label_to_self_and_children(label)\n+\n     def add_extra_attribute_to_self_and_children(self, key: str, value: str) -> None:\n         self.add_extra_attribute(key, value)\n         for node in self._defines:""",
+                change_type=ChangeType.ADDED,
+            ),
+        ],
+        root_uri=root_path,
+        blarignore_path=blarignore_path,
+    )
 
     print("Updating")
     # main_update(
