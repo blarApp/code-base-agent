@@ -1,7 +1,6 @@
 from typing import List, Optional, Tuple, Union, TYPE_CHECKING, Dict
 from blarify.graph.relationship import RelationshipCreator
 from blarify.graph.node.types.node import Node
-from blarify.logger import Logger
 
 if TYPE_CHECKING:
     from ..class_node import ClassNode
