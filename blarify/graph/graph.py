@@ -3,10 +3,7 @@ from blarify.graph.node import Node, NodeLabels
 from blarify.graph.node import FileNode
 from blarify.graph.relationship import Relationship
 
-from typing import List, TYPE_CHECKING, Dict, Set, DefaultDict, Optional
-
-if TYPE_CHECKING:
-    from .relationship import RelationshipType
+from typing import List, Dict, Set, DefaultDict, Optional
 
 
 class Graph:
