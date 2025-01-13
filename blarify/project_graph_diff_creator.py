@@ -24,6 +24,8 @@ class ChangeType(Enum):
     MODIFIED = "MODIFIED"
     DELETED = "DELETED"
 
+    SMALLEST_ADDED_SCOPE = "SMALLEST_ADDED_SCOPE"
+
 
 @dataclass
 class FileDiff:
@@ -164,7 +166,7 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
         # THIS IS A TEMPORAL FIX, TO DO THIS THE RIGHT WAY WE NEED A SMALL REFACTOR OF THE WAY WE HANDLE DIFFS
         for line in lines:
             file_node.add_label_to_children_in_reference(
-                ChangeType.MODIFIED.value,
+                ChangeType.SMALLEST_ADDED_SCOPE.value,
                 Reference(
                     reference={
                         "uri": file_node.path,
