@@ -130,9 +130,16 @@ class DefinitionNode(Node):
         return definition_ranges
 
     def add_extra_label_to_self_and_children(self, label: str) -> None:
-        self.extra_labels.append(label)
+        self.add_extra_label(label)
         for node in self._defines:
             node.add_extra_label_to_self_and_children(label)
+
+    def add_extra_label(self, label: str) -> None:
+        self.extra_labels.append(label)
+
+    def add_label_to_children_in_reference(self, label: str, reference: "Reference") -> None:
+        node = self.reference_search(reference)
+        node.add_extra_label_to_self_and_children(label)
 
     def add_extra_attribute_to_self_and_children(self, key: str, value: str) -> None:
         self.add_extra_attribute(key, value)

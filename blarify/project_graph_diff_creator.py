@@ -1,3 +1,4 @@
+from blarify.code_references.types import Reference
 from blarify.graph.node.utils.node_factory import NodeFactory
 from blarify.graph.node.types.node_labels import NodeLabels
 from blarify.project_graph_creator import ProjectGraphCreator
@@ -15,6 +16,7 @@ from blarify.graph.external_relationship_store import ExternalRelationshipStore
 from blarify.graph.graph_update import GraphUpdate
 from blarify.graph.node.utils.id_calculator import IdCalculator
 from blarify.utils.path_calculator import PathCalculator
+from blarify.utils.unidiff_parser import UnidiffParser
 
 
 class ChangeType(Enum):
@@ -137,6 +139,29 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
             diff = self.get_file_diff_for_path(file_node.path)
 
             file_node.add_extra_label_to_self_and_children("DIFF")
+
+            lines = UnidiffParser.get_modified_lines(diff.diff_text)
+
+            for line in lines:
+                file_node.add_label_to_children_in_reference(
+                    diff.change_type.value,
+                    Reference(
+                        reference={
+                            "uri": file_node.path,
+                            "range": {
+                                "start": {
+                                    "line": line,
+                                    "character": 0,
+                                },
+                                "end": {
+                                    "line": line,
+                                    "character": 0,
+                                },
+                            },
+                        }
+                    ),
+                )
+
             file_node.add_extra_label_to_self_and_children(diff.change_type.value)
 
             file_node.add_extra_attribute_to_self_and_children("diff_text", diff.diff_text)
