@@ -16,6 +16,7 @@ from blarify.graph.graph_update import GraphUpdate
 from blarify.graph.node.utils.id_calculator import IdCalculator
 from blarify.utils.path_calculator import PathCalculator
 from blarify.graph.node import Node, DefinitionNode
+from blarify.utils.relative_id_calculator import RelativeIdCalculator
 
 
 class ChangeType(Enum):
@@ -31,22 +32,18 @@ class FileDiff:
     change_type: ChangeType
 
 
-class GraphDelta:
-    added_nodes: List[Node]
-    modified_nodes: List[DefinitionNode]
-    deleted_nodes: List[Node]
+@dataclass
+class PreviousNodeState:
+    node_path: str
+    code_text: str
 
-    def __init__(self, added_nodes, modified_nodes, deleted_nodes):
-        self.added_nodes = added_nodes
-        self.modified_nodes = modified_nodes
-        self.deleted_nodes = deleted_nodes
+    @property
+    def relative_id(self):
+        return RelativeIdCalculator.calculate(self.node_path)
 
-    def build(old: Graph, new: Graph):
-        added_nodes = old.get_added_nodes(updated_graph=new)
-        modified_nodes = old.get_modified_nodes(updated_graph=new)
-        deleted_nodes = old.get_deleted_nodes(updated_graph=new)
-
-        return GraphDelta(added_nodes, modified_nodes, deleted_nodes)
+    @property
+    def hashed_id(self):
+        return IdCalculator.hash_id(self.node_path)
 
 
 class ProjectGraphDiffCreator(ProjectGraphCreator):
@@ -92,25 +89,35 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
 
         return GraphUpdate(self.graph, self.external_relationship_store)
 
-    def build_with_graph_delta_relationships(self, previous_graph) -> GraphUpdate:
+    def build_with_previous_node_states(self, previous_node_states: List[PreviousNodeState]) -> GraphUpdate:
+        """
+        This method will also create "MODIFIED" relationships between the specific nodes that were modified
+
+        For example, if a function was modified, a "MODIFIED" relationship will be created between the previous and current function nodes
+        """
         self.create_code_hierarchy()
-        graph_delta = GraphDelta.build(previous_graph, self.graph)
         self.mark_updated_and_added_nodes_as_diff()
-        self.create_relationships_for_modified_nodes(graph_delta)
+        self.create_relationships_from_previous_node_states(previous_node_states)
         self.create_relationship_from_references_for_modified_and_added_files()
         self.keep_only_files_to_create()
         self.add_deleted_relationships_and_nodes()
 
         return GraphUpdate(self.graph, self.external_relationship_store)
 
-    def create_relationships_for_modified_nodes(self, graph_delta):
-        for modified_node in graph_delta.modified_nodes:
-            equivalent = self.graph.get_node_by_relative_id(modified_node.relative_id)
+    def create_relationships_from_previous_node_states(self, previous_node_states: List[PreviousNodeState]):
+        for previous_node in previous_node_states:
+            equivalent_node: DefinitionNode = self.graph.get_node_by_relative_id(previous_node.relative_id)
 
-            if equivalent:
+            is_equivalent_node_modified = equivalent_node and not equivalent_node.is_code_text_equivalent(
+                previous_node.code_text
+            )
+
+            print(f"Node {previous_node.node_path} is modified: {is_equivalent_node_modified}")
+
+            if is_equivalent_node_modified:
                 self.external_relationship_store.create_and_add_relationship(
-                    start_node_id=modified_node.hashed_id,
-                    end_node_id=equivalent.hashed_id,
+                    start_node_id=equivalent_node.hashed_id,
+                    end_node_id=previous_node.hashed_id,
                     rel_type=RelationshipType.MODIFIED,
                 )
 
