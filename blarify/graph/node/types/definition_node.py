@@ -148,15 +148,12 @@ class DefinitionNode(Node):
         for node in self._defines:
             node.update_graph_environment_to_self_and_children(graph_environment)
 
-    def are_code_texts_equivalent(self, other: "DefinitionNode") -> bool:
-        code_text = self.code_text
-        other_code_text = other.code_text
-
+    def is_code_text_equivalent(self, code_text: str) -> bool:
         # Removing _get_text_for_skeleton() from code_text with a regex
-        code_text = re.sub(r"# Code replaced for brevity, see node: \w+\n", "", code_text)
-        other_code_text = re.sub(r"# Code replaced for brevity, see node: \w+\n", "", other_code_text)
+        stripped_code_text = re.sub(r"# Code replaced for brevity, see node: \w+\n", "", self.code_text)
+        other_code_text = re.sub(r"# Code replaced for brevity, see node: \w+\n", "", code_text)
 
-        return code_text == other_code_text
+        return stripped_code_text == other_code_text
 
     def __copy__(self):
         cls = self.__class__

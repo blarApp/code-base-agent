@@ -3,6 +3,8 @@ from hashlib import md5
 from blarify.format_verifier import FormatVerifier
 import os
 
+from blarify.utils.relative_id_calculator import RelativeIdCalculator
+
 if TYPE_CHECKING:
     from blarify.graph.relationship import Relationship
     from blarify.graph.node import NodeLabels
@@ -48,10 +50,7 @@ class Node:
         """
         Returns the id without the graph environment prefix or root folder name
         """
-        splitted = self.id.strip("/").split("/")
-        if len(splitted) > 3:
-            return "/" + "/".join(splitted[3:])
-        return "/"
+        return RelativeIdCalculator.calculate(self.id)
 
     @property
     def id(self) -> str:
