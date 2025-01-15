@@ -2,6 +2,8 @@ from typing import List, Optional, Tuple, Union, TYPE_CHECKING, Dict
 from blarify.graph.relationship import RelationshipCreator
 from blarify.graph.node.types.node import Node
 
+import re
+
 if TYPE_CHECKING:
     from ..class_node import ClassNode
     from ..function_node import FunctionNode
@@ -86,13 +88,9 @@ class DefinitionNode(Node):
         parent_node = self._tree_sitter_node
         text_bytes = parent_node.text
         bytes_offset = -self._tree_sitter_node.start_byte - 1
-        if self.name == "Range":
-            pass
         for node in self._defines:
             if node.body_node is None:
                 continue
-            if self.name == "Range":
-                pass
             start_text, start_byte = node.get_start_text_bytes(parent_text_bytes=text_bytes, bytes_offset=bytes_offset)
             end_text, end_byte = node.get_end_text_bytes(parent_text_bytes=text_bytes, bytes_offset=bytes_offset)
             text_bytes = start_text + node._get_text_for_skeleton() + end_text
@@ -130,9 +128,12 @@ class DefinitionNode(Node):
         return definition_ranges
 
     def add_extra_label_to_self_and_children(self, label: str) -> None:
-        self.extra_labels.append(label)
+        self.add_extra_label(label)
         for node in self._defines:
             node.add_extra_label_to_self_and_children(label)
+
+    def add_extra_label(self, label: str) -> None:
+        self.extra_labels.append(label)
 
     def add_extra_attribute_to_self_and_children(self, key: str, value: str) -> None:
         self.add_extra_attribute(key, value)
@@ -146,6 +147,16 @@ class DefinitionNode(Node):
         self.update_graph_environment(graph_environment)
         for node in self._defines:
             node.update_graph_environment_to_self_and_children(graph_environment)
+
+    def are_code_texts_equivalent(self, other: "DefinitionNode") -> bool:
+        code_text = self.code_text
+        other_code_text = other.code_text
+
+        # Removing _get_text_for_skeleton() from code_text with a regex
+        code_text = re.sub(r"# Code replaced for brevity, see node: \w+\n", "", code_text)
+        other_code_text = re.sub(r"# Code replaced for brevity, see node: \w+\n", "", other_code_text)
+
+        return code_text == other_code_text
 
     def __copy__(self):
         cls = self.__class__

@@ -62,6 +62,10 @@ class ProjectGraphCreator:
         self.create_relationships_from_references_for_files()
         return self.graph
 
+    def build_hierarchy_only(self) -> Graph:
+        self.create_code_hierarchy()
+        return self.graph
+
     def create_code_hierarchy(self):
         start_time = time.time()
 
@@ -159,7 +163,7 @@ class ProjectGraphCreator:
             self._log_if_multiple_of_x(
                 index=index,
                 x=log_interval,
-                text=f"Processing file {file_node.name}: {index+1}/{total_files} -- {100*index/total_files:.2f}%",
+                text=f"Processing file {file_node.name}: {index + 1}/{total_files} -- {100 * index / total_files:.2f}%",
             )
 
             nodes = self.graph.get_nodes_by_path(file_node.path)

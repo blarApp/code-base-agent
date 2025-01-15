@@ -15,6 +15,7 @@ from blarify.graph.external_relationship_store import ExternalRelationshipStore
 from blarify.graph.graph_update import GraphUpdate
 from blarify.graph.node.utils.id_calculator import IdCalculator
 from blarify.utils.path_calculator import PathCalculator
+from blarify.graph.node import Node, DefinitionNode
 
 
 class ChangeType(Enum):
@@ -28,6 +29,24 @@ class FileDiff:
     path: str
     diff_text: str
     change_type: ChangeType
+
+
+class GraphDelta:
+    added_nodes: List[Node]
+    modified_nodes: List[DefinitionNode]
+    deleted_nodes: List[Node]
+
+    def __init__(self, added_nodes, modified_nodes, deleted_nodes):
+        self.added_nodes = added_nodes
+        self.modified_nodes = modified_nodes
+        self.deleted_nodes = deleted_nodes
+
+    def build(old: Graph, new: Graph):
+        added_nodes = old.get_added_nodes(updated_graph=new)
+        modified_nodes = old.get_modified_nodes(updated_graph=new)
+        deleted_nodes = old.get_deleted_nodes(updated_graph=new)
+
+        return GraphDelta(added_nodes, modified_nodes, deleted_nodes)
 
 
 class ProjectGraphDiffCreator(ProjectGraphCreator):
@@ -72,6 +91,28 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
         self.add_deleted_relationships_and_nodes()
 
         return GraphUpdate(self.graph, self.external_relationship_store)
+
+    def build_with_graph_delta_relationships(self, previous_graph) -> GraphUpdate:
+        self.create_code_hierarchy()
+        graph_delta = GraphDelta.build(previous_graph, self.graph)
+        self.mark_updated_and_added_nodes_as_diff()
+        self.create_relationships_for_modified_nodes(graph_delta)
+        self.create_relationship_from_references_for_modified_and_added_files()
+        self.keep_only_files_to_create()
+        self.add_deleted_relationships_and_nodes()
+
+        return GraphUpdate(self.graph, self.external_relationship_store)
+
+    def create_relationships_for_modified_nodes(self, graph_delta):
+        for modified_node in graph_delta.modified_nodes:
+            equivalent = self.graph.get_node_by_relative_id(modified_node.relative_id)
+
+            if equivalent:
+                self.external_relationship_store.create_and_add_relationship(
+                    start_node_id=modified_node.hashed_id,
+                    end_node_id=equivalent.hashed_id,
+                    rel_type=RelationshipType.MODIFIED,
+                )
 
     def mark_updated_and_added_nodes_as_diff(self):
         self.mark_file_nodes_as_diff(self.get_file_nodes_from_path_list(self.added_and_modified_paths))
@@ -132,24 +173,11 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
 
     def mark_file_nodes_as_diff(self, file_nodes: List[FileNode]):
         for file_node in file_nodes:
-            clone_node = copy(file_node)
-
             diff = self.get_file_diff_for_path(file_node.path)
-
             file_node.add_extra_label_to_self_and_children("DIFF")
             file_node.add_extra_label_to_self_and_children(diff.change_type.value)
-
             file_node.add_extra_attribute_to_self_and_children("diff_text", diff.diff_text)
-
             file_node.update_graph_environment_to_self_and_children(self.pr_environment)
-
-            if diff.change_type == ChangeType.MODIFIED:
-                self.external_relationship_store.create_and_add_relationship(
-                    start_node_id=file_node.hashed_id,
-                    end_node_id=clone_node.hashed_id,
-                    rel_type=RelationshipType.MODIFIED,
-                )
-
             file_node.skeletonize()
 
     def get_file_diff_for_path(self, path):
