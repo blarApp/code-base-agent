@@ -113,6 +113,116 @@ def main_update(updated_files: list, root_uri: str = None, blarignore_path: str 
     lsp_query_helper.shutdown_exit_close()
 
 
+def main_graph_subtraction(graph_a_path: str, graph_b_path: str, blarignore_path: str = None):
+    lsp_query_helper_a = LspQueryHelper(root_uri=graph_a_path)
+    lsp_query_helper_a.start()
+
+    lsp_query_helper_b = LspQueryHelper(root_uri=graph_b_path)
+    lsp_query_helper_b.start()
+
+    project_files_iterator_a = ProjectFilesIterator(
+        root_path=graph_a_path,
+        blarignore_path=blarignore_path,
+    )
+
+    project_files_iterator_b = ProjectFilesIterator(
+        root_path=graph_b_path,
+        blarignore_path=blarignore_path,
+    )
+
+    FileRemover.soft_delete_if_exists(graph_a_path, "Gemfile")
+    FileRemover.soft_delete_if_exists(graph_b_path, "Gemfile")
+
+    repoId = "test"
+    entity_id = "test"
+    graph_manager = Neo4jManager(repoId, entity_id)
+
+    graph_creator_a = ProjectGraphCreator(
+        root_path=graph_a_path,
+        lsp_query_helper=lsp_query_helper_a,
+        project_files_iterator=project_files_iterator_a,
+        graph_environment=GraphEnvironment("dev", "MAIN", graph_a_path),
+    )
+
+    graph = graph_creator_a.build_hierarchy_only()
+    graph_manager.save_graph(graph.get_nodes_as_objects(), graph.get_relationships_as_objects())
+
+    graph_diff_creator = ProjectGraphDiffCreator(
+        root_path=graph_b_path,
+        lsp_query_helper=lsp_query_helper_b,
+        project_files_iterator=project_files_iterator_b,
+        file_diffs=[],
+        graph_environment=GraphEnvironment("dev", "MAIN", graph_b_path),
+        pr_environment=GraphEnvironment("dev", "pr-123", graph_b_path),
+        previous_graph=graph,
+    )
+
+    graph = graph_diff_creator.build()
+
+    relationships = graph.get_relationships_as_objects()
+    nodes = graph.get_nodes_as_objects()
+
+    graph_manager.save_graph(nodes, relationships)
+    graph_manager.close()
+
+    lsp_query_helper_a.shutdown_exit_close()
+    lsp_query_helper_b.shutdown_exit_close()
+
+
+def main_diff_with_delta(graph_a_path: str, graph_b_path: str, blarignore_path: str = None, file_diffs: list = None):
+    lsp_query_helper = LspQueryHelper(root_uri=graph_b_path)
+    lsp_query_helper.start()
+
+    project_files_iterator = ProjectFilesIterator(
+        root_path=graph_b_path,
+        blarignore_path=blarignore_path,
+    )
+
+    repoId = "test"
+    entity_id = "test"
+
+    prev_graph = ProjectGraphCreator(
+        root_path=graph_b_path,
+        lsp_query_helper=lsp_query_helper,
+        project_files_iterator=project_files_iterator,
+        graph_environment=GraphEnvironment("dev", "MAIN", graph_b_path),
+    ).build_hierarchy_only()
+
+    lsp_query_helper.shutdown_exit_close()
+
+    lsp_query_helper = LspQueryHelper(root_uri=graph_a_path)
+    lsp_query_helper.start()
+
+    project_files_iterator = ProjectFilesIterator(
+        root_path=graph_a_path,
+        blarignore_path=blarignore_path,
+    )
+
+    repoId = "test"
+    entity_id = "test"
+    graph_manager = Neo4jManager(repoId, entity_id)
+
+    graph_diff_creator = ProjectGraphDiffCreator(
+        root_path=graph_a_path,
+        lsp_query_helper=lsp_query_helper,
+        project_files_iterator=project_files_iterator,
+        file_diffs=file_diffs,
+        graph_environment=GraphEnvironment("dev", "MAIN", graph_a_path),
+        pr_environment=GraphEnvironment("dev", "pr-123", graph_a_path),
+    )
+
+    graph = graph_diff_creator.build_with_graph_delta_relationships(previous_graph=prev_graph)
+
+    relationships = graph.get_relationships_as_objects()
+    # nodes = graph.get_nodes_as_objects()
+    nodes = []
+
+    print(f"Saving graph with {len(nodes)} nodes and {len(relationships)} relationships")
+    graph_manager.save_graph(nodes, relationships)
+    graph_manager.close()
+    lsp_query_helper.shutdown_exit_close()
+
+
 def delete_updated_files_from_neo4j(updated_files, db_manager: Neo4jManager):
     for updated_file in updated_files:
         db_manager.detatch_delete_nodes_with_path(updated_file.path)
@@ -121,19 +231,30 @@ def delete_updated_files_from_neo4j(updated_files, db_manager: Neo4jManager):
 if __name__ == "__main__":
     dotenv.load_dotenv()
     root_path = os.getenv("ROOT_PATH")
+    root_path_2 = os.getenv("ROOT_PATH_2")
     blarignore_path = os.getenv("BLARIGNORE_PATH")
-    main(root_path=root_path, blarignore_path=blarignore_path)
-    main_diff(
-        file_diffs=[
-            FileDiff(
-                path="file:///home/juan/devel/blar/lsp-poc/blarify/graph/node/types/definition_node.py",
-                diff_text="""@@ -1,7 +1,6 @@\n from typing import List, Optional, Tuple, Union, TYPE_CHECKING, Dict\n from blarify.graph.relationship import RelationshipCreator\n from blarify.graph.node.types.node import Node\n-from blarify.logger import Logger\n \n if TYPE_CHECKING:\n     from ..class_node import ClassNode\n@@ -131,10 +130,17 @@ def get_all_definition_ranges(self) -> List["Reference"]:\n         return definition_ranges\n \n     def add_extra_label_to_self_and_children(self, label: str) -> None:\n-        self.extra_labels.append(label)\n+        self.add_extra_label(label)\n         for node in self._defines:\n             node.add_extra_label_to_self_and_children(label)\n \n+    def add_extra_label(self, label: str) -> None:\n+        self.extra_labels.append(label)\n+\n+    def add_label_to_children_in_reference(self, label: str, reference: "Reference") -> None:\n+        node = self.reference_search(reference)\n+        node.add_extra_label_to_self_and_children(label)\n+\n     def add_extra_attribute_to_self_and_children(self, key: str, value: str) -> None:\n         self.add_extra_attribute(key, value)\n         for node in self._defines:""",
-                change_type=ChangeType.ADDED,
-            ),
-        ],
-        root_uri=root_path,
-        blarignore_path=blarignore_path,
-    )
+    # main(root_path=root_path, blarignore_path=blarignore_path)
+    # main_diff(
+    #     file_diffs=[
+    #         FileDiff(
+    #             path="file:///home/juan/devel/blar/lsp-poc/blarify/graph/node/utils/node_factory.py",
+    #             diff_text="diff+++",
+    #             change_type=ChangeType.ADDED,
+    #         ),
+    #         FileDiff(
+    #             path="file:///home/juan/devel/blar/lsp-poc/blarify/graph/relationship/relationship_type.py",
+    #             diff_text="diff+++",
+    #             change_type=ChangeType.ADDED,
+    #         ),
+    #         FileDiff(
+    #             path="file:///home/juan/devel/blar/lsp-poc/blarify/graph/relationship/relationship_creator.py",
+    #             diff_text="diff+++",
+    #             change_type=ChangeType.DELETED,
+    #         ),
+    #     ],
+    #     root_uri=root_path,
+    #     blarignore_path=blarignore_path,
+    # )
 
     print("Updating")
     # main_update(
@@ -145,3 +266,16 @@ if __name__ == "__main__":
     #     root_uri=root_path,
     #     blarignore_path=blarignore_path,
     # )
+
+    main_diff_with_delta(
+        graph_a_path=root_path,
+        graph_b_path=root_path_2,
+        blarignore_path=blarignore_path,
+        file_diffs=[
+            FileDiff(
+                path="file:///home/juan/devel/blar/blar-qa/blar/agents/tasks.py",
+                diff_text="diff+++",
+                change_type=ChangeType.MODIFIED,
+            ),
+        ],
+    )

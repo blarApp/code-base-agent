@@ -12,4 +12,5 @@ class ExternalRelationship:
             "sourceId": self.source,
             "targetId": self.target,
             "type": self.type.name,
+            "scopeText": "",
         }

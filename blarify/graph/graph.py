@@ -1,6 +1,7 @@
 from collections import defaultdict
 from blarify.graph.node import Node, NodeLabels
 from blarify.graph.node import FileNode
+from blarify.graph.node.types.definition_node import DefinitionNode
 from blarify.graph.relationship import Relationship
 
 from typing import List, Dict, Set, DefaultDict, Optional
@@ -21,6 +22,7 @@ class Graph:
         self.file_nodes_by_path = {}
         self.folder_nodes_by_path = {}
         self.nodes_by_label = defaultdict(set)
+        self.nodes_by_relative_id = {}
 
     def has_folder_node_with_path(self, path: str) -> bool:
         return path in self.folder_nodes_by_path
@@ -33,6 +35,7 @@ class Graph:
         self.__nodes[node.id] = node
         self.nodes_by_path[node.path].add(node)
         self.nodes_by_label[node.label].add(node)
+        self.nodes_by_relative_id[node.relative_id] = node
 
         if node.label == NodeLabels.FILE:
             self.file_nodes_by_path[node.path] = node
@@ -52,8 +55,11 @@ class Graph:
     def get_nodes_by_label(self, label: str) -> set:
         return self.nodes_by_label[label]
 
-    def get_node_by_id(self, id: str) -> Node:
-        return self.__nodes[id]
+    def get_node_by_id(self, id: str) -> Optional[Node]:
+        return self.__nodes.get(id)
+
+    def get_node_by_relative_id(self, relative_id: str) -> Optional[Node]:
+        return self.nodes_by_relative_id.get(relative_id)
 
     def get_relationships_as_objects(self) -> List[dict]:
         internal_relationships = [relationship.as_object() for relationship in self.get_relationships_from_nodes()]
@@ -86,6 +92,40 @@ class Graph:
                 graph.add_references_relationships([relationship])
 
         return graph
+
+    def get_modified_nodes(self, updated_graph: "Graph") -> List[DefinitionNode]:
+        """
+        Returns a list of definition nodes that exist in both self and other graphs but have different code_text.
+        """
+        nodes_with_differences = []
+
+        for node in self.__nodes.values():
+            if isinstance(node, DefinitionNode) and updated_graph._contains_node(node):
+                updated_node: DefinitionNode = updated_graph.get_node_by_id(node.id)
+
+                print(
+                    "Found node with differences",
+                )
+
+                if not node.are_code_texts_equivalent(updated_node):
+                    nodes_with_differences.append(node)
+
+        return nodes_with_differences
+
+    def get_deleted_nodes(self, updated_graph: "Graph") -> List[Node]:
+        return self._get_unique_nodes(updated_graph)
+
+    def get_added_nodes(self, updated_graph: "Graph") -> List[Node]:
+        return updated_graph._get_unique_nodes(self)
+
+    def _get_unique_nodes(self, other: "Graph") -> List[Node]:
+        """
+        Returns nodes that exist in self but not in other
+        """
+        return [node for node in self.__nodes.values() if not other._contains_node(node)]
+
+    def _contains_node(self, node: Node) -> bool:
+        return self.get_node_by_id(node.id) is not None
 
     def __str__(self) -> str:
         to_return = ""

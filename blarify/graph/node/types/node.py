@@ -39,13 +39,19 @@ class Node:
     def is_path_format_valid(self) -> bool:
         return FormatVerifier.is_path_uri(self.path)
 
-    @staticmethod
-    def hash_path_to_id(path: str) -> str:
-        return md5(path.encode()).hexdigest()
-
     @property
     def hashed_id(self) -> str:
         return md5(self.id.encode()).hexdigest()
+
+    @property
+    def relative_id(self) -> str:
+        """
+        Returns the id without the graph environment prefix or root folder name
+        """
+        splitted = self.id.strip("/").split("/")
+        if len(splitted) > 3:
+            return "/" + "/".join(splitted[3:])
+        return "/"
 
     @property
     def id(self) -> str:
