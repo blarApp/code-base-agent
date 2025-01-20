@@ -125,6 +125,8 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
                     rel_type=RelationshipType.MODIFIED,
                 )
 
+                equivalent_node.add_extra_label(ChangeType.MODIFIED.value)
+
     def _mark_new_nodes_with_label(self, previous_node_states: List[PreviousNodeState]):
         previous_nodes_relative_id = {previous_node.relative_id for previous_node in previous_node_states}
 
