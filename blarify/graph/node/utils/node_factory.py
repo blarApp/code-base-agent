@@ -156,7 +156,7 @@ class NodeFactory:
     ):
         return DeletedNode(
             label=NodeLabels.DELETED,
-            path=graph_environment.root_path + f"/DELETED-{str(uuid4())}",
+            path="file://" + graph_environment.root_path + f"/DELETED-{str(uuid4())}",
             name="DELETED",
             level=0,
             graph_environment=graph_environment,
