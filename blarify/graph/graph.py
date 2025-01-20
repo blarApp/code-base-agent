@@ -43,7 +43,7 @@ class Graph:
         if node.label == NodeLabels.FOLDER:
             self.folder_nodes_by_path[node.path] = node
 
-    def get_nodes_by_path(self, path: str) -> set:
+    def get_nodes_by_path(self, path: str) -> set[Node]:
         return self.nodes_by_path[path]
 
     def get_file_node_by_path(self, path: str) -> Optional[FileNode]:

@@ -105,6 +105,10 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
         return GraphUpdate(self.graph, self.external_relationship_store)
 
     def create_relationships_from_previous_node_states(self, previous_node_states: List[PreviousNodeState]):
+        self._create_modified_relationships(previous_node_states)
+        self._mark_new_nodes_with_label(previous_node_states)
+
+    def _create_modified_relationships(self, previous_node_states: List[PreviousNodeState]):
         for previous_node in previous_node_states:
             equivalent_node: DefinitionNode = self.graph.get_node_by_relative_id(previous_node.relative_id)
 
@@ -120,6 +124,18 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
                     end_node_id=previous_node.hashed_id,
                     rel_type=RelationshipType.MODIFIED,
                 )
+
+    def _mark_new_nodes_with_label(self, previous_node_states: List[PreviousNodeState]):
+        previous_nodes_relative_id = {previous_node.relative_id for previous_node in previous_node_states}
+
+        for path in self.added_and_modified_paths:
+            for node in self.graph.get_nodes_by_path(path):
+                self._mark_new_node_if_absent(previous_nodes_relative_id, node)
+
+    def _mark_new_node_if_absent(self, previous_nodes_relative_id: str, node: Node):
+        is_relative_id_in_previous_nodes = node.relative_id in previous_nodes_relative_id
+        if not is_relative_id_in_previous_nodes and isinstance(node, DefinitionNode):
+            node.add_extra_label(ChangeType.ADDED.value)
 
     def mark_updated_and_added_nodes_as_diff(self):
         self.mark_file_nodes_as_diff(self.get_file_nodes_from_path_list(self.added_and_modified_paths))
@@ -182,7 +198,6 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
         for file_node in file_nodes:
             diff = self.get_file_diff_for_path(file_node.path)
             file_node.add_extra_label_to_self_and_children("DIFF")
-            file_node.add_extra_label_to_self_and_children(diff.change_type.value)
             file_node.add_extra_attribute_to_self_and_children("diff_text", diff.diff_text)
             file_node.update_graph_environment_to_self_and_children(self.pr_environment)
             file_node.skeletonize()
