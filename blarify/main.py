@@ -209,5 +209,9 @@ if __name__ == "__main__":
                 "/dev/MAIN/blar-qa/blar/agents/tasks.py.execute_pr_report_agent_task",
                 open("/home/juan/devel/blar/lsp-poc/blarify/example", "r").read(),
             ),
+            PreviousNodeState(
+                "/dev/MAIN/blar-qa/blar/agents/tasks.py.execute_pr_report_agent_taski",
+                open("/home/juan/devel/blar/lsp-poc/blarify/example", "r").read(),
+            ),
         ],
     )
