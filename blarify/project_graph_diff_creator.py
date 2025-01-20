@@ -73,6 +73,7 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
         self.modified_paths = self.get_modified_paths()
 
         self.added_and_modified_paths = self.added_paths + self.modified_paths
+        self.deleted_nodes_added_paths = []
 
     def get_added_paths(self) -> List[str]:
         return [file_diff.path for file_diff in self.file_diffs if file_diff.change_type == ChangeType.ADDED]
@@ -107,6 +108,7 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
     def create_relationships_from_previous_node_states(self, previous_node_states: List[PreviousNodeState]):
         self._create_modified_relationships(previous_node_states)
         self._mark_new_nodes_with_label(previous_node_states)
+        self._mark_deleted_nodes_with_label(previous_node_states)
 
     def _create_modified_relationships(self, previous_node_states: List[PreviousNodeState]):
         for previous_node in previous_node_states:
@@ -137,12 +139,39 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
         if not is_relative_id_in_previous_nodes and isinstance(node, DefinitionNode):
             node.add_extra_label(ChangeType.ADDED.value)
 
+    def _mark_deleted_nodes_with_label(self, previous_node_states: List[PreviousNodeState]):
+        for previous_node in previous_node_states:
+            equivalent_node: DefinitionNode = self.graph.get_node_by_relative_id(previous_node.relative_id)
+            if not equivalent_node:
+                print(f"Node not found: {previous_node.relative_id}")
+                deleted_node = NodeFactory.create_deleted_node(
+                    graph_environment=self.pr_environment,
+                )
+
+                print(f"Creating deleted node: {deleted_node.hashed_id}")
+                print(deleted_node.as_object())
+
+                self.graph.add_node(deleted_node)
+                self.deleted_nodes_added_paths.append(deleted_node.path)
+
+                self.external_relationship_store.create_and_add_relationship(
+                    start_node_id=previous_node.hashed_id,
+                    end_node_id=deleted_node.hashed_id,
+                    rel_type=RelationshipType.DELETED,
+                )
+
+    def _mark_deleted_node_if_absent(self, previous_nodes_relative_id: str, node: Node):
+        is_relative_id_in_previous_nodes = node.relative_id in previous_nodes_relative_id
+        if not is_relative_id_in_previous_nodes and isinstance(node, DefinitionNode):
+            node.add_extra_label(ChangeType.DELETED.value)
+
     def mark_updated_and_added_nodes_as_diff(self):
         self.mark_file_nodes_as_diff(self.get_file_nodes_from_path_list(self.added_and_modified_paths))
 
     def keep_only_files_to_create(self):
         paths_to_keep = self.get_parent_paths_from_paths(self.added_and_modified_paths)
         paths_to_keep.extend(self.added_and_modified_paths)
+        paths_to_keep.extend(self.deleted_nodes_added_paths)
 
         self.graph = self.graph.filtered_graph_by_paths(paths_to_keep)
 
@@ -236,9 +265,7 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
         for diff in self.file_diffs:
             if diff.change_type == ChangeType.DELETED:
                 deleted_node_pr_env = NodeFactory.create_deleted_node(
-                    path=diff.path,
                     graph_environment=self.pr_environment,
-                    label=NodeLabels.DELETED,
                 )
 
                 path = PathCalculator.uri_to_path(diff.path)

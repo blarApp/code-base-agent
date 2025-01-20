@@ -7,6 +7,8 @@ from ..types.node_labels import NodeLabels
 
 from typing import Optional, Union, TYPE_CHECKING
 
+from uuid import uuid4
+
 if TYPE_CHECKING:
     from blarify.project_file_explorer import Folder
     from blarify.graph.graph_environment import GraphEnvironment
@@ -150,13 +152,11 @@ class NodeFactory:
 
     @staticmethod
     def create_deleted_node(
-        label: "NodeLabels",
-        path: str,
         graph_environment: "GraphEnvironment" = None,
     ):
         return DeletedNode(
-            label=label,
-            path=path,
+            label=NodeLabels.DELETED,
+            path="file://" + graph_environment.root_path + f"/DELETED-{str(uuid4())}",
             name="DELETED",
             level=0,
             graph_environment=graph_environment,
