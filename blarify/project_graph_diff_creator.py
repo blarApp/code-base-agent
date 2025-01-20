@@ -116,8 +116,6 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
                 previous_node.code_text
             )
 
-            print(f"Node {previous_node.node_path} is modified: {is_equivalent_node_modified}")
-
             if is_equivalent_node_modified:
                 self.external_relationship_store.create_and_add_relationship(
                     start_node_id=equivalent_node.hashed_id,
