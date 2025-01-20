@@ -150,13 +150,11 @@ class NodeFactory:
 
     @staticmethod
     def create_deleted_node(
-        label: "NodeLabels",
-        path: str,
         graph_environment: "GraphEnvironment" = None,
     ):
         return DeletedNode(
-            label=label,
-            path=path,
+            label=NodeLabels.DELETED
+            path="file://",
             name="DELETED",
             level=0,
             graph_environment=graph_environment,

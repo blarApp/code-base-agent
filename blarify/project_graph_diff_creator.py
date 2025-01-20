@@ -143,9 +143,7 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
             equivalent_node: DefinitionNode = self.graph.get_node_by_relative_id(previous_node.relative_id)
             if not equivalent_node:
                 deleted_node = NodeFactory.create_deleted_node(
-                    path=previous_node.node_path,
                     graph_environment=self.pr_environment,
-                    label=NodeLabels.DELETED,
                 )
 
                 self.graph.add_node(deleted_node)
@@ -260,9 +258,7 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
         for diff in self.file_diffs:
             if diff.change_type == ChangeType.DELETED:
                 deleted_node_pr_env = NodeFactory.create_deleted_node(
-                    path=diff.path,
                     graph_environment=self.pr_environment,
-                    label=NodeLabels.DELETED,
                 )
 
                 path = PathCalculator.uri_to_path(diff.path)
