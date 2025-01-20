@@ -153,7 +153,7 @@ class NodeFactory:
         graph_environment: "GraphEnvironment" = None,
     ):
         return DeletedNode(
-            label=NodeLabels.DELETED
+            label=NodeLabels.DELETED,
             path="file://",
             name="DELETED",
             level=0,
