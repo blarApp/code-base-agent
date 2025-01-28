@@ -7,13 +7,13 @@ This graph was generated from the code in this repository.
 # Quickstart
 Get started with blarify by following our quickstart guide:
 
-[➡️ Quickstart Guide](https://github.com/blarApp/blarify/docs/quickstart.md)
+[➡️ Quickstart Guide](https://github.com/blarApp/blarify/blob/main/docs/quickstart.md)
 
 # Article
 
 Read our article on Medium to learn more about the motivation behind this project:
 
-[➡️ Article](https://medium.com/@v4rgas/how-we-built-a-tool-to-turn-any-code-base-into-a-graph-of-its-relationships-23c7bd130f13)
+[➡️ How we built a tool to turn any codebase into a graph of its relationships](https://medium.com/@v4rgas/how-we-built-a-tool-to-turn-any-code-base-into-a-graph-of-its-relationships-23c7bd130f13)
 
 # Notes
 
