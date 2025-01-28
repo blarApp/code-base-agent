@@ -9,6 +9,12 @@ Get started with blarify by following our quickstart guide:
 
 [➡️ Quickstart Guide](https://github.com/blarApp/blarify/docs/quickstart.md)
 
+# Article
+
+Read our article on Medium to learn more about the motivation behind this project:
+
+[➡️ Article](https://medium.com/@v4rgas/how-we-built-a-tool-to-turn-any-code-base-into-a-graph-of-its-relationships-23c7bd130f13)
+
 # Notes
 
 After some experimentation I have found that Language Servers can be quite slow. For example in solargraph, if the function has many references it can take a long time to return results.
