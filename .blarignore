@@ -1,12 +1,10 @@
 .env
 __pycache__
 poetry.lock
-pyproject.toml
 .git
 .venv
 lsp-ws-proxy
 Guardfile
-README.md
 422.html
 .venv
 .ruff_cache
