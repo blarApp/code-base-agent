@@ -28,6 +28,11 @@ git clone git@github.com:blarApp/blarify.git
 pip install blarify/
 ```
 
+Start the lsp-ws-proxy with the language servers you want to use on port 5000:
+```
+./lsp-ws-proxy/target/debug/lsp-ws-proxy --listen 5000 -- solargraph stdio -- jedi-language-server  -- typescript-language-server --stdio
+```
+
 ## Usage
 
 ```python
