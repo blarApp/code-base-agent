@@ -6,7 +6,7 @@ Welcome to Blarify! This guide will help you get started using Blarify to visual
 
 - Python (>=3.10,<=3.12.8)
 - [lsp-ws-proxy](https://github.com/qualified/lsp-ws-proxy)
-- A neo4j instance (we recommend using [AuraDB](https://neo4j.com/product/auradb/))
+- A graph database instance (we recommend using [FalkorDB](https://falkordb.com/) or [AuraDB](https://neo4j.com/product/auradb/))
 
 and one or more of the following:
 
@@ -56,13 +56,11 @@ project_files_iterator = ProjectFilesIterator(
 )
 ```
 
-Remove the Gemfile if it exists, solargraph won't work if you have a Gemfile in your project
+If you are using Ruby, remove the Gemfile from the project to avoid problems with the language server
 
 ```python
 FileRemover.soft_delete_if_exists(PATH_TO_YOUR_PROJECT, "Gemfile")
 ```
-
-
 
 Create the graph creator and build
 ```python
@@ -73,8 +71,59 @@ graph_creator = ProjectGraphCreator(
 graph = graph_creator.build()
 ```
 
+This will return a graph object that contains all the nodes and relationships in your codebase
 
-Save the graph to neo4j
+To save them and visualize them in a graph database you can get the nodes and relationships as objects
+
+```python
+relationships = graph.get_relationships_as_objects()
+nodes = graph.get_nodes_as_objects()
+```
+
+this will return a list of dictionaries with the following structure
+
+### Relationship
+```python
+{
+    "sourceId": "hashed_id_of_start_node", # Unique identifier for the start node
+    "targetId": "hashed_id_of_end_node", # Unique identifier for the end node
+    "type": "relationship_type", # Type of the relationship
+    "scopeText": "scope_text", # Text that the relationship is based on
+}
+```
+
+### Node
+```python
+{
+    "type": "node_type", # File, Class, Function, etc
+    "extra_labels": [], # Additional labels for the node
+    "attributes": {
+        "label": "node_type, # Same as type
+        "path": "file://path/to/file", # Path to the file that contains the node
+        "node_id": "node_id", # Unique identifier for the node, hashed node path
+        "node_path": "path/to/node", # Path to the within the file
+        "name": "node_name", # Name of the node
+        "level": "node_level", # Level of the node within the file structure
+        "hashed_id": "node_id", # Same as node_id
+        "diff_identifier": "diff_identifier", # Identifier for the node, this is used when using the PR feature
+
+        # The following attributes may not be present in all nodes
+        "start_line": "start_line", # Start line of the node within the file
+        "end_line": "end_line", # End line of the node within the file
+        "text": "node_text", # Text of the node within the file
+    },
+}
+```
+
+Close the lsp query helper and graph manager
+
+```python
+graph_manager.close()
+lsp_query_helper.shutdown_exit_close()
+```
+
+
+Example using Neo4j
 ```python
 # Set up the graph manager, this will be used to save the graph to neo4j
 repoId = "name_of_your_repo"
@@ -87,10 +136,6 @@ nodes = graph.get_nodes_as_objects()
 graph_manager.save_graph(nodes, relationships)
 ```
 
-Close the graph manager and lsp query helper
-```python
-graph_manager.close()
-lsp_query_helper.shutdown_exit_close()
-```
+
 
 
