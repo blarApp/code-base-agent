@@ -9,3 +9,5 @@ ruby-on-rails-sample-app/
 dist/
 fil-result/
 example
+delete.py
+*.json
