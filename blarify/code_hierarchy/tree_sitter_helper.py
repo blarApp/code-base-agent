@@ -79,6 +79,8 @@ class TreeSitterHelper:
             return self.created_nodes
 
         file_node = self._create_file_node_from_raw_file(file, parent_folder)
+        file_node.add_extra_label("RAW")
+
         return [file_node]
 
     def _does_path_have_valid_extension(self, path: str) -> bool:
@@ -217,7 +219,7 @@ class TreeSitterHelper:
     def get_parent_node(self, context_stack: List["Node"]) -> "DefinitionNode":
         return context_stack[-1]
 
-    def _create_file_node_from_raw_file(self, file: File, parent_folder: "FolderNode" = None) -> "Node":
+    def _create_file_node_from_raw_file(self, file: File, parent_folder: "FolderNode" = None) -> "FileNode":
         return NodeFactory.create_file_node(
             path=file.uri_path,
             name=file.name,
