@@ -243,8 +243,8 @@ class LspCaller:
         }
 
     def log(self, message: dict) -> None:
-        if self.log:
-            self.pretty_print(message)
+        # if self.log:
+        self.pretty_print(message)
 
     def pretty_print(self, message: dict) -> None:
         ## print formatted json

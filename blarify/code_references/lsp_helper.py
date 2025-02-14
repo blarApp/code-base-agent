@@ -1,4 +1,5 @@
 from typing import Optional
+
 from .lsp_caller import LspCaller
 from .types.Reference import Reference
 from blarify.graph.node import DefinitionNode
@@ -9,6 +10,7 @@ from blarify.code_hierarchy.languages import (
     RubyDefinitions,
     TypescriptDefinitions,
     LanguageDefinitions,
+    CsharpDefinitions,
 )
 from collections import ChainMap
 
@@ -38,6 +40,7 @@ class LspQueryHelper:
             self._create_extension_to_lsp_servers(JavascriptDefinitions, ImplementedLsp.TYPESCRIPT_LANGUAGE_SERVER),
             self._create_extension_to_lsp_servers(TypescriptDefinitions, ImplementedLsp.TYPESCRIPT_LANGUAGE_SERVER),
             self._create_extension_to_lsp_servers(RubyDefinitions, ImplementedLsp.SOLARGRAPH),
+            self._create_extension_to_lsp_servers(CsharpDefinitions, ImplementedLsp.CSHARP_LS),
         )
 
     def _create_extension_to_lsp_servers(self, language_definitions: LanguageDefinitions, lsp_server: ImplementedLsp):
@@ -68,8 +71,10 @@ class LspQueryHelper:
     def get_paths_where_node_is_referenced(self, node: DefinitionNode) -> list[Reference]:
         lsp_caller = self.get_lsp_caller_for_extension(node.extension)
         references = lsp_caller.get_references(node.path, node.definition_range.start_dict)
+
         if not references:
             return []
+
         return [Reference(reference) for reference in references]
 
     def get_definition_path_for_reference(self, reference: Reference) -> str:

@@ -112,6 +112,26 @@ docs = ["sphinx (>=7.3,<8.0)", "sphinx-book-theme"]
 tests = ["tree-sitter-html (>=0.23.0)", "tree-sitter-javascript (>=0.23.0)", "tree-sitter-json (>=0.23.0)", "tree-sitter-python (>=0.23.0)", "tree-sitter-rust (>=0.23.0)"]
 
 [[package]]
+name = "tree-sitter-c-sharp"
+version = "0.23.1"
+description = "C# grammar for tree-sitter"
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "tree_sitter_c_sharp-0.23.1-cp39-abi3-macosx_10_9_x86_64.whl", hash = "sha256:2b612a6e5bd17bb7fa2aab4bb6fc1fba45c94f09cb034ab332e45603b86e32fd"},
+    {file = "tree_sitter_c_sharp-0.23.1-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:1a8b98f62bc53efcd4d971151950c9b9cd5cbe3bacdb0cd69fdccac63350d83e"},
+    {file = "tree_sitter_c_sharp-0.23.1-cp39-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:986e93d845a438ec3c4416401aa98e6a6f6631d644bbbc2e43fcb915c51d255d"},
+    {file = "tree_sitter_c_sharp-0.23.1-cp39-abi3-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a8024e466b2f5611c6dc90321f232d8584893c7fb88b75e4a831992f877616d2"},
+    {file = "tree_sitter_c_sharp-0.23.1-cp39-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:7f9bf876866835492281d336b9e1f9626ab668737f74e914c31d285261507da7"},
+    {file = "tree_sitter_c_sharp-0.23.1-cp39-abi3-win_amd64.whl", hash = "sha256:ae9a9e859e8f44e2b07578d44f9a220d3fa25b688966708af6aa55d42abeebb3"},
+    {file = "tree_sitter_c_sharp-0.23.1-cp39-abi3-win_arm64.whl", hash = "sha256:c81548347a93347be4f48cb63ec7d60ef4b0efa91313330e69641e49aa5a08c5"},
+    {file = "tree_sitter_c_sharp-0.23.1.tar.gz", hash = "sha256:322e2cfd3a547a840375276b2aea3335fa6458aeac082f6c60fec3f745c967eb"},
+]
+
+[package.extras]
+core = ["tree-sitter (>=0.22,<1.0)"]
+
+[[package]]
 name = "tree-sitter-javascript"
 version = "0.23.1"
 description = "JavaScript grammar for tree-sitter"
@@ -288,5 +308,5 @@ files = [
 
 [metadata]
 lock-version = "2.0"
-python-versions = ">=3.10,<=3.12.8"
-content-hash = "a9c7603534dd4253b0674e07c5f0d98a7c52061374857fcef1b0317a762a2f31"
+python-versions = ">=3.10,<=3.13"
+content-hash = "39f2f6fcb74f8c3af214f2298baae627244be2c5b393953f63725fc9ce0b3cef"

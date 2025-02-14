@@ -18,8 +18,7 @@ def main(root_path: str = None, blarignore_path: str = None):
     lsp_query_helper.start()
 
     project_files_iterator = ProjectFilesIterator(
-        root_path=root_path,
-        blarignore_path=blarignore_path,
+        root_path=root_path, blarignore_path=blarignore_path, extensions_to_skip=[".json", ".xml"]
     )
 
     ProjectFileStats(project_files_iterator).print(limit=10)
@@ -151,6 +150,9 @@ def main_diff_with_previous(
     nodes = graph.get_nodes_as_objects()
 
     print(f"Saving graph with {len(nodes)} nodes and {len(relationships)} relationships")
+
+    # batch create nodes and relationships
+
     graph_manager.save_graph(nodes, relationships)
     graph_manager.close()
     lsp_query_helper.shutdown_exit_close()
@@ -160,7 +162,7 @@ if __name__ == "__main__":
     dotenv.load_dotenv()
     root_path = os.getenv("ROOT_PATH")
     blarignore_path = os.getenv("BLARIGNORE_PATH")
-    # main(root_path=root_path, blarignore_path=blarignore_path)
+    main(root_path=root_path, blarignore_path=blarignore_path)
     # main_diff(
     #     file_diffs=[
     #         FileDiff(
@@ -186,32 +188,39 @@ if __name__ == "__main__":
     print("Updating")
     # main_update(
     #     updated_files=[
-    #         UpdatedFile(
-    #             path="file:///home/juan/devel/blar/git-webhook-tester/app/test/main.py",
-    #         ),
+    #         # UpdatedFile("file:///temp/repos/development/main/0/encuadrado-web/encuadrado-web/schemas.py"),
+    #         # UpdatedFile("file:///temp/repos/development/main/0/encuadrado-web/encuadrado-web/models.py"),
+    #     ],
+    #     root_uri=root_path,
+    #     blarignore_path=blarignore_path,
+    # )
+    # main_update(
+    #     updated_files=[
+    #         UpdatedFile("file:///temp/repos/development/main/0/encuadrado-web/encuadrado-web/schemas.py"),
+    #         UpdatedFile("file:///temp/repos/development/main/0/encuadrado-web/encuadrado-web/models.py"),
     #     ],
     #     root_uri=root_path,
     #     blarignore_path=blarignore_path,
     # )
 
-    main_diff_with_previous(
-        file_diffs=[
-            FileDiff(
-                path="file:///home/juan/devel/blar/blar-qa/blar/agents/tasks.py",
-                diff_text="diff+++",
-                change_type=ChangeType.MODIFIED,
-            ),
-        ],
-        root_uri=root_path,
-        blarignore_path=blarignore_path,
-        previous_node_states=[
-            PreviousNodeState(
-                "/dev/MAIN/blar-qa/blar/agents/tasks.py.execute_pr_report_agent_task",
-                open("/home/juan/devel/blar/lsp-poc/blarify/example", "r").read(),
-            ),
-            PreviousNodeState(
-                "/dev/MAIN/blar-qa/blar/agents/tasks.py.execute_pr_report_agent_taski",
-                open("/home/juan/devel/blar/lsp-poc/blarify/example", "r").read(),
-            ),
-        ],
-    )
+    # main_diff_with_previous(
+    #     file_diffs=[
+    #         FileDiff(
+    #             path="file:///home/juan/devel/blar/blar-qa/blar/agents/tasks.py",
+    #             diff_text="diff+++",
+    #             change_type=ChangeType.MODIFIED,
+    #         ),
+    #     ],
+    #     root_uri=root_path,
+    #     blarignore_path=blarignore_path,
+    #     previous_node_states=[
+    #         PreviousNodeState(
+    #             "/dev/MAIN/blar-qa/blar/agents/tasks.py.execute_pr_report_agent_task",
+    #             open("/home/juan/devel/blar/lsp-poc/blarify/example", "r").read(),
+    #         ),
+    #         PreviousNodeState(
+    #             "/dev/MAIN/blar-qa/blar/agents/tasks.py.execute_pr_report_agent_taski",
+    #             open("/home/juan/devel/blar/lsp-poc/blarify/example", "r").read(),
+    #         ),
+    #     ],
+    # )

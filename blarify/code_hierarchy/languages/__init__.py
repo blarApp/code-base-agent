@@ -4,3 +4,4 @@ from .javascript_definitions import JavascriptDefinitions
 from .typescript_definitions import TypescriptDefinitions
 from .ruby_definitions import RubyDefinitions
 from .fallback_definitions import FallbackDefinitions
+from .csharp_definitions import CsharpDefinitions
