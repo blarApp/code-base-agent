@@ -136,7 +136,7 @@ class LspQueryHelper:
         if not definitions:
             return ""
 
-        return definitions[0].uri
+        return definitions[0]["uri"]
 
     def shutdown_exit_close(self) -> None:
         for lsp in self.entered_lsp_servers.values():
