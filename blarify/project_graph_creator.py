@@ -58,7 +58,7 @@ class ProjectGraphCreator:
 
         # TODO: Implement a better way to wait for the lsp to finish
         Logger.log("Waiting for LSP to finish")
-        time.sleep(15)
+        # time.sleep(15)
         Logger.log("LSP finished")
 
         self.create_relationships_from_references_for_files()
@@ -173,8 +173,6 @@ class ProjectGraphCreator:
                 if node.label == NodeLabels.FILE:
                     continue
 
-                print(f"Processing node {node.name} of type {node.label}")
-
                 tree_sitter_helper = self._get_tree_sitter_for_file_extension(node.extension)
                 references_relationships.extend(
                     self.create_node_relationships(node=node, tree_sitter_helper=tree_sitter_helper)
@@ -194,13 +192,15 @@ class ProjectGraphCreator:
         if index % x == 0:
             Logger.log(text)
 
-    def create_node_relationships(self, node: "Node", tree_sitter_helper: TreeSitterHelper) -> List["Relationship"]:
+    def create_node_relationships(
+        self,
+        node: "Node",
+        tree_sitter_helper: TreeSitterHelper,
+    ) -> List["Relationship"]:
         references = self.lsp_query_helper.get_paths_where_node_is_referenced(node)
-        print(f"References found: {len(references)}")
+
         relationships = RelationshipCreator.create_relationships_from_paths_where_node_is_referenced(
             references=references, node=node, graph=self.graph, tree_sitter_helper=tree_sitter_helper
         )
-
-        print(f"Relationships created: {len(relationships)}")
 
         return relationships

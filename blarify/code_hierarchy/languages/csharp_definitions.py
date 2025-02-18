@@ -25,7 +25,7 @@ class CsharpDefinitions(LanguageDefinitions):
         return LanguageDefinitions._should_create_node_base_implementation(
             node,
             [
-                " method_declaration",
+                "method_declaration",
                 "class_declaration",
                 "interface_declaration",
                 "constructor_declaration",
@@ -67,7 +67,13 @@ class CsharpDefinitions(LanguageDefinitions):
 
     def _get_relationship_types_by_label() -> dict[str, RelationshipType]:
         return {
-            NodeLabels.CLASS: {},
+            NodeLabels.CLASS: {
+                "object_creation_expression": RelationshipType.INSTANTIATES,
+                "using_directive": RelationshipType.IMPORTS,
+                "variable_declaration": RelationshipType.TYPES,
+                "parameter": RelationshipType.TYPES,
+                "base_list": RelationshipType.INHERITS,
+            },
             NodeLabels.FUNCTION: {
                 "invocation_expression": RelationshipType.CALLS,
             },
