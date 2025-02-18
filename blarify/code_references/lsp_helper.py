@@ -127,12 +127,16 @@ class LspQueryHelper:
 
     def get_definition_path_for_reference(self, reference: Reference) -> str:
         lsp_caller = self._get_or_create_multi_lsp(".py")
-        definition = lsp_caller.request_definition(
+        definitions = lsp_caller.request_definition(
             file_path=PathCalculator.get_relative_path_from_uri(root_uri=self.root_uri, uri=reference.uri),
             line=reference.range.start.line,
             column=reference.range.start.character,
         )
-        return definition["uri"] if definition else ""
+
+        if not definitions:
+            return ""
+
+        return definitions[0].uri
 
     def shutdown_exit_close(self) -> None:
         for lsp in self.entered_lsp_servers.values():
