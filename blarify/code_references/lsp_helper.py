@@ -62,7 +62,7 @@ class LspQueryHelper:
         DEPRECATED, LSP servers are started on demand
         """
 
-    def get_or_create_multi_lsp(self, extension):
+    def _get_or_create_multi_lsp(self, extension):
         language_definitions = self._get_language_definition_for_extension(extension)
         language = language_definitions.get_language_name()
 
@@ -85,15 +85,15 @@ class LspQueryHelper:
         """
 
     def get_paths_where_node_is_referenced(self, node: DefinitionNode) -> list[Reference]:
-        server = self.get_or_create_multi_lsp(node.extension)
-        references = self.request_references_with_fallback(node, server)
+        server = self._get_or_create_multi_lsp(node.extension)
+        references = self._request_references_with_fallback(node, server)
 
         if not references:
             return []
 
         return [Reference(reference) for reference in references]
 
-    def request_references_with_fallback(self, node, lsp):
+    def _request_references_with_fallback(self, node, lsp):
         try:
             references = lsp.request_references(
                 file_path=PathCalculator.get_relative_path_from_uri(root_uri=self.root_uri, uri=node.path),
@@ -101,7 +101,7 @@ class LspQueryHelper:
                 column=node.definition_range.start_dict["character"],
             )
         except TimeoutError:
-            self.restart_lsp_for_extension(node)
+            self._restart_lsp_for_extension(node)
             lsp = self.multi_lsp_callers[node.extension]
             references = lsp.request_references(
                 file_path=PathCalculator.get_relative_path_from_uri(root_uri=self.root_uri, uri=node.path),
@@ -111,7 +111,7 @@ class LspQueryHelper:
 
         return references
 
-    def restart_lsp_for_extension(self, node):
+    def _restart_lsp_for_extension(self, node):
         language_definitions = self._get_language_definition_for_extension(node.extension)
 
         new_lsp = self._create_lsp_server(language_definitions)
@@ -126,7 +126,7 @@ class LspQueryHelper:
         self.entered_lsp_servers[node.extension] = context
 
     def get_definition_path_for_reference(self, reference: Reference) -> str:
-        lsp_caller = self.get_or_create_multi_lsp(".py")
+        lsp_caller = self._get_or_create_multi_lsp(".py")
         definition = lsp_caller.request_definition(
             file_path=PathCalculator.get_relative_path_from_uri(root_uri=self.root_uri, uri=reference.uri),
             line=reference.range.start.line,
