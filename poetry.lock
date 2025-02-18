@@ -280,15 +280,19 @@ description = "A language-agnostic LSP client in Python, with a library interfac
 optional = false
 python-versions = ">=3.7"
 groups = ["main"]
-files = [
-    {file = "multilspy-0.0.12-py3-none-any.whl", hash = "sha256:e06f7ef7c388793eaaa2d4a6bb91dd9ef3efc78090b34ca1d2343b52062c57fc"},
-    {file = "multilspy-0.0.12.tar.gz", hash = "sha256:d6166302d15cda6d1c6820e9d0aac0a30382cb76dfc5fa2d1cee9f873289eb9c"},
-]
+files = []
+develop = false
 
 [package.dependencies]
 jedi-language-server = "0.41.1"
 pydantic = ">=1.10.5,<2"
 requests = "2.32.3"
+
+[package.source]
+type = "git"
+url = "https://github.com/blarApp/multilspy.git"
+reference = "HEAD"
+resolved_reference = "c1f05ad2f083e6d8130ff4e19e0b4fbcacaef28a"
 
 [[package]]
 name = "neo4j"
@@ -750,4 +754,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<=3.14"
-content-hash = "f3755f83e1487be50653affb8c47df88edda0236e448710e3584767225ffaf77"
+content-hash = "ffea608a9e38e11827e1c64114a8422f07f0052f8fe316f508f9596d552e07bf"

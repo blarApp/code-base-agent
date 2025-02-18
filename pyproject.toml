@@ -21,7 +21,7 @@ tree-sitter-ruby = "^0.23.0"
 tree-sitter-javascript = "^0.23.0"
 tree-sitter-typescript = "^0.23.2"
 tree-sitter-c-sharp = "^0.23.1"
-multilspy = "^0.0.12"
+multilspy = {git = "https://github.com/blarApp/multilspy.git"}
 
 
 [build-system]
