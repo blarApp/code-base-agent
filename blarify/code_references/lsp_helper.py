@@ -69,7 +69,7 @@ class LspQueryHelper:
         DEPRECATED, LSP servers are started on demand
         """
 
-    def _get_or_create_multi_lsp(self, extension):
+    def _get_or_create_lsp_server(self, extension):
         language_definitions = self._get_language_definition_for_extension(extension)
         language = language_definitions.get_language_name()
 
@@ -92,7 +92,7 @@ class LspQueryHelper:
         """
 
     def get_paths_where_node_is_referenced(self, node: DefinitionNode) -> list[Reference]:
-        server = self._get_or_create_multi_lsp(node.extension)
+        server = self._get_or_create_lsp_server(node.extension)
         references = self._request_references_with_fallback(node, server)
 
         if not references:
@@ -109,7 +109,7 @@ class LspQueryHelper:
             )
         except TimeoutError:
             self._restart_lsp_for_extension(node)
-            lsp = self._get_or_create_multi_lsp(node.extension)
+            lsp = self._get_or_create_lsp_server(node.extension)
             references = lsp.request_references(
                 file_path=PathCalculator.get_relative_path_from_uri(root_uri=self.root_uri, uri=node.path),
                 line=node.definition_range.start_dict["line"],
@@ -126,14 +126,16 @@ class LspQueryHelper:
         logger.warning("Restarting LSP server")
         try:
             context = new_lsp.start_server()
-            context.__enter__()
+            new_lsp = context.__enter__()
+            self.language_to_lsp_server[language_definitions.get_language_name()] = new_lsp
+
         except ConnectionResetError:
             logger.error("Connection reset error")
 
         self.entered_lsp_servers[node.extension] = context
 
     def get_definition_path_for_reference(self, reference: Reference) -> str:
-        lsp_caller = self._get_or_create_multi_lsp(".py")
+        lsp_caller = self._get_or_create_lsp_server(".py")
         definitions = lsp_caller.request_definition(
             file_path=PathCalculator.get_relative_path_from_uri(root_uri=self.root_uri, uri=reference.uri),
             line=reference.range.start.line,
