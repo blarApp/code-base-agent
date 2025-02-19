@@ -292,7 +292,7 @@ requests = "2.32.3"
 type = "git"
 url = "https://github.com/blarApp/multilspy.git"
 reference = "HEAD"
-resolved_reference = "c1f05ad2f083e6d8130ff4e19e0b4fbcacaef28a"
+resolved_reference = "2d5a3906bcdea76b70799cf79739394b7eb27e91"
 
 [[package]]
 name = "neo4j"

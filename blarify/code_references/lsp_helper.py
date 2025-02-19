@@ -125,14 +125,10 @@ class LspQueryHelper:
 
         logger.warning("Restarting LSP server")
         try:
-            context = new_lsp.start_server()
-            new_lsp = context.__enter__()
+            self._initialize_lsp_server(language_definitions.get_language_name(), new_lsp)
             self.language_to_lsp_server[language_definitions.get_language_name()] = new_lsp
-
         except ConnectionResetError:
             logger.error("Connection reset error")
-
-        self.entered_lsp_servers[node.extension] = context
 
     def get_definition_path_for_reference(self, reference: Reference) -> str:
         lsp_caller = self._get_or_create_lsp_server(".py")
