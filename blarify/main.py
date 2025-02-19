@@ -11,6 +11,10 @@ from blarify.utils.file_remover import FileRemover
 import dotenv
 import os
 
+URI = os.getenv("NEO4J_URI")
+USER = os.getenv("NEO4J_USERNAME")
+PASSWORD = os.getenv("NEO4J_PASSWORD")
+
 
 def main(root_path: str = None, blarignore_path: str = None):
     lsp_query_helper = LspQueryHelper(root_uri=root_path)
@@ -29,9 +33,7 @@ def main(root_path: str = None, blarignore_path: str = None):
     entity_id = "test"
     graph_manager = Neo4jManager(repoId, entity_id)
 
-    graph_creator = ProjectGraphCreator(
-        root_path, lsp_query_helper, project_files_iterator, GraphEnvironment("dev", "MAIN", root_path)
-    )
+    graph_creator = ProjectGraphCreator(root_path, lsp_query_helper, project_files_iterator)
 
     graph = graph_creator.build()
 

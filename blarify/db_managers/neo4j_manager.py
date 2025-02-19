@@ -16,10 +16,18 @@ class Neo4jManager:
     repoId: str
     driver: Driver
 
-    def __init__(self, repoId: str = None, entityId: str = None, max_connections: int = 50, create_index=False):
-        uri = os.getenv("NEO4J_URI")
-        user = os.getenv("NEO4J_USERNAME")
-        password = os.getenv("NEO4J_PASSWORD")
+    def __init__(
+        self,
+        repo_id: str = None,
+        entityId: str = None,
+        max_connections: int = 50,
+        uri: str = None,
+        user: str = None,
+        password: str = None,
+    ):
+        uri = uri or os.getenv("NEO4J_URI")
+        user = user or os.getenv("NEO4J_USERNAME")
+        password = password or os.getenv("NEO4J_PASSWORD")
 
         retries = 3
         for attempt in range(retries):
@@ -32,16 +40,16 @@ class Neo4jManager:
                 else:
                     raise e
 
-        self.repoId = repoId if repoId is not None else "default_repo"
+        self.repoId = repo_id if repo_id is not None else "default_repo"
         self.entityId = entityId if entityId is not None else "default_user"
-
-    def save_graph(self, nodes: List[Any], edges: List[Any]):
-        self.create_nodes(nodes)
-        self.create_edges(edges)
 
     def close(self):
         # Close the connection to the database
         self.driver.close()
+
+    def save_graph(self, nodes: List[Any], edges: List[Any]):
+        self.create_nodes(nodes)
+        self.create_edges(edges)
 
     def create_nodes(self, nodeList: List[Any]):
         # Function to create nodes in the Neo4j database

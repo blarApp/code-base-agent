@@ -15,13 +15,14 @@ from blarify.code_hierarchy.languages import (
 )
 from typing import List, TYPE_CHECKING
 from blarify.logger import Logger
+from blarify.graph.graph_environment import GraphEnvironment
+
 
 if TYPE_CHECKING:
     from blarify.graph.node import FolderNode
     from blarify.project_file_explorer import File, Folder
     from blarify.graph.node import Node, FileNode
     from blarify.graph.relationship import Relationship
-    from blarify.graph.graph_environment import GraphEnvironment
 
 
 class ProjectGraphCreator:
@@ -49,7 +50,7 @@ class ProjectGraphCreator:
         self.root_path = root_path
         self.lsp_query_helper = lsp_query_helper
         self.project_files_iterator = project_files_iterator
-        self.graph_environment = graph_environment
+        self.graph_environment = graph_environment or GraphEnvironment("blarify", "repo", self.root_path)
 
         self.graph = Graph()
 
@@ -172,8 +173,6 @@ class ProjectGraphCreator:
             for node in nodes:
                 if node.label == NodeLabels.FILE:
                     continue
-
-                print(f"Processing node {node.name}")
 
                 tree_sitter_helper = self._get_tree_sitter_for_file_extension(node.extension)
                 references_relationships.extend(
