@@ -16,6 +16,9 @@ from blarify.code_hierarchy.languages import (
 from typing import List, TYPE_CHECKING
 from blarify.logger import Logger
 from blarify.graph.graph_environment import GraphEnvironment
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
@@ -58,9 +61,9 @@ class ProjectGraphCreator:
         self.create_code_hierarchy()
 
         # TODO: Implement a better way to wait for the lsp to finish
-        Logger.log("Waiting for LSP to finish")
+        logger.info("Waiting for LSP to finish")
         # time.sleep(15)
-        Logger.log("LSP finished")
+        logger.info("LSP finished")
 
         self.create_relationships_from_references_for_files()
         return self.graph
@@ -77,7 +80,7 @@ class ProjectGraphCreator:
 
         end_time = time.time()
         execution_time = end_time - start_time
-        Logger.log(f"Execution time of create_code_hierarchy: {execution_time:.2f} seconds")
+        logger.info(f"Execution time of create_code_hierarchy: {execution_time:.2f} seconds")
 
     def process_folder(self, folder: "Folder") -> None:
         folder_node = self.add_or_get_folder_node(folder)

@@ -18,6 +18,10 @@ from blarify.code_hierarchy.languages import (
 from multilspy.multilspy_config import MultilspyConfig
 from multilspy.multilspy_logger import MultilspyLogger
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class FileExtensionNotSupported(Exception):
     pass
@@ -116,12 +120,12 @@ class LspQueryHelper:
 
         new_lsp = self._create_lsp_server(language_definitions)
 
-        print("Restarting LSP server")
+        logger.warning("Restarting LSP server")
         try:
             context = new_lsp.start_server()
             context.__enter__()
         except ConnectionResetError:
-            print("Connection reset error")
+            logger.error("Connection reset error")
 
         self.entered_lsp_servers[node.extension] = context
 

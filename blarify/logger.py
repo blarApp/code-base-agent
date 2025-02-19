@@ -8,4 +8,4 @@ class Logger:
     @staticmethod
     def log(message: str) -> None:
         # if os.getenv("DEBUG"):
-        print(message)
+        logger.info(message)

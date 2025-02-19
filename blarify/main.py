@@ -11,6 +11,8 @@ from blarify.utils.file_remover import FileRemover
 import dotenv
 import os
 
+import logging
+
 URI = os.getenv("NEO4J_URI")
 USER = os.getenv("NEO4J_USERNAME")
 PASSWORD = os.getenv("NEO4J_PASSWORD")
@@ -161,6 +163,7 @@ def main_diff_with_previous(
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     dotenv.load_dotenv()
     root_path = os.getenv("ROOT_PATH")
     blarignore_path = os.getenv("BLARIGNORE_PATH")
