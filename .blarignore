@@ -1,0 +1,11 @@
+.env
+__pycache__
+poetry.lock
+.git
+.venv
+lsp-ws-proxy
+Guardfile
+422.html
+.venv
+.ruff_cache
+node_modules

@@ -1,0 +1,13 @@
+__pycache__/
+.venv/
+.env
+lsp-ws-proxy/
+ruby-on-rails-sample-app/
+.python-version
+.vscode/
+.idea/
+dist/
+fil-result/
+example
+delete.py
+*.json
