@@ -48,10 +48,8 @@ class LanguageDefinitions(ABC):
     def _get_identifier_node_base_implementation(node: Node) -> Node:
         if identifier := node.child_by_field_name("name"):
             return identifier
-
-        raise IdentifierNodeNotFound(
-            f"No identifier node found for node type {node.type} at {node.start_point} - {node.end_point}"
-        )
+        error = f"No identifier node found for node type {node.type} at {node.start_point} - {node.end_point}"
+        raise IdentifierNodeNotFound(error)
 
     @staticmethod
     @abstractmethod

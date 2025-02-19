@@ -10,6 +10,7 @@ class GraphBuilder:
         root_path: str,
         extensions_to_skip: list[str] = None,
         names_to_skip: list[str] = None,
+        only_hierarchy: bool = False,
     ):
         """
         A class responsible for constructing a graph representation of a project's codebase.
@@ -35,13 +36,19 @@ class GraphBuilder:
 
         self.repo_id = "REPO"
         self.entity_id = "BLARIFY"
+        self.only_hierarchy = only_hierarchy
 
     def build(self) -> Graph:
         lsp_query_helper = self._get_started_lsp_query_helper()
         project_files_iterator = self._get_project_files_iterator()
 
         graph_creator = ProjectGraphCreator(self.root_path, lsp_query_helper, project_files_iterator)
-        graph = graph_creator.build()
+
+        if self.only_hierarchy:
+            graph = graph_creator.build_hierarchy_only()
+        else:
+            graph = graph_creator.build()
+
         lsp_query_helper.shutdown_exit_close()
 
         return graph

@@ -24,6 +24,10 @@ def save_to_neo4j(relationships, nodes):
 
 
 if __name__ == "__main__":
+    import logging
+
+    logging.basicConfig(level=logging.INFO)
+
     dotenv.load_dotenv()
     root_path = os.getenv("ROOT_PATH")
     build(root_path=root_path)

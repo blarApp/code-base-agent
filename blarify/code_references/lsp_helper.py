@@ -13,6 +13,7 @@ from blarify.code_hierarchy.languages import (
     TypescriptDefinitions,
     LanguageDefinitions,
     CsharpDefinitions,
+    GoDefinitions,
 )
 
 from multilspy.multilspy_config import MultilspyConfig
@@ -49,6 +50,8 @@ class LspQueryHelper:
             return RubyDefinitions
         elif extension in CsharpDefinitions.get_language_file_extensions():
             return CsharpDefinitions
+        elif extension in GoDefinitions.get_language_file_extensions():
+            return GoDefinitions
         else:
             raise FileExtensionNotSupported(f'File extension "{extension}" is not supported)')
 

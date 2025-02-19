@@ -28,13 +28,19 @@ class GoDefinitions(LanguageDefinitions):
         )
 
     def get_identifier_node(node: Node) -> Node:
+        print("NODE IDENTIFIER", node.type)
         if node.type == "type_declaration":
-            node = node.child_by_field_id("type_spec")
+            for child in node.named_children:
+                if child.type == "type_spec" or "type_alias":
+                    node = child
+
         return LanguageDefinitions._get_identifier_node_base_implementation(node)
 
     def get_body_node(node: Node) -> Node:
         if node.type == "type_declaration":
-            node = node.child_by_field_id("field_declaration_list")
+            for child in node.named_children:
+                if child.type == "type_spec":
+                    node = child
 
         return LanguageDefinitions._get_body_node_base_implementation(node)
 

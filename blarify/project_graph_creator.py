@@ -1,4 +1,5 @@
 import time
+from blarify.code_hierarchy.languages.go_definitions import GoDefinitions
 from blarify.code_references import LspQueryHelper, FileExtensionNotSupported
 from blarify.project_file_explorer import ProjectFilesIterator
 from blarify.graph.node import NodeLabels, NodeFactory
@@ -41,6 +42,7 @@ class ProjectGraphCreator:
         ".tsx": TypescriptDefinitions,
         ".rb": RubyDefinitions,
         ".cs": CsharpDefinitions,
+        ".go": GoDefinitions,
     }
 
     def __init__(

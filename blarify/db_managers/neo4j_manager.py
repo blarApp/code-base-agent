@@ -12,14 +12,14 @@ load_dotenv()
 
 
 class Neo4jManager:
-    entityId: str
-    repoId: str
+    entity_id: str
+    repo_id: str
     driver: Driver
 
     def __init__(
         self,
         repo_id: str = None,
-        entityId: str = None,
+        entity_id: str = None,
         max_connections: int = 50,
         uri: str = None,
         user: str = None,
@@ -40,8 +40,8 @@ class Neo4jManager:
                 else:
                     raise e
 
-        self.repoId = repo_id if repo_id is not None else "default_repo"
-        self.entityId = entityId if entityId is not None else "default_user"
+        self.repo_id = repo_id if repo_id is not None else "default_repo"
+        self.entity_id = entity_id if entity_id is not None else "default_user"
 
     def close(self):
         # Close the connection to the database
@@ -54,12 +54,14 @@ class Neo4jManager:
     def create_nodes(self, nodeList: List[Any]):
         # Function to create nodes in the Neo4j database
         with self.driver.session() as session:
-            session.write_transaction(self._create_nodes_txn, nodeList, 100, repoId=self.repoId, entityId=self.entityId)
+            session.write_transaction(
+                self._create_nodes_txn, nodeList, 100, repoId=self.repo_id, entityId=self.entity_id
+            )
 
     def create_edges(self, edgesList: List[Any]):
         # Function to create edges between nodes in the Neo4j database
         with self.driver.session() as session:
-            session.write_transaction(self._create_edges_txn, edgesList, 100, entityId=self.entityId)
+            session.write_transaction(self._create_edges_txn, edgesList, 100, entityId=self.entity_id)
 
     @staticmethod
     def _create_nodes_txn(tx, nodeList: List[Any], batch_size: int, repoId: str, entityId: str):
