@@ -143,13 +143,9 @@ class ProjectGraphDiffCreator(ProjectGraphCreator):
         for previous_node in previous_node_states:
             equivalent_node: DefinitionNode = self.graph.get_node_by_relative_id(previous_node.relative_id)
             if not equivalent_node:
-                print(f"Node not found: {previous_node.relative_id}")
                 deleted_node = NodeFactory.create_deleted_node(
                     graph_environment=self.pr_environment,
                 )
-
-                print(f"Creating deleted node: {deleted_node.hashed_id}")
-                print(deleted_node.as_object())
 
                 self.graph.add_node(deleted_node)
                 self.deleted_nodes_added_paths.append(deleted_node.path)
