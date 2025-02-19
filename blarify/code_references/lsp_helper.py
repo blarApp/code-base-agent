@@ -149,4 +149,10 @@ class LspQueryHelper:
 
     def shutdown_exit_close(self) -> None:
         for lsp in self.entered_lsp_servers.values():
-            lsp.__exit__(None, None, None)
+            try:
+                lsp.__exit__(None, None, None)
+            except Exception as e:
+                logger.error(f"Error shutting down LSP: {e}")
+        self.entered_lsp_servers = {}
+        self.language_to_lsp_server = {}
+        logger.info("LSP servers have been shut down")

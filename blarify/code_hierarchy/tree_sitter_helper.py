@@ -176,7 +176,6 @@ class TreeSitterHelper:
         identifier_node = self.language_definitions.get_identifier_node(node)
         identifier_reference = self._get_reference_from_node(node=identifier_node)
         identifier_name = self._get_identifier_name(identifier_node=identifier_node)
-        print("identifier", identifier_name)
         return identifier_name, identifier_reference
 
     def _get_identifier_name(self, identifier_node: str) -> str:
