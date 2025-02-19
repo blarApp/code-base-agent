@@ -71,13 +71,12 @@ class GoDefinitions(LanguageDefinitions):
     def _get_relationship_types_by_label() -> dict[str, RelationshipType]:
         return {
             NodeLabels.CLASS: {
-                "object_creation_expression": RelationshipType.INSTANTIATES,
-                "using_directive": RelationshipType.IMPORTS,
-                "variable_declaration": RelationshipType.TYPES,
-                "parameter": RelationshipType.TYPES,
-                "base_list": RelationshipType.INHERITS,
+                "import_declaration": RelationshipType.IMPORTS,
+                "field_declaration": RelationshipType.TYPES,
+                "composite_literal": RelationshipType.INSTANTIATES,
             },
             NodeLabels.FUNCTION: {
-                "invocation_expression": RelationshipType.CALLS,
+                "import_declaration": RelationshipType.IMPORTS,
+                "call_expression": RelationshipType.CALLS,
             },
         }

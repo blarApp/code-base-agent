@@ -109,7 +109,7 @@ class LspQueryHelper:
             )
         except TimeoutError:
             self._restart_lsp_for_extension(node)
-            lsp = self.multi_lsp_callers[node.extension]
+            lsp = self._get_or_create_multi_lsp(node.extension)
             references = lsp.request_references(
                 file_path=PathCalculator.get_relative_path_from_uri(root_uri=self.root_uri, uri=node.path),
                 line=node.definition_range.start_dict["line"],
