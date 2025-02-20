@@ -1,5 +1,14 @@
 This repo introduces a method to represent a local code repository as a graph structure. The objective is to allow an LLM to traverse this graph to understand the code logic and flow. Providing the LLM with the power to debug, refactor, and optimize queries.
 
+# Supported Languages
+
+- Python
+- JavaScript
+- TypeScript
+- Ruby
+- Go
+- C#
+
 # Example
 <img src="https://raw.githubusercontent.com/blarApp/blarify/refs/heads/main/docs/visualisation.png"></img>
 This graph was generated from the code in this repository.
