@@ -28,7 +28,6 @@ class GoDefinitions(LanguageDefinitions):
         )
 
     def get_identifier_node(node: Node) -> Node:
-        print("NODE IDENTIFIER", node.type)
         if node.type == "type_declaration":
             for child in node.named_children:
                 if child.type == "type_spec" or "type_alias":
