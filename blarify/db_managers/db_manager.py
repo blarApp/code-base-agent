@@ -1,4 +1,4 @@
-class AbstractNeo4jManager:
+class AbstractDbManager:
     def close(self):
         """Close the connection to the database."""
         raise NotImplementedError

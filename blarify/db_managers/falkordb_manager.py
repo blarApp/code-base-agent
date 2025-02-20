@@ -51,7 +51,7 @@ class FalkorDBManager:
             attributes.update({"repoId": self.repo_id, "entityId": self.entity_id})
             # Construct parameterized query
             cypher_query = f"CREATE (n:{labels} $props)"
-            graph.query(cypher_query, params={"name": attributes["name"]})
+            graph.query(cypher_query, params={"props": attributes})
 
     def create_edges(self, edgesList: List[Any]):
         # Function to create edges between nodes in the FalkorDB database
