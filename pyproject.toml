@@ -23,6 +23,7 @@ tree-sitter-typescript = "^0.23.2"
 tree-sitter-c-sharp = "^0.23.1"
 multilspy = {git = "https://github.com/blarApp/multilspy.git"}
 tree-sitter-go = "^0.23.4"
+falkordb = "^1.0.10"
 
 
 [build-system]
