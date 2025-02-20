@@ -1,4 +1,5 @@
 import time
+from blarify.code_hierarchy.languages.go_definitions import GoDefinitions
 from blarify.code_references import LspQueryHelper, FileExtensionNotSupported
 from blarify.project_file_explorer import ProjectFilesIterator
 from blarify.graph.node import NodeLabels, NodeFactory
@@ -11,16 +12,21 @@ from blarify.code_hierarchy.languages import (
     TypescriptDefinitions,
     FallbackDefinitions,
     RubyDefinitions,
+    CsharpDefinitions,
 )
 from typing import List, TYPE_CHECKING
 from blarify.logger import Logger
+from blarify.graph.graph_environment import GraphEnvironment
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 if TYPE_CHECKING:
     from blarify.graph.node import FolderNode
     from blarify.project_file_explorer import File, Folder
     from blarify.graph.node import Node, FileNode
     from blarify.graph.relationship import Relationship
-    from blarify.graph.graph_environment import GraphEnvironment
 
 
 class ProjectGraphCreator:
@@ -35,6 +41,8 @@ class ProjectGraphCreator:
         ".ts": TypescriptDefinitions,
         ".tsx": TypescriptDefinitions,
         ".rb": RubyDefinitions,
+        ".cs": CsharpDefinitions,
+        ".go": GoDefinitions,
     }
 
     def __init__(
@@ -47,7 +55,7 @@ class ProjectGraphCreator:
         self.root_path = root_path
         self.lsp_query_helper = lsp_query_helper
         self.project_files_iterator = project_files_iterator
-        self.graph_environment = graph_environment
+        self.graph_environment = graph_environment or GraphEnvironment("blarify", "repo", self.root_path)
 
         self.graph = Graph()
 
@@ -55,9 +63,9 @@ class ProjectGraphCreator:
         self.create_code_hierarchy()
 
         # TODO: Implement a better way to wait for the lsp to finish
-        Logger.log("Waiting for LSP to finish")
-        time.sleep(15)
-        Logger.log("LSP finished")
+        logger.info("Waiting for LSP to finish")
+        # time.sleep(15)
+        logger.info("LSP finished")
 
         self.create_relationships_from_references_for_files()
         return self.graph
@@ -74,7 +82,7 @@ class ProjectGraphCreator:
 
         end_time = time.time()
         execution_time = end_time - start_time
-        Logger.log(f"Execution time of create_code_hierarchy: {execution_time:.2f} seconds")
+        logger.info(f"Execution time of create_code_hierarchy: {execution_time:.2f} seconds")
 
     def process_folder(self, folder: "Folder") -> None:
         folder_node = self.add_or_get_folder_node(folder)
@@ -190,8 +198,13 @@ class ProjectGraphCreator:
         if index % x == 0:
             Logger.log(text)
 
-    def create_node_relationships(self, node: "Node", tree_sitter_helper: TreeSitterHelper) -> List["Relationship"]:
+    def create_node_relationships(
+        self,
+        node: "Node",
+        tree_sitter_helper: TreeSitterHelper,
+    ) -> List["Relationship"]:
         references = self.lsp_query_helper.get_paths_where_node_is_referenced(node)
+
         relationships = RelationshipCreator.create_relationships_from_paths_where_node_is_referenced(
             references=references, node=node, graph=self.graph, tree_sitter_helper=tree_sitter_helper
         )

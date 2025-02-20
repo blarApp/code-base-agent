@@ -8,6 +8,7 @@ class ProjectFilesIterator:
     root_path: str
     paths_to_skip: List[str]
     names_to_skip: List[str]
+    extensions_to_skip: List[str]
     max_file_size_mb: int
 
     def __init__(
@@ -15,12 +16,14 @@ class ProjectFilesIterator:
         root_path: str,
         paths_to_skip: List[str] = None,
         names_to_skip: List[str] = None,
+        extensions_to_skip: List[str] = None,
         blarignore_path: str = None,
         max_file_size_mb: int = 10,
     ):
         self.paths_to_skip = paths_to_skip or []
         self.root_path = root_path
         self.names_to_skip = names_to_skip or []
+        self.extensions_to_skip = extensions_to_skip or []
         self.max_file_size_mb = max_file_size_mb
 
         if blarignore_path:
@@ -83,7 +86,9 @@ class ProjectFilesIterator:
 
         is_file_size_too_big = os.path.getsize(path) > self._mb_to_bytes(self.max_file_size_mb)
 
-        return is_basename_in_names_to_skip or is_path_in_paths_to_skip or is_file_size_too_big
+        is_extension_to_skip = any(path.endswith(extension) for extension in self.extensions_to_skip)
+
+        return is_basename_in_names_to_skip or is_path_in_paths_to_skip or is_file_size_too_big or is_extension_to_skip
 
     def _mb_to_bytes(self, mb: int) -> int:
         return 1024 * 1024 * mb
