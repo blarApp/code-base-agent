@@ -107,7 +107,10 @@ class LspQueryHelper:
                 line=node.definition_range.start_dict["line"],
                 column=node.definition_range.start_dict["character"],
             )
-        except TimeoutError:
+
+        except (TimeoutError, ConnectionResetError) as e:
+            logger.warning(f"Error requesting references: {e}, attempting to restart LSP server")
+
             self._restart_lsp_for_extension(node)
             lsp = self._get_or_create_lsp_server(node.extension)
             references = lsp.request_references(
@@ -127,6 +130,7 @@ class LspQueryHelper:
         try:
             self._initialize_lsp_server(language_definitions.get_language_name(), new_lsp)
             self.language_to_lsp_server[language_definitions.get_language_name()] = new_lsp
+            logger.warning("LSP server restarted")
         except ConnectionResetError:
             logger.error("Connection reset error")
 
