@@ -24,23 +24,13 @@ class GoDefinitions(LanguageDefinitions):
     def should_create_node(node: Node) -> bool:
         return LanguageDefinitions._should_create_node_base_implementation(
             node,
-            ["type_declaration", "method_declaration", "function_declaration"],
+            ["type_spec", "type_alias", "method_declaration", "function_declaration"],
         )
 
     def get_identifier_node(node: Node) -> Node:
-        if node.type == "type_declaration":
-            for child in node.named_children:
-                if child.type == "type_spec" or "type_alias":
-                    node = child
-
         return LanguageDefinitions._get_identifier_node_base_implementation(node)
 
     def get_body_node(node: Node) -> Node:
-        if node.type == "type_declaration":
-            for child in node.named_children:
-                if child.type == "type_spec":
-                    node = child
-
         return LanguageDefinitions._get_body_node_base_implementation(node)
 
     def get_relationship_type(node: GraphNode, node_in_point_reference: Node) -> Optional[FoundRelationshipScope]:
@@ -51,7 +41,8 @@ class GoDefinitions(LanguageDefinitions):
 
     def get_node_label_from_type(type: str) -> NodeLabels:
         return {
-            "type_declaration": NodeLabels.CLASS,
+            "type_spec": NodeLabels.CLASS,
+            "type_alias": NodeLabels.CLASS,
             "method_declaration": NodeLabels.FUNCTION,
             "function_declaration": NodeLabels.FUNCTION,
         }[type]
