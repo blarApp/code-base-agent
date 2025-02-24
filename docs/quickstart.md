@@ -118,9 +118,7 @@ import os
 
 
 def build(root_path: str = None):
-    graph_builder = GraphBuilder(
-        root_path=root_path, extensions_to_skip=[".json"], names_to_skip=["__pycache__"], only_hierarchy=True
-    )
+    graph_builder = GraphBuilder(root_path=root_path, extensions_to_skip=[".json"], names_to_skip=["__pycache__"])
     graph = graph_builder.build()
 
     relationships = graph.get_relationships_as_objects()
@@ -153,7 +151,6 @@ if __name__ == "__main__":
     dotenv.load_dotenv()
     root_path = os.getenv("ROOT_PATH")
     build(root_path=root_path)
-
 ```
 
 
