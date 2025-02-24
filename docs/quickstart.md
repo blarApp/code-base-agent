@@ -91,7 +91,7 @@ this will return a list of dictionaries with the following structure
 }
 ```
 
-Example using Neo4j
+Example using FalkorDB
 ```python
 relationships = graph.get_relationships_as_objects()
 nodes = graph.get_nodes_as_objects()
@@ -111,19 +111,22 @@ graph_manager.close()
 # Taken from blarify/examples/graph_builder.py
 from blarify.prebuilt.graph_builder import GraphBuilder
 from blarify.db_managers.neo4j_manager import Neo4jManager
+from blarify.db_managers.falkordb_manager import FalkorDBManager
 
 import dotenv
 import os
 
 
 def build(root_path: str = None):
-    graph_builder = GraphBuilder(root_path=root_path, extensions_to_skip=[".json"], names_to_skip=["__pycache__"])
+    graph_builder = GraphBuilder(
+        root_path=root_path, extensions_to_skip=[".json"], names_to_skip=["__pycache__"], only_hierarchy=True
+    )
     graph = graph_builder.build()
 
     relationships = graph.get_relationships_as_objects()
     nodes = graph.get_nodes_as_objects()
 
-    save_to_neo4j(relationships, nodes)
+    save_to_falkordb(relationships, nodes)
 
 
 def save_to_neo4j(relationships, nodes):
@@ -134,10 +137,23 @@ def save_to_neo4j(relationships, nodes):
     graph_manager.close()
 
 
+def save_to_falkordb(relationships, nodes):
+    graph_manager = FalkorDBManager(repo_id="repo", entity_id="organization")
+
+    print(f"Saving graph with {len(nodes)} nodes and {len(relationships)} relationships")
+    graph_manager.save_graph(nodes, relationships)
+    graph_manager.close()
+
+
 if __name__ == "__main__":
+    import logging
+
+    logging.basicConfig(level=logging.INFO)
+
     dotenv.load_dotenv()
     root_path = os.getenv("ROOT_PATH")
     build(root_path=root_path)
+
 ```
 
 
