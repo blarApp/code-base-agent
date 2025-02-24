@@ -35,47 +35,42 @@ class FalkorDBManager:
         self.entity_id = entity_id if entity_id is not None else "default_user"
 
     def close(self):
-        # Close the connection to the database
-        self.db.close()
+        pass
 
     def save_graph(self, nodes: List[Any], edges: List[Any]):
         self.create_nodes(nodes)
         self.create_edges(edges)
 
-    def create_nodes(self, nodeList: List[Any]):
-        # Function to create nodes in the FalkorDB database
+    def create_nodes(self, nodeList: List[dict]):
         graph = self.db.select_graph(self.repo_id)
-        for node in nodeList:
-            labels = ":".join(node.get("extra_labels", []) + [node["type"], "NODE"])
-            attributes = node.get("attributes", {})
-            attributes.update({"repoId": self.repo_id, "entityId": self.entity_id})
-            # Construct parameterized query
-            cypher_query = f"CREATE (n:{labels} $props)"
-            graph.query(cypher_query, params={"props": attributes})
+        cypher_query = """
+        UNWIND $nodes AS node
+        CREATE (n)
+        SET n = node.attributes
+        WITH n AS created_node, node.extra_labels AS labels
+        UNWIND labels AS label
+        SET created_node:label
+        RETURN created_node
+        """
+        graph.query(
+            cypher_query,
+            params={"nodes": nodeList},
+        )
 
-    def create_edges(self, edgesList: List[Any]):
-        # Function to create edges between nodes in the FalkorDB database
+    def create_edges(self, edgesList: List[dict]):
         graph = self.db.select_graph(self.repo_id)
-        for edge in edgesList:
-            # Construct parameterized query
-            cypher_query = (
-                "MATCH (a:NODE {node_id: $sourceId}), "
-                "(b:NODE {node_id: $targetId}) "
-                "CREATE (a)-[r:$type {scopeText: $scopeText}]->(b)"
-            )
-            graph.query(
-                cypher_query,
-                params={
-                    "sourceId": edge["sourceId"],
-                    "targetId": edge["targetId"],
-                    "type": edge["type"],
-                    "scopeText": edge["scopeText"],
-                },
-            )
+        cypher_query = """
+        UNWIND $edges AS edge
+        MATCH (a {node_id: edge.sourceId}), (b {node_id: edge.targetId})
+        CREATE (a)-[:`$edge.type` {scopeText: edge.scopeText}]->(b)
+        """
+        graph.query(
+            cypher_query,
+            params={"edges": edgesList},
+        )
 
     def detach_delete_nodes_with_path(self, path: str):
         graph = self.db.select_graph(self.repo_id)
-        # Construct parameterized query
         cypher_query = "MATCH (n {path: $path}) DETACH DELETE n"
         result = graph.query(cypher_query, params={"path": path})
         return result.result_set
