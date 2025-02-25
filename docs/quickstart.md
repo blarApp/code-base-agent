@@ -15,10 +15,9 @@ python -m venv .venv
 source .venv/bin/activate
 ```
 
-Clone and install the Blarify repository:
+Install the Blarify repository:
 ```bash
-git clone git@github.com:blarApp/blarify.git
-pip install blarify/
+pip install blarify
 ```
 
 ## Usage
@@ -36,6 +35,8 @@ from blarify.prebuilt.graph_builder import GraphBuilder
 Create the graph builder
 
 You can skip files or directories by passing them in the extensions_to_skip or names_to_skip parameters
+
+I highly recommend skipping everything that is not a code file as this will make the graph much more readable and way faster to build
 
 ```python
 graph_builder = GraphBuilder(root_path=PATH_TO_YOUR_PROJECT, extensions_to_skip=[".json"], names_to_skip=["__pycache__"])
@@ -89,20 +90,6 @@ this will return a list of dictionaries with the following structure
         "text": "node_text", # Text of the node within the file
     },
 }
-```
-
-Example using FalkorDB
-```python
-relationships = graph.get_relationships_as_objects()
-nodes = graph.get_nodes_as_objects()
-
-# This assumes you have the following environment variables set:
-# NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD
-graph_manager = Neo4jManager(repo_id="repo", entity_id="organization")
-
-graph_manager.save_graph(nodes, relationships)
-graph_manager.close()
-
 ```
 
 ## Complete Example

@@ -1,3 +1,6 @@
+
+# dont ignore anything in blarify/vendor
+
 __pycache__/
 .venv/
 .env
@@ -11,3 +14,6 @@ fil-result/
 example
 delete.py
 *.json
+
+!blarify/vendor/**/*.json
+
