@@ -1,6 +1,6 @@
 from typing import Optional
 
-from vendor.multilspy import SyncLanguageServer
+from blarify.vendor.multilspy import SyncLanguageServer
 
 from blarify.utils.path_calculator import PathCalculator
 
@@ -16,8 +16,8 @@ from blarify.code_hierarchy.languages import (
     GoDefinitions,
 )
 
-from vendor.multilspy.multilspy_config import MultilspyConfig
-from vendor.multilspy.multilspy_logger import MultilspyLogger
+from blarify.vendor.multilspy.multilspy_config import MultilspyConfig
+from blarify.vendor.multilspy.multilspy_logger import MultilspyLogger
 
 
 import logging

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "blarify"
-version = "1.0.0"
+version = "1.0.1"
 description = "A simple graph builder based on LSP calls"
 authors = ["Juan Vargas <juan@blar.io>", "Benjamín Errazuriz <benjamin@blar.io>"]
 readme = "README.md"
@@ -26,8 +26,8 @@ falkordb = "^1.0.10"
 requests = "^2.32.3"
 
 [tool.vendoring]
-destination = "vendor"
-namespace = "vendor"
+destination = "blarify/vendor"
+namespace = "blarify.vendor"
 requirements = "requirements-vendor.txt"
 
 [build-system]
