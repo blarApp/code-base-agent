@@ -241,3 +241,8 @@ class TreeSitterHelper:
             ),
             uri=self.current_path,
         )
+
+    def pretty_print(self, tree_sitter_node: "TreeSitterNode", indent: int = 0) -> None:
+        print(" " * indent + f"{{{tree_sitter_node.type}}} {tree_sitter_node.text.decode('utf-8')}")
+        for child in tree_sitter_node.children:
+            self.pretty_print(child, indent + 1)

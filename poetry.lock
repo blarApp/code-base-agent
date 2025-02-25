@@ -588,6 +588,27 @@ files = [
 core = ["tree-sitter (>=0.22,<1.0)"]
 
 [[package]]
+name = "tree-sitter-embedded-template"
+version = "0.23.2"
+description = "Embedded Template (ERB, EJS) grammar for tree-sitter"
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "tree_sitter_embedded_template-0.23.2-cp39-abi3-macosx_10_9_x86_64.whl", hash = "sha256:a505c2d2494464029d79db541cab52f6da5fb326bf3d355e69bf98b84eb89ae0"},
+    {file = "tree_sitter_embedded_template-0.23.2-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:28028b93b42cc3753261ae7ce066675d407f59de512417524f9c3ab7792b1d37"},
+    {file = "tree_sitter_embedded_template-0.23.2-cp39-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:ec399d59ce93ffb60759a2d96053eed529f3c3f6a27128f261710d0d0de60e10"},
+    {file = "tree_sitter_embedded_template-0.23.2-cp39-abi3-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:bcfa01f62b88d50dbcb736cc23baec8ddbfe08daacfdc613eee8c04ab65efd09"},
+    {file = "tree_sitter_embedded_template-0.23.2-cp39-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:6debd24791466f887109a433c31aa4a5deeba2b217817521c745a4e748a944ed"},
+    {file = "tree_sitter_embedded_template-0.23.2-cp39-abi3-win_amd64.whl", hash = "sha256:158fecb38be5b15db0190ef7238e5248f24bf32ae3cab93bc1197e293a5641eb"},
+    {file = "tree_sitter_embedded_template-0.23.2-cp39-abi3-win_arm64.whl", hash = "sha256:9f1f3b79fe273f3d15a5b64c85fc6ebfb48decfbe8542accd05f5b7694860df0"},
+    {file = "tree_sitter_embedded_template-0.23.2.tar.gz", hash = "sha256:7b24dcf2e92497f54323e617564d36866230a8bfb719dbb7b45b461510dcddaa"},
+]
+
+[package.extras]
+core = ["tree-sitter (>=0.22,<1.0)"]
+
+[[package]]
 name = "tree-sitter-go"
 version = "0.23.4"
 description = "Go grammar for tree-sitter"
@@ -628,6 +649,26 @@ files = [
 
 [package.extras]
 core = ["tree-sitter (>=0.22,<1.0)"]
+
+[[package]]
+name = "tree-sitter-language-pack"
+version = "0.4.0"
+description = "Extensive Language Pack for Tree-Sitter"
+optional = false
+python-versions = ">=3.9.0"
+groups = ["main"]
+files = [
+    {file = "tree_sitter_language_pack-0.4.0-cp39-abi3-macosx_10_13_universal2.whl", hash = "sha256:64dc27593b9c5cd6a8554c9f026c7e7e728744b1f8aacf6d8935255b17d2792d"},
+    {file = "tree_sitter_language_pack-0.4.0-cp39-abi3-manylinux2014_x86_64.whl", hash = "sha256:50bf88e5b9ee77bd86ca0145a0758ee6268c7c59c93a822d96d9f699948391fe"},
+    {file = "tree_sitter_language_pack-0.4.0-cp39-abi3-win_amd64.whl", hash = "sha256:da4b504f069a28b73f4470c9e079979cdd666f747766094a8a97fed22e13d0c8"},
+    {file = "tree_sitter_language_pack-0.4.0.tar.gz", hash = "sha256:d368ab56480e57e0f4e7cc34ae1d00190a66f60424135e44a7c8e1968ce62304"},
+]
+
+[package.dependencies]
+tree-sitter = ">=0.23.2"
+tree-sitter-c-sharp = ">=0.23.1"
+tree-sitter-embedded-template = ">=0.23.2"
+tree-sitter-yaml = ">=0.7.0"
 
 [[package]]
 name = "tree-sitter-python"
@@ -691,6 +732,27 @@ files = [
 
 [package.extras]
 core = ["tree-sitter (>=0.23,<1.0)"]
+
+[[package]]
+name = "tree-sitter-yaml"
+version = "0.7.0"
+description = "YAML grammar for tree-sitter"
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "tree_sitter_yaml-0.7.0-cp39-abi3-macosx_10_9_x86_64.whl", hash = "sha256:e21553ac190ae05bf82796df8beb4d9158ba195b5846018cb36fbc3a35bd0679"},
+    {file = "tree_sitter_yaml-0.7.0-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:c022054f1f9b54201082ea83073a6c24c42d0436ad8ee99ff2574cba8f928c28"},
+    {file = "tree_sitter_yaml-0.7.0-cp39-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:1cd1725142f19e41c51d27c99cfc60780f596e069eb181cfa6433d993a19aa3d"},
+    {file = "tree_sitter_yaml-0.7.0-cp39-abi3-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:9d1b268378254f75bb27396d83c96d886ccbfcda6bd8c2778e94e3e1d2459085"},
+    {file = "tree_sitter_yaml-0.7.0-cp39-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:27c2e7f4f49ddf410003abbb82a7b00ec77ea263d8ef08dbce1a15d293eed2fd"},
+    {file = "tree_sitter_yaml-0.7.0-cp39-abi3-win_amd64.whl", hash = "sha256:98dce0d6bc376f842cfb1d3c32512eea95b37e61cd2c87074bb4b05c999917c8"},
+    {file = "tree_sitter_yaml-0.7.0-cp39-abi3-win_arm64.whl", hash = "sha256:f0f8d8e05fa8e70f08d0f18a209d6026e171844f4ea7090e7c779b9c375b3a31"},
+    {file = "tree_sitter_yaml-0.7.0.tar.gz", hash = "sha256:9c8bb17d9755c3b0e757260917240c0d19883cd3b59a5d74f205baa8bf8435a4"},
+]
+
+[package.extras]
+core = ["tree-sitter (>=0.22,<1.0)"]
 
 [[package]]
 name = "typing-extensions"
@@ -821,4 +883,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<=3.14"
-content-hash = "06565b2c28596ebb4359a4c55aae0ec1a9d06478d8399bc12164fe9ab8b832c8"
+content-hash = "011a8d0c2734410fadaba30ffcd8f551b343e940f0574ce3e68d16d083ce9680"

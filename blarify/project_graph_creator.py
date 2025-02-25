@@ -12,6 +12,7 @@ from blarify.code_hierarchy.languages import (
     TypescriptDefinitions,
     FallbackDefinitions,
     RubyDefinitions,
+    DartDefinitions,
     CsharpDefinitions,
 )
 from typing import List, TYPE_CHECKING
@@ -43,6 +44,7 @@ class ProjectGraphCreator:
         ".rb": RubyDefinitions,
         ".cs": CsharpDefinitions,
         ".go": GoDefinitions,
+        ".dart": DartDefinitions,
     }
 
     def __init__(

@@ -1,0 +1,1210 @@
+[94mprogram[0m [92m[Point(row=0, column=0) - Point(row=104, column=0)][0m import 'dart:io';
+
+import 'package:flutter/material.dart';
+
+/// A temporary workaround for [WillPopScope] and [PopScope] not working in GoRouter
+/// https://github.com/flutter/flutter/issues/140869#issuecomment-2247181468
+class AppPopScope extends StatefulWidget {
+  final Widget child;
+
+  final PopInvokedCallback? onPopInvoked;
+
+  final bool canPop;
+
+  const AppPopScope({
+    super.key,
+    required this.child,
+    this.canPop = true,
+    this.onPopInvoked,
+  });
+
+  @override
+  State<AppPopScope> createState() => _AppPopScopeState();
+}
+
+class _AppPopScopeState extends State<AppPopScope> {
+  final bool _enable = Platform.isAndroid;
+  ModalRoute? _route;
+  BackButtonDispatcher? _parentBackBtnDispatcher;
+  ChildBackButtonDispatcher? _backBtnDispatcher;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _route = ModalRoute.of(context);
+    _updateBackButtonDispatcher();
+  }
+
+  @override
+  void activate() {
+    super.activate();
+    _updateBackButtonDispatcher();
+  }
+
+  @override
+  void deactivate() {
+    super.deactivate();
+    _disposeBackBtnDispatcher();
+  }
+
+  @override
+  void dispose() {
+    _disposeBackBtnDispatcher();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: widget.canPop,
+      onPopInvoked: widget.onPopInvoked,
+      child: widget.child,
+    );
+  }
+
+  void _updateBackButtonDispatcher() {
+    if (!_enable) return;
+
+    var dispatcher = Router.maybeOf(context)?.backButtonDispatcher;
+    if (dispatcher != _parentBackBtnDispatcher) {
+      _disposeBackBtnDispatcher();
+      _parentBackBtnDispatcher = dispatcher;
+      if (dispatcher is BackButtonDispatcher &&
+          dispatcher is! ChildBackButtonDispatcher) {
+        dispatcher = dispatcher.createChildBackButtonDispatcher();
+      }
+      _backBtnDispatcher = dispatcher as ChildBackButtonDispatcher;
+    }
+    _backBtnDispatcher?.removeCallback(_handleBackButton);
+    _backBtnDispatcher?.addCallback(_handleBackButton);
+    _backBtnDispatcher?.takePriority();
+  }
+
+  void _disposeBackBtnDispatcher() {
+    _backBtnDispatcher?.removeCallback(_handleBackButton);
+    if (_backBtnDispatcher is ChildBackButtonDispatcher) {
+      final child = _backBtnDispatcher as ChildBackButtonDispatcher;
+      _parentBackBtnDispatcher?.forget(child);
+    }
+    _backBtnDispatcher = null;
+    _parentBackBtnDispatcher = null;
+  }
+
+  bool get _onlyRoute => _route != null && _route!.isFirst && _route!.isCurrent;
+
+  Future<bool> _handleBackButton() async {
+    if (_onlyRoute) {
+      widget.onPopInvoked?.call(widget.canPop);
+      if (!widget.canPop) {
+        return true;
+      }
+    }
+    return false;
+  }
+}
+
+  [94mimport_or_export[0m [92m[Point(row=0, column=0) - Point(row=0, column=17)][0m import 'dart:io';
+    [94mlibrary_import[0m [92m[Point(row=0, column=0) - Point(row=0, column=17)][0m import 'dart:io';
+      [94mimport_specification[0m [92m[Point(row=0, column=0) - Point(row=0, column=17)][0m import 'dart:io';
+        [94mimport[0m [92m[Point(row=0, column=0) - Point(row=0, column=6)][0m import
+        [94mconfigurable_uri[0m [92m[Point(row=0, column=7) - Point(row=0, column=16)][0m 'dart:io'
+          [94muri[0m [92m[Point(row=0, column=7) - Point(row=0, column=16)][0m 'dart:io'
+            [94mstring_literal[0m [92m[Point(row=0, column=7) - Point(row=0, column=16)][0m 'dart:io'
+              [94m'[0m [92m[Point(row=0, column=7) - Point(row=0, column=8)][0m '
+              [94m'[0m [92m[Point(row=0, column=15) - Point(row=0, column=16)][0m '
+        [94m;[0m [92m[Point(row=0, column=16) - Point(row=0, column=17)][0m ;
+  [94mimport_or_export[0m [92m[Point(row=2, column=0) - Point(row=2, column=39)][0m import 'package:flutter/material.dart';
+    [94mlibrary_import[0m [92m[Point(row=2, column=0) - Point(row=2, column=39)][0m import 'package:flutter/material.dart';
+      [94mimport_specification[0m [92m[Point(row=2, column=0) - Point(row=2, column=39)][0m import 'package:flutter/material.dart';
+        [94mimport[0m [92m[Point(row=2, column=0) - Point(row=2, column=6)][0m import
+        [94mconfigurable_uri[0m [92m[Point(row=2, column=7) - Point(row=2, column=38)][0m 'package:flutter/material.dart'
+          [94muri[0m [92m[Point(row=2, column=7) - Point(row=2, column=38)][0m 'package:flutter/material.dart'
+            [94mstring_literal[0m [92m[Point(row=2, column=7) - Point(row=2, column=38)][0m 'package:flutter/material.dart'
+              [94m'[0m [92m[Point(row=2, column=7) - Point(row=2, column=8)][0m '
+              [94m'[0m [92m[Point(row=2, column=37) - Point(row=2, column=38)][0m '
+        [94m;[0m [92m[Point(row=2, column=38) - Point(row=2, column=39)][0m ;
+  [94mdocumentation_comment[0m [92m[Point(row=4, column=0) - Point(row=4, column=84)][0m /// A temporary workaround for [WillPopScope] and [PopScope] not working in GoRouter
+    [94m///[0m [92m[Point(row=4, column=0) - Point(row=4, column=3)][0m ///
+  [94mdocumentation_comment[0m [92m[Point(row=5, column=0) - Point(row=5, column=76)][0m /// https://github.com/flutter/flutter/issues/140869#issuecomment-2247181468
+    [94m///[0m [92m[Point(row=5, column=0) - Point(row=5, column=3)][0m ///
+  [94mclass_definition[0m [92m[Point(row=6, column=0) - Point(row=22, column=1)][0m class AppPopScope extends StatefulWidget {
+  final Widget child;
+
+  final PopInvokedCallback? onPopInvoked;
+
+  final bool canPop;
+
+  const AppPopScope({
+    super.key,
+    required this.child,
+    this.canPop = true,
+    this.onPopInvoked,
+  });
+
+  @override
+  State<AppPopScope> createState() => _AppPopScopeState();
+}
+    [94mclass[0m [92m[Point(row=6, column=0) - Point(row=6, column=5)][0m class
+    [94midentifier[0m [92m[Point(row=6, column=6) - Point(row=6, column=17)][0m AppPopScope
+    [94msuperclass[0m [92m[Point(row=6, column=18) - Point(row=6, column=40)][0m extends StatefulWidget
+      [94mextends[0m [92m[Point(row=6, column=18) - Point(row=6, column=25)][0m extends
+      [94mtype_identifier[0m [92m[Point(row=6, column=26) - Point(row=6, column=40)][0m StatefulWidget
+    [94mclass_body[0m [92m[Point(row=6, column=41) - Point(row=22, column=1)][0m {
+  final Widget child;
+
+  final PopInvokedCallback? onPopInvoked;
+
+  final bool canPop;
+
+  const AppPopScope({
+    super.key,
+    required this.child,
+    this.canPop = true,
+    this.onPopInvoked,
+  });
+
+  @override
+  State<AppPopScope> createState() => _AppPopScopeState();
+}
+      [94m{[0m [92m[Point(row=6, column=41) - Point(row=6, column=42)][0m {
+      [94mdeclaration[0m [92m[Point(row=7, column=2) - Point(row=7, column=20)][0m final Widget child
+        [94mfinal_builtin[0m [92m[Point(row=7, column=2) - Point(row=7, column=7)][0m final
+          [94mfinal[0m [92m[Point(row=7, column=2) - Point(row=7, column=7)][0m final
+        [94mtype_identifier[0m [92m[Point(row=7, column=8) - Point(row=7, column=14)][0m Widget
+        [94minitialized_identifier_list[0m [92m[Point(row=7, column=15) - Point(row=7, column=20)][0m child
+          [94minitialized_identifier[0m [92m[Point(row=7, column=15) - Point(row=7, column=20)][0m child
+            [94midentifier[0m [92m[Point(row=7, column=15) - Point(row=7, column=20)][0m child
+      [94m;[0m [92m[Point(row=7, column=20) - Point(row=7, column=21)][0m ;
+      [94mdeclaration[0m [92m[Point(row=9, column=2) - Point(row=9, column=40)][0m final PopInvokedCallback? onPopInvoked
+        [94mfinal_builtin[0m [92m[Point(row=9, column=2) - Point(row=9, column=7)][0m final
+          [94mfinal[0m [92m[Point(row=9, column=2) - Point(row=9, column=7)][0m final
+        [94mtype_identifier[0m [92m[Point(row=9, column=8) - Point(row=9, column=26)][0m PopInvokedCallback
+        [94mnullable_type[0m [92m[Point(row=9, column=26) - Point(row=9, column=27)][0m ?
+          [94m?[0m [92m[Point(row=9, column=26) - Point(row=9, column=27)][0m ?
+        [94minitialized_identifier_list[0m [92m[Point(row=9, column=28) - Point(row=9, column=40)][0m onPopInvoked
+          [94minitialized_identifier[0m [92m[Point(row=9, column=28) - Point(row=9, column=40)][0m onPopInvoked
+            [94midentifier[0m [92m[Point(row=9, column=28) - Point(row=9, column=40)][0m onPopInvoked
+      [94m;[0m [92m[Point(row=9, column=40) - Point(row=9, column=41)][0m ;
+      [94mdeclaration[0m [92m[Point(row=11, column=2) - Point(row=11, column=19)][0m final bool canPop
+        [94mfinal_builtin[0m [92m[Point(row=11, column=2) - Point(row=11, column=7)][0m final
+          [94mfinal[0m [92m[Point(row=11, column=2) - Point(row=11, column=7)][0m final
+        [94mtype_identifier[0m [92m[Point(row=11, column=8) - Point(row=11, column=12)][0m bool
+        [94minitialized_identifier_list[0m [92m[Point(row=11, column=13) - Point(row=11, column=19)][0m canPop
+          [94minitialized_identifier[0m [92m[Point(row=11, column=13) - Point(row=11, column=19)][0m canPop
+            [94midentifier[0m [92m[Point(row=11, column=13) - Point(row=11, column=19)][0m canPop
+      [94m;[0m [92m[Point(row=11, column=19) - Point(row=11, column=20)][0m ;
+      [94mdeclaration[0m [92m[Point(row=13, column=2) - Point(row=18, column=4)][0m const AppPopScope({
+    super.key,
+    required this.child,
+    this.canPop = true,
+    this.onPopInvoked,
+  })
+        [94mconstant_constructor_signature[0m [92m[Point(row=13, column=2) - Point(row=18, column=4)][0m const AppPopScope({
+    super.key,
+    required this.child,
+    this.canPop = true,
+    this.onPopInvoked,
+  })
+          [94mconst_builtin[0m [92m[Point(row=13, column=2) - Point(row=13, column=7)][0m const
+          [94midentifier[0m [92m[Point(row=13, column=8) - Point(row=13, column=19)][0m AppPopScope
+          [94mformal_parameter_list[0m [92m[Point(row=13, column=19) - Point(row=18, column=4)][0m ({
+    super.key,
+    required this.child,
+    this.canPop = true,
+    this.onPopInvoked,
+  })
+            [94m([0m [92m[Point(row=13, column=19) - Point(row=13, column=20)][0m (
+            [94moptional_formal_parameters[0m [92m[Point(row=13, column=20) - Point(row=18, column=3)][0m {
+    super.key,
+    required this.child,
+    this.canPop = true,
+    this.onPopInvoked,
+  }
+              [94m{[0m [92m[Point(row=13, column=20) - Point(row=13, column=21)][0m {
+              [94mformal_parameter[0m [92m[Point(row=14, column=4) - Point(row=14, column=13)][0m super.key
+                [94msuper_formal_parameter[0m [92m[Point(row=14, column=4) - Point(row=14, column=13)][0m super.key
+                  [94msuper[0m [92m[Point(row=14, column=4) - Point(row=14, column=9)][0m super
+                    [94msuper[0m [92m[Point(row=14, column=4) - Point(row=14, column=9)][0m super
+                  [94m.[0m [92m[Point(row=14, column=9) - Point(row=14, column=10)][0m .
+                  [94midentifier[0m [92m[Point(row=14, column=10) - Point(row=14, column=13)][0m key
+              [94m,[0m [92m[Point(row=14, column=13) - Point(row=14, column=14)][0m ,
+              [94mrequired[0m [92m[Point(row=15, column=4) - Point(row=15, column=12)][0m required
+              [94mformal_parameter[0m [92m[Point(row=15, column=13) - Point(row=15, column=23)][0m this.child
+                [94mconstructor_param[0m [92m[Point(row=15, column=13) - Point(row=15, column=23)][0m this.child
+                  [94mthis[0m [92m[Point(row=15, column=13) - Point(row=15, column=17)][0m this
+                    [94mthis[0m [92m[Point(row=15, column=13) - Point(row=15, column=17)][0m this
+                  [94m.[0m [92m[Point(row=15, column=17) - Point(row=15, column=18)][0m .
+                  [94midentifier[0m [92m[Point(row=15, column=18) - Point(row=15, column=23)][0m child
+              [94m,[0m [92m[Point(row=15, column=23) - Point(row=15, column=24)][0m ,
+              [94mformal_parameter[0m [92m[Point(row=16, column=4) - Point(row=16, column=15)][0m this.canPop
+                [94mconstructor_param[0m [92m[Point(row=16, column=4) - Point(row=16, column=15)][0m this.canPop
+                  [94mthis[0m [92m[Point(row=16, column=4) - Point(row=16, column=8)][0m this
+                    [94mthis[0m [92m[Point(row=16, column=4) - Point(row=16, column=8)][0m this
+                  [94m.[0m [92m[Point(row=16, column=8) - Point(row=16, column=9)][0m .
+                  [94midentifier[0m [92m[Point(row=16, column=9) - Point(row=16, column=15)][0m canPop
+              [94m=[0m [92m[Point(row=16, column=16) - Point(row=16, column=17)][0m =
+              [94mtrue[0m [92m[Point(row=16, column=18) - Point(row=16, column=22)][0m true
+                [94mtrue[0m [92m[Point(row=16, column=18) - Point(row=16, column=22)][0m true
+              [94m,[0m [92m[Point(row=16, column=22) - Point(row=16, column=23)][0m ,
+              [94mformal_parameter[0m [92m[Point(row=17, column=4) - Point(row=17, column=21)][0m this.onPopInvoked
+                [94mconstructor_param[0m [92m[Point(row=17, column=4) - Point(row=17, column=21)][0m this.onPopInvoked
+                  [94mthis[0m [92m[Point(row=17, column=4) - Point(row=17, column=8)][0m this
+                    [94mthis[0m [92m[Point(row=17, column=4) - Point(row=17, column=8)][0m this
+                  [94m.[0m [92m[Point(row=17, column=8) - Point(row=17, column=9)][0m .
+                  [94midentifier[0m [92m[Point(row=17, column=9) - Point(row=17, column=21)][0m onPopInvoked
+              [94m,[0m [92m[Point(row=17, column=21) - Point(row=17, column=22)][0m ,
+              [94m}[0m [92m[Point(row=18, column=2) - Point(row=18, column=3)][0m }
+            [94m)[0m [92m[Point(row=18, column=3) - Point(row=18, column=4)][0m )
+      [94m;[0m [92m[Point(row=18, column=4) - Point(row=18, column=5)][0m ;
+      [94mannotation[0m [92m[Point(row=20, column=2) - Point(row=20, column=11)][0m @override
+        [94m@[0m [92m[Point(row=20, column=2) - Point(row=20, column=3)][0m @
+        [94midentifier[0m [92m[Point(row=20, column=3) - Point(row=20, column=11)][0m override
+      [94mmethod_signature[0m [92m[Point(row=21, column=2) - Point(row=21, column=34)][0m State<AppPopScope> createState()
+        [94mfunction_signature[0m [92m[Point(row=21, column=2) - Point(row=21, column=34)][0m State<AppPopScope> createState()
+          [94mtype_identifier[0m [92m[Point(row=21, column=2) - Point(row=21, column=7)][0m State
+          [94mtype_arguments[0m [92m[Point(row=21, column=7) - Point(row=21, column=20)][0m <AppPopScope>
+            [94m<[0m [92m[Point(row=21, column=7) - Point(row=21, column=8)][0m <
+            [94mtype_identifier[0m [92m[Point(row=21, column=8) - Point(row=21, column=19)][0m AppPopScope
+            [94m>[0m [92m[Point(row=21, column=19) - Point(row=21, column=20)][0m >
+          [94midentifier[0m [92m[Point(row=21, column=21) - Point(row=21, column=32)][0m createState
+          [94mformal_parameter_list[0m [92m[Point(row=21, column=32) - Point(row=21, column=34)][0m ()
+            [94m([0m [92m[Point(row=21, column=32) - Point(row=21, column=33)][0m (
+            [94m)[0m [92m[Point(row=21, column=33) - Point(row=21, column=34)][0m )
+      [94mfunction_body[0m [92m[Point(row=21, column=35) - Point(row=21, column=58)][0m => _AppPopScopeState();
+        [94m=>[0m [92m[Point(row=21, column=35) - Point(row=21, column=37)][0m =>
+        [94midentifier[0m [92m[Point(row=21, column=38) - Point(row=21, column=55)][0m _AppPopScopeState
+        [94mselector[0m [92m[Point(row=21, column=55) - Point(row=21, column=57)][0m ()
+          [94margument_part[0m [92m[Point(row=21, column=55) - Point(row=21, column=57)][0m ()
+            [94marguments[0m [92m[Point(row=21, column=55) - Point(row=21, column=57)][0m ()
+              [94m([0m [92m[Point(row=21, column=55) - Point(row=21, column=56)][0m (
+              [94m)[0m [92m[Point(row=21, column=56) - Point(row=21, column=57)][0m )
+        [94m;[0m [92m[Point(row=21, column=57) - Point(row=21, column=58)][0m ;
+      [94m}[0m [92m[Point(row=22, column=0) - Point(row=22, column=1)][0m }
+  [94mclass_definition[0m [92m[Point(row=24, column=0) - Point(row=103, column=1)][0m class _AppPopScopeState extends State<AppPopScope> {
+  final bool _enable = Platform.isAndroid;
+  ModalRoute? _route;
+  BackButtonDispatcher? _parentBackBtnDispatcher;
+  ChildBackButtonDispatcher? _backBtnDispatcher;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _route = ModalRoute.of(context);
+    _updateBackButtonDispatcher();
+  }
+
+  @override
+  void activate() {
+    super.activate();
+    _updateBackButtonDispatcher();
+  }
+
+  @override
+  void deactivate() {
+    super.deactivate();
+    _disposeBackBtnDispatcher();
+  }
+
+  @override
+  void dispose() {
+    _disposeBackBtnDispatcher();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: widget.canPop,
+      onPopInvoked: widget.onPopInvoked,
+      child: widget.child,
+    );
+  }
+
+  void _updateBackButtonDispatcher() {
+    if (!_enable) return;
+
+    var dispatcher = Router.maybeOf(context)?.backButtonDispatcher;
+    if (dispatcher != _parentBackBtnDispatcher) {
+      _disposeBackBtnDispatcher();
+      _parentBackBtnDispatcher = dispatcher;
+      if (dispatcher is BackButtonDispatcher &&
+          dispatcher is! ChildBackButtonDispatcher) {
+        dispatcher = dispatcher.createChildBackButtonDispatcher();
+      }
+      _backBtnDispatcher = dispatcher as ChildBackButtonDispatcher;
+    }
+    _backBtnDispatcher?.removeCallback(_handleBackButton);
+    _backBtnDispatcher?.addCallback(_handleBackButton);
+    _backBtnDispatcher?.takePriority();
+  }
+
+  void _disposeBackBtnDispatcher() {
+    _backBtnDispatcher?.removeCallback(_handleBackButton);
+    if (_backBtnDispatcher is ChildBackButtonDispatcher) {
+      final child = _backBtnDispatcher as ChildBackButtonDispatcher;
+      _parentBackBtnDispatcher?.forget(child);
+    }
+    _backBtnDispatcher = null;
+    _parentBackBtnDispatcher = null;
+  }
+
+  bool get _onlyRoute => _route != null && _route!.isFirst && _route!.isCurrent;
+
+  Future<bool> _handleBackButton() async {
+    if (_onlyRoute) {
+      widget.onPopInvoked?.call(widget.canPop);
+      if (!widget.canPop) {
+        return true;
+      }
+    }
+    return false;
+  }
+}
+    [94mclass[0m [92m[Point(row=24, column=0) - Point(row=24, column=5)][0m class
+    [94midentifier[0m [92m[Point(row=24, column=6) - Point(row=24, column=23)][0m _AppPopScopeState
+    [94msuperclass[0m [92m[Point(row=24, column=24) - Point(row=24, column=50)][0m extends State<AppPopScope>
+      [94mextends[0m [92m[Point(row=24, column=24) - Point(row=24, column=31)][0m extends
+      [94mtype_identifier[0m [92m[Point(row=24, column=32) - Point(row=24, column=37)][0m State
+      [94mtype_arguments[0m [92m[Point(row=24, column=37) - Point(row=24, column=50)][0m <AppPopScope>
+        [94m<[0m [92m[Point(row=24, column=37) - Point(row=24, column=38)][0m <
+        [94mtype_identifier[0m [92m[Point(row=24, column=38) - Point(row=24, column=49)][0m AppPopScope
+        [94m>[0m [92m[Point(row=24, column=49) - Point(row=24, column=50)][0m >
+    [94mclass_body[0m [92m[Point(row=24, column=51) - Point(row=103, column=1)][0m {
+  final bool _enable = Platform.isAndroid;
+  ModalRoute? _route;
+  BackButtonDispatcher? _parentBackBtnDispatcher;
+  ChildBackButtonDispatcher? _backBtnDispatcher;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _route = ModalRoute.of(context);
+    _updateBackButtonDispatcher();
+  }
+
+  @override
+  void activate() {
+    super.activate();
+    _updateBackButtonDispatcher();
+  }
+
+  @override
+  void deactivate() {
+    super.deactivate();
+    _disposeBackBtnDispatcher();
+  }
+
+  @override
+  void dispose() {
+    _disposeBackBtnDispatcher();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: widget.canPop,
+      onPopInvoked: widget.onPopInvoked,
+      child: widget.child,
+    );
+  }
+
+  void _updateBackButtonDispatcher() {
+    if (!_enable) return;
+
+    var dispatcher = Router.maybeOf(context)?.backButtonDispatcher;
+    if (dispatcher != _parentBackBtnDispatcher) {
+      _disposeBackBtnDispatcher();
+      _parentBackBtnDispatcher = dispatcher;
+      if (dispatcher is BackButtonDispatcher &&
+          dispatcher is! ChildBackButtonDispatcher) {
+        dispatcher = dispatcher.createChildBackButtonDispatcher();
+      }
+      _backBtnDispatcher = dispatcher as ChildBackButtonDispatcher;
+    }
+    _backBtnDispatcher?.removeCallback(_handleBackButton);
+    _backBtnDispatcher?.addCallback(_handleBackButton);
+    _backBtnDispatcher?.takePriority();
+  }
+
+  void _disposeBackBtnDispatcher() {
+    _backBtnDispatcher?.removeCallback(_handleBackButton);
+    if (_backBtnDispatcher is ChildBackButtonDispatcher) {
+      final child = _backBtnDispatcher as ChildBackButtonDispatcher;
+      _parentBackBtnDispatcher?.forget(child);
+    }
+    _backBtnDispatcher = null;
+    _parentBackBtnDispatcher = null;
+  }
+
+  bool get _onlyRoute => _route != null && _route!.isFirst && _route!.isCurrent;
+
+  Future<bool> _handleBackButton() async {
+    if (_onlyRoute) {
+      widget.onPopInvoked?.call(widget.canPop);
+      if (!widget.canPop) {
+        return true;
+      }
+    }
+    return false;
+  }
+}
+      [94m{[0m [92m[Point(row=24, column=51) - Point(row=24, column=52)][0m {
+      [94mdeclaration[0m [92m[Point(row=25, column=2) - Point(row=25, column=41)][0m final bool _enable = Platform.isAndroid
+        [94mfinal_builtin[0m [92m[Point(row=25, column=2) - Point(row=25, column=7)][0m final
+          [94mfinal[0m [92m[Point(row=25, column=2) - Point(row=25, column=7)][0m final
+        [94mtype_identifier[0m [92m[Point(row=25, column=8) - Point(row=25, column=12)][0m bool
+        [94minitialized_identifier_list[0m [92m[Point(row=25, column=13) - Point(row=25, column=41)][0m _enable = Platform.isAndroid
+          [94minitialized_identifier[0m [92m[Point(row=25, column=13) - Point(row=25, column=41)][0m _enable = Platform.isAndroid
+            [94midentifier[0m [92m[Point(row=25, column=13) - Point(row=25, column=20)][0m _enable
+            [94m=[0m [92m[Point(row=25, column=21) - Point(row=25, column=22)][0m =
+            [94midentifier[0m [92m[Point(row=25, column=23) - Point(row=25, column=31)][0m Platform
+            [94mselector[0m [92m[Point(row=25, column=31) - Point(row=25, column=41)][0m .isAndroid
+              [94munconditional_assignable_selector[0m [92m[Point(row=25, column=31) - Point(row=25, column=41)][0m .isAndroid
+                [94m.[0m [92m[Point(row=25, column=31) - Point(row=25, column=32)][0m .
+                [94midentifier[0m [92m[Point(row=25, column=32) - Point(row=25, column=41)][0m isAndroid
+      [94m;[0m [92m[Point(row=25, column=41) - Point(row=25, column=42)][0m ;
+      [94mdeclaration[0m [92m[Point(row=26, column=2) - Point(row=26, column=20)][0m ModalRoute? _route
+        [94mtype_identifier[0m [92m[Point(row=26, column=2) - Point(row=26, column=12)][0m ModalRoute
+        [94mnullable_type[0m [92m[Point(row=26, column=12) - Point(row=26, column=13)][0m ?
+          [94m?[0m [92m[Point(row=26, column=12) - Point(row=26, column=13)][0m ?
+        [94minitialized_identifier_list[0m [92m[Point(row=26, column=14) - Point(row=26, column=20)][0m _route
+          [94minitialized_identifier[0m [92m[Point(row=26, column=14) - Point(row=26, column=20)][0m _route
+            [94midentifier[0m [92m[Point(row=26, column=14) - Point(row=26, column=20)][0m _route
+      [94m;[0m [92m[Point(row=26, column=20) - Point(row=26, column=21)][0m ;
+      [94mdeclaration[0m [92m[Point(row=27, column=2) - Point(row=27, column=48)][0m BackButtonDispatcher? _parentBackBtnDispatcher
+        [94mtype_identifier[0m [92m[Point(row=27, column=2) - Point(row=27, column=22)][0m BackButtonDispatcher
+        [94mnullable_type[0m [92m[Point(row=27, column=22) - Point(row=27, column=23)][0m ?
+          [94m?[0m [92m[Point(row=27, column=22) - Point(row=27, column=23)][0m ?
+        [94minitialized_identifier_list[0m [92m[Point(row=27, column=24) - Point(row=27, column=48)][0m _parentBackBtnDispatcher
+          [94minitialized_identifier[0m [92m[Point(row=27, column=24) - Point(row=27, column=48)][0m _parentBackBtnDispatcher
+            [94midentifier[0m [92m[Point(row=27, column=24) - Point(row=27, column=48)][0m _parentBackBtnDispatcher
+      [94m;[0m [92m[Point(row=27, column=48) - Point(row=27, column=49)][0m ;
+      [94mdeclaration[0m [92m[Point(row=28, column=2) - Point(row=28, column=47)][0m ChildBackButtonDispatcher? _backBtnDispatcher
+        [94mtype_identifier[0m [92m[Point(row=28, column=2) - Point(row=28, column=27)][0m ChildBackButtonDispatcher
+        [94mnullable_type[0m [92m[Point(row=28, column=27) - Point(row=28, column=28)][0m ?
+          [94m?[0m [92m[Point(row=28, column=27) - Point(row=28, column=28)][0m ?
+        [94minitialized_identifier_list[0m [92m[Point(row=28, column=29) - Point(row=28, column=47)][0m _backBtnDispatcher
+          [94minitialized_identifier[0m [92m[Point(row=28, column=29) - Point(row=28, column=47)][0m _backBtnDispatcher
+            [94midentifier[0m [92m[Point(row=28, column=29) - Point(row=28, column=47)][0m _backBtnDispatcher
+      [94m;[0m [92m[Point(row=28, column=47) - Point(row=28, column=48)][0m ;
+      [94mannotation[0m [92m[Point(row=30, column=2) - Point(row=30, column=11)][0m @override
+        [94m@[0m [92m[Point(row=30, column=2) - Point(row=30, column=3)][0m @
+        [94midentifier[0m [92m[Point(row=30, column=3) - Point(row=30, column=11)][0m override
+      [94mmethod_signature[0m [92m[Point(row=31, column=2) - Point(row=31, column=30)][0m void didChangeDependencies()
+        [94mfunction_signature[0m [92m[Point(row=31, column=2) - Point(row=31, column=30)][0m void didChangeDependencies()
+          [94mvoid_type[0m [92m[Point(row=31, column=2) - Point(row=31, column=6)][0m void
+          [94midentifier[0m [92m[Point(row=31, column=7) - Point(row=31, column=28)][0m didChangeDependencies
+          [94mformal_parameter_list[0m [92m[Point(row=31, column=28) - Point(row=31, column=30)][0m ()
+            [94m([0m [92m[Point(row=31, column=28) - Point(row=31, column=29)][0m (
+            [94m)[0m [92m[Point(row=31, column=29) - Point(row=31, column=30)][0m )
+      [94mfunction_body[0m [92m[Point(row=31, column=31) - Point(row=35, column=3)][0m {
+    super.didChangeDependencies();
+    _route = ModalRoute.of(context);
+    _updateBackButtonDispatcher();
+  }
+        [94mblock[0m [92m[Point(row=31, column=31) - Point(row=35, column=3)][0m {
+    super.didChangeDependencies();
+    _route = ModalRoute.of(context);
+    _updateBackButtonDispatcher();
+  }
+          [94m{[0m [92m[Point(row=31, column=31) - Point(row=31, column=32)][0m {
+          [94mexpression_statement[0m [92m[Point(row=32, column=4) - Point(row=32, column=34)][0m super.didChangeDependencies();
+            [94msuper[0m [92m[Point(row=32, column=4) - Point(row=32, column=9)][0m super
+              [94msuper[0m [92m[Point(row=32, column=4) - Point(row=32, column=9)][0m super
+            [94munconditional_assignable_selector[0m [92m[Point(row=32, column=9) - Point(row=32, column=31)][0m .didChangeDependencies
+              [94m.[0m [92m[Point(row=32, column=9) - Point(row=32, column=10)][0m .
+              [94midentifier[0m [92m[Point(row=32, column=10) - Point(row=32, column=31)][0m didChangeDependencies
+            [94mselector[0m [92m[Point(row=32, column=31) - Point(row=32, column=33)][0m ()
+              [94margument_part[0m [92m[Point(row=32, column=31) - Point(row=32, column=33)][0m ()
+                [94marguments[0m [92m[Point(row=32, column=31) - Point(row=32, column=33)][0m ()
+                  [94m([0m [92m[Point(row=32, column=31) - Point(row=32, column=32)][0m (
+                  [94m)[0m [92m[Point(row=32, column=32) - Point(row=32, column=33)][0m )
+            [94m;[0m [92m[Point(row=32, column=33) - Point(row=32, column=34)][0m ;
+          [94mexpression_statement[0m [92m[Point(row=33, column=4) - Point(row=33, column=36)][0m _route = ModalRoute.of(context);
+            [94massignment_expression[0m [92m[Point(row=33, column=4) - Point(row=33, column=35)][0m _route = ModalRoute.of(context)
+              [94massignable_expression[0m [92m[Point(row=33, column=4) - Point(row=33, column=10)][0m _route
+                [94midentifier[0m [92m[Point(row=33, column=4) - Point(row=33, column=10)][0m _route
+              [94m=[0m [92m[Point(row=33, column=11) - Point(row=33, column=12)][0m =
+              [94midentifier[0m [92m[Point(row=33, column=13) - Point(row=33, column=23)][0m ModalRoute
+              [94mselector[0m [92m[Point(row=33, column=23) - Point(row=33, column=26)][0m .of
+                [94munconditional_assignable_selector[0m [92m[Point(row=33, column=23) - Point(row=33, column=26)][0m .of
+                  [94m.[0m [92m[Point(row=33, column=23) - Point(row=33, column=24)][0m .
+                  [94midentifier[0m [92m[Point(row=33, column=24) - Point(row=33, column=26)][0m of
+              [94mselector[0m [92m[Point(row=33, column=26) - Point(row=33, column=35)][0m (context)
+                [94margument_part[0m [92m[Point(row=33, column=26) - Point(row=33, column=35)][0m (context)
+                  [94marguments[0m [92m[Point(row=33, column=26) - Point(row=33, column=35)][0m (context)
+                    [94m([0m [92m[Point(row=33, column=26) - Point(row=33, column=27)][0m (
+                    [94margument[0m [92m[Point(row=33, column=27) - Point(row=33, column=34)][0m context
+                      [94midentifier[0m [92m[Point(row=33, column=27) - Point(row=33, column=34)][0m context
+                    [94m)[0m [92m[Point(row=33, column=34) - Point(row=33, column=35)][0m )
+            [94m;[0m [92m[Point(row=33, column=35) - Point(row=33, column=36)][0m ;
+          [94mexpression_statement[0m [92m[Point(row=34, column=4) - Point(row=34, column=34)][0m _updateBackButtonDispatcher();
+            [94midentifier[0m [92m[Point(row=34, column=4) - Point(row=34, column=31)][0m _updateBackButtonDispatcher
+            [94mselector[0m [92m[Point(row=34, column=31) - Point(row=34, column=33)][0m ()
+              [94margument_part[0m [92m[Point(row=34, column=31) - Point(row=34, column=33)][0m ()
+                [94marguments[0m [92m[Point(row=34, column=31) - Point(row=34, column=33)][0m ()
+                  [94m([0m [92m[Point(row=34, column=31) - Point(row=34, column=32)][0m (
+                  [94m)[0m [92m[Point(row=34, column=32) - Point(row=34, column=33)][0m )
+            [94m;[0m [92m[Point(row=34, column=33) - Point(row=34, column=34)][0m ;
+          [94m}[0m [92m[Point(row=35, column=2) - Point(row=35, column=3)][0m }
+      [94mannotation[0m [92m[Point(row=37, column=2) - Point(row=37, column=11)][0m @override
+        [94m@[0m [92m[Point(row=37, column=2) - Point(row=37, column=3)][0m @
+        [94midentifier[0m [92m[Point(row=37, column=3) - Point(row=37, column=11)][0m override
+      [94mmethod_signature[0m [92m[Point(row=38, column=2) - Point(row=38, column=17)][0m void activate()
+        [94mfunction_signature[0m [92m[Point(row=38, column=2) - Point(row=38, column=17)][0m void activate()
+          [94mvoid_type[0m [92m[Point(row=38, column=2) - Point(row=38, column=6)][0m void
+          [94midentifier[0m [92m[Point(row=38, column=7) - Point(row=38, column=15)][0m activate
+          [94mformal_parameter_list[0m [92m[Point(row=38, column=15) - Point(row=38, column=17)][0m ()
+            [94m([0m [92m[Point(row=38, column=15) - Point(row=38, column=16)][0m (
+            [94m)[0m [92m[Point(row=38, column=16) - Point(row=38, column=17)][0m )
+      [94mfunction_body[0m [92m[Point(row=38, column=18) - Point(row=41, column=3)][0m {
+    super.activate();
+    _updateBackButtonDispatcher();
+  }
+        [94mblock[0m [92m[Point(row=38, column=18) - Point(row=41, column=3)][0m {
+    super.activate();
+    _updateBackButtonDispatcher();
+  }
+          [94m{[0m [92m[Point(row=38, column=18) - Point(row=38, column=19)][0m {
+          [94mexpression_statement[0m [92m[Point(row=39, column=4) - Point(row=39, column=21)][0m super.activate();
+            [94msuper[0m [92m[Point(row=39, column=4) - Point(row=39, column=9)][0m super
+              [94msuper[0m [92m[Point(row=39, column=4) - Point(row=39, column=9)][0m super
+            [94munconditional_assignable_selector[0m [92m[Point(row=39, column=9) - Point(row=39, column=18)][0m .activate
+              [94m.[0m [92m[Point(row=39, column=9) - Point(row=39, column=10)][0m .
+              [94midentifier[0m [92m[Point(row=39, column=10) - Point(row=39, column=18)][0m activate
+            [94mselector[0m [92m[Point(row=39, column=18) - Point(row=39, column=20)][0m ()
+              [94margument_part[0m [92m[Point(row=39, column=18) - Point(row=39, column=20)][0m ()
+                [94marguments[0m [92m[Point(row=39, column=18) - Point(row=39, column=20)][0m ()
+                  [94m([0m [92m[Point(row=39, column=18) - Point(row=39, column=19)][0m (
+                  [94m)[0m [92m[Point(row=39, column=19) - Point(row=39, column=20)][0m )
+            [94m;[0m [92m[Point(row=39, column=20) - Point(row=39, column=21)][0m ;
+          [94mexpression_statement[0m [92m[Point(row=40, column=4) - Point(row=40, column=34)][0m _updateBackButtonDispatcher();
+            [94midentifier[0m [92m[Point(row=40, column=4) - Point(row=40, column=31)][0m _updateBackButtonDispatcher
+            [94mselector[0m [92m[Point(row=40, column=31) - Point(row=40, column=33)][0m ()
+              [94margument_part[0m [92m[Point(row=40, column=31) - Point(row=40, column=33)][0m ()
+                [94marguments[0m [92m[Point(row=40, column=31) - Point(row=40, column=33)][0m ()
+                  [94m([0m [92m[Point(row=40, column=31) - Point(row=40, column=32)][0m (
+                  [94m)[0m [92m[Point(row=40, column=32) - Point(row=40, column=33)][0m )
+            [94m;[0m [92m[Point(row=40, column=33) - Point(row=40, column=34)][0m ;
+          [94m}[0m [92m[Point(row=41, column=2) - Point(row=41, column=3)][0m }
+      [94mannotation[0m [92m[Point(row=43, column=2) - Point(row=43, column=11)][0m @override
+        [94m@[0m [92m[Point(row=43, column=2) - Point(row=43, column=3)][0m @
+        [94midentifier[0m [92m[Point(row=43, column=3) - Point(row=43, column=11)][0m override
+      [94mmethod_signature[0m [92m[Point(row=44, column=2) - Point(row=44, column=19)][0m void deactivate()
+        [94mfunction_signature[0m [92m[Point(row=44, column=2) - Point(row=44, column=19)][0m void deactivate()
+          [94mvoid_type[0m [92m[Point(row=44, column=2) - Point(row=44, column=6)][0m void
+          [94midentifier[0m [92m[Point(row=44, column=7) - Point(row=44, column=17)][0m deactivate
+          [94mformal_parameter_list[0m [92m[Point(row=44, column=17) - Point(row=44, column=19)][0m ()
+            [94m([0m [92m[Point(row=44, column=17) - Point(row=44, column=18)][0m (
+            [94m)[0m [92m[Point(row=44, column=18) - Point(row=44, column=19)][0m )
+      [94mfunction_body[0m [92m[Point(row=44, column=20) - Point(row=47, column=3)][0m {
+    super.deactivate();
+    _disposeBackBtnDispatcher();
+  }
+        [94mblock[0m [92m[Point(row=44, column=20) - Point(row=47, column=3)][0m {
+    super.deactivate();
+    _disposeBackBtnDispatcher();
+  }
+          [94m{[0m [92m[Point(row=44, column=20) - Point(row=44, column=21)][0m {
+          [94mexpression_statement[0m [92m[Point(row=45, column=4) - Point(row=45, column=23)][0m super.deactivate();
+            [94msuper[0m [92m[Point(row=45, column=4) - Point(row=45, column=9)][0m super
+              [94msuper[0m [92m[Point(row=45, column=4) - Point(row=45, column=9)][0m super
+            [94munconditional_assignable_selector[0m [92m[Point(row=45, column=9) - Point(row=45, column=20)][0m .deactivate
+              [94m.[0m [92m[Point(row=45, column=9) - Point(row=45, column=10)][0m .
+              [94midentifier[0m [92m[Point(row=45, column=10) - Point(row=45, column=20)][0m deactivate
+            [94mselector[0m [92m[Point(row=45, column=20) - Point(row=45, column=22)][0m ()
+              [94margument_part[0m [92m[Point(row=45, column=20) - Point(row=45, column=22)][0m ()
+                [94marguments[0m [92m[Point(row=45, column=20) - Point(row=45, column=22)][0m ()
+                  [94m([0m [92m[Point(row=45, column=20) - Point(row=45, column=21)][0m (
+                  [94m)[0m [92m[Point(row=45, column=21) - Point(row=45, column=22)][0m )
+            [94m;[0m [92m[Point(row=45, column=22) - Point(row=45, column=23)][0m ;
+          [94mexpression_statement[0m [92m[Point(row=46, column=4) - Point(row=46, column=32)][0m _disposeBackBtnDispatcher();
+            [94midentifier[0m [92m[Point(row=46, column=4) - Point(row=46, column=29)][0m _disposeBackBtnDispatcher
+            [94mselector[0m [92m[Point(row=46, column=29) - Point(row=46, column=31)][0m ()
+              [94margument_part[0m [92m[Point(row=46, column=29) - Point(row=46, column=31)][0m ()
+                [94marguments[0m [92m[Point(row=46, column=29) - Point(row=46, column=31)][0m ()
+                  [94m([0m [92m[Point(row=46, column=29) - Point(row=46, column=30)][0m (
+                  [94m)[0m [92m[Point(row=46, column=30) - Point(row=46, column=31)][0m )
+            [94m;[0m [92m[Point(row=46, column=31) - Point(row=46, column=32)][0m ;
+          [94m}[0m [92m[Point(row=47, column=2) - Point(row=47, column=3)][0m }
+      [94mannotation[0m [92m[Point(row=49, column=2) - Point(row=49, column=11)][0m @override
+        [94m@[0m [92m[Point(row=49, column=2) - Point(row=49, column=3)][0m @
+        [94midentifier[0m [92m[Point(row=49, column=3) - Point(row=49, column=11)][0m override
+      [94mmethod_signature[0m [92m[Point(row=50, column=2) - Point(row=50, column=16)][0m void dispose()
+        [94mfunction_signature[0m [92m[Point(row=50, column=2) - Point(row=50, column=16)][0m void dispose()
+          [94mvoid_type[0m [92m[Point(row=50, column=2) - Point(row=50, column=6)][0m void
+          [94midentifier[0m [92m[Point(row=50, column=7) - Point(row=50, column=14)][0m dispose
+          [94mformal_parameter_list[0m [92m[Point(row=50, column=14) - Point(row=50, column=16)][0m ()
+            [94m([0m [92m[Point(row=50, column=14) - Point(row=50, column=15)][0m (
+            [94m)[0m [92m[Point(row=50, column=15) - Point(row=50, column=16)][0m )
+      [94mfunction_body[0m [92m[Point(row=50, column=17) - Point(row=53, column=3)][0m {
+    _disposeBackBtnDispatcher();
+    super.dispose();
+  }
+        [94mblock[0m [92m[Point(row=50, column=17) - Point(row=53, column=3)][0m {
+    _disposeBackBtnDispatcher();
+    super.dispose();
+  }
+          [94m{[0m [92m[Point(row=50, column=17) - Point(row=50, column=18)][0m {
+          [94mexpression_statement[0m [92m[Point(row=51, column=4) - Point(row=51, column=32)][0m _disposeBackBtnDispatcher();
+            [94midentifier[0m [92m[Point(row=51, column=4) - Point(row=51, column=29)][0m _disposeBackBtnDispatcher
+            [94mselector[0m [92m[Point(row=51, column=29) - Point(row=51, column=31)][0m ()
+              [94margument_part[0m [92m[Point(row=51, column=29) - Point(row=51, column=31)][0m ()
+                [94marguments[0m [92m[Point(row=51, column=29) - Point(row=51, column=31)][0m ()
+                  [94m([0m [92m[Point(row=51, column=29) - Point(row=51, column=30)][0m (
+                  [94m)[0m [92m[Point(row=51, column=30) - Point(row=51, column=31)][0m )
+            [94m;[0m [92m[Point(row=51, column=31) - Point(row=51, column=32)][0m ;
+          [94mexpression_statement[0m [92m[Point(row=52, column=4) - Point(row=52, column=20)][0m super.dispose();
+            [94msuper[0m [92m[Point(row=52, column=4) - Point(row=52, column=9)][0m super
+              [94msuper[0m [92m[Point(row=52, column=4) - Point(row=52, column=9)][0m super
+            [94munconditional_assignable_selector[0m [92m[Point(row=52, column=9) - Point(row=52, column=17)][0m .dispose
+              [94m.[0m [92m[Point(row=52, column=9) - Point(row=52, column=10)][0m .
+              [94midentifier[0m [92m[Point(row=52, column=10) - Point(row=52, column=17)][0m dispose
+            [94mselector[0m [92m[Point(row=52, column=17) - Point(row=52, column=19)][0m ()
+              [94margument_part[0m [92m[Point(row=52, column=17) - Point(row=52, column=19)][0m ()
+                [94marguments[0m [92m[Point(row=52, column=17) - Point(row=52, column=19)][0m ()
+                  [94m([0m [92m[Point(row=52, column=17) - Point(row=52, column=18)][0m (
+                  [94m)[0m [92m[Point(row=52, column=18) - Point(row=52, column=19)][0m )
+            [94m;[0m [92m[Point(row=52, column=19) - Point(row=52, column=20)][0m ;
+          [94m}[0m [92m[Point(row=53, column=2) - Point(row=53, column=3)][0m }
+      [94mannotation[0m [92m[Point(row=55, column=2) - Point(row=55, column=11)][0m @override
+        [94m@[0m [92m[Point(row=55, column=2) - Point(row=55, column=3)][0m @
+        [94midentifier[0m [92m[Point(row=55, column=3) - Point(row=55, column=11)][0m override
+      [94mmethod_signature[0m [92m[Point(row=56, column=2) - Point(row=56, column=36)][0m Widget build(BuildContext context)
+        [94mfunction_signature[0m [92m[Point(row=56, column=2) - Point(row=56, column=36)][0m Widget build(BuildContext context)
+          [94mtype_identifier[0m [92m[Point(row=56, column=2) - Point(row=56, column=8)][0m Widget
+          [94midentifier[0m [92m[Point(row=56, column=9) - Point(row=56, column=14)][0m build
+          [94mformal_parameter_list[0m [92m[Point(row=56, column=14) - Point(row=56, column=36)][0m (BuildContext context)
+            [94m([0m [92m[Point(row=56, column=14) - Point(row=56, column=15)][0m (
+            [94mformal_parameter[0m [92m[Point(row=56, column=15) - Point(row=56, column=35)][0m BuildContext context
+              [94mtype_identifier[0m [92m[Point(row=56, column=15) - Point(row=56, column=27)][0m BuildContext
+              [94midentifier[0m [92m[Point(row=56, column=28) - Point(row=56, column=35)][0m context
+            [94m)[0m [92m[Point(row=56, column=35) - Point(row=56, column=36)][0m )
+      [94mfunction_body[0m [92m[Point(row=56, column=37) - Point(row=62, column=3)][0m {
+    return PopScope(
+      canPop: widget.canPop,
+      onPopInvoked: widget.onPopInvoked,
+      child: widget.child,
+    );
+  }
+        [94mblock[0m [92m[Point(row=56, column=37) - Point(row=62, column=3)][0m {
+    return PopScope(
+      canPop: widget.canPop,
+      onPopInvoked: widget.onPopInvoked,
+      child: widget.child,
+    );
+  }
+          [94m{[0m [92m[Point(row=56, column=37) - Point(row=56, column=38)][0m {
+          [94mreturn_statement[0m [92m[Point(row=57, column=4) - Point(row=61, column=6)][0m return PopScope(
+      canPop: widget.canPop,
+      onPopInvoked: widget.onPopInvoked,
+      child: widget.child,
+    );
+            [94mreturn[0m [92m[Point(row=57, column=4) - Point(row=57, column=10)][0m return
+            [94midentifier[0m [92m[Point(row=57, column=11) - Point(row=57, column=19)][0m PopScope
+            [94mselector[0m [92m[Point(row=57, column=19) - Point(row=61, column=5)][0m (
+      canPop: widget.canPop,
+      onPopInvoked: widget.onPopInvoked,
+      child: widget.child,
+    )
+              [94margument_part[0m [92m[Point(row=57, column=19) - Point(row=61, column=5)][0m (
+      canPop: widget.canPop,
+      onPopInvoked: widget.onPopInvoked,
+      child: widget.child,
+    )
+                [94marguments[0m [92m[Point(row=57, column=19) - Point(row=61, column=5)][0m (
+      canPop: widget.canPop,
+      onPopInvoked: widget.onPopInvoked,
+      child: widget.child,
+    )
+                  [94m([0m [92m[Point(row=57, column=19) - Point(row=57, column=20)][0m (
+                  [94mnamed_argument[0m [92m[Point(row=58, column=6) - Point(row=58, column=27)][0m canPop: widget.canPop
+                    [94mlabel[0m [92m[Point(row=58, column=6) - Point(row=58, column=13)][0m canPop:
+                      [94midentifier[0m [92m[Point(row=58, column=6) - Point(row=58, column=12)][0m canPop
+                      [94m:[0m [92m[Point(row=58, column=12) - Point(row=58, column=13)][0m :
+                    [94midentifier[0m [92m[Point(row=58, column=14) - Point(row=58, column=20)][0m widget
+                    [94mselector[0m [92m[Point(row=58, column=20) - Point(row=58, column=27)][0m .canPop
+                      [94munconditional_assignable_selector[0m [92m[Point(row=58, column=20) - Point(row=58, column=27)][0m .canPop
+                        [94m.[0m [92m[Point(row=58, column=20) - Point(row=58, column=21)][0m .
+                        [94midentifier[0m [92m[Point(row=58, column=21) - Point(row=58, column=27)][0m canPop
+                  [94m,[0m [92m[Point(row=58, column=27) - Point(row=58, column=28)][0m ,
+                  [94mnamed_argument[0m [92m[Point(row=59, column=6) - Point(row=59, column=39)][0m onPopInvoked: widget.onPopInvoked
+                    [94mlabel[0m [92m[Point(row=59, column=6) - Point(row=59, column=19)][0m onPopInvoked:
+                      [94midentifier[0m [92m[Point(row=59, column=6) - Point(row=59, column=18)][0m onPopInvoked
+                      [94m:[0m [92m[Point(row=59, column=18) - Point(row=59, column=19)][0m :
+                    [94midentifier[0m [92m[Point(row=59, column=20) - Point(row=59, column=26)][0m widget
+                    [94mselector[0m [92m[Point(row=59, column=26) - Point(row=59, column=39)][0m .onPopInvoked
+                      [94munconditional_assignable_selector[0m [92m[Point(row=59, column=26) - Point(row=59, column=39)][0m .onPopInvoked
+                        [94m.[0m [92m[Point(row=59, column=26) - Point(row=59, column=27)][0m .
+                        [94midentifier[0m [92m[Point(row=59, column=27) - Point(row=59, column=39)][0m onPopInvoked
+                  [94m,[0m [92m[Point(row=59, column=39) - Point(row=59, column=40)][0m ,
+                  [94mnamed_argument[0m [92m[Point(row=60, column=6) - Point(row=60, column=25)][0m child: widget.child
+                    [94mlabel[0m [92m[Point(row=60, column=6) - Point(row=60, column=12)][0m child:
+                      [94midentifier[0m [92m[Point(row=60, column=6) - Point(row=60, column=11)][0m child
+                      [94m:[0m [92m[Point(row=60, column=11) - Point(row=60, column=12)][0m :
+                    [94midentifier[0m [92m[Point(row=60, column=13) - Point(row=60, column=19)][0m widget
+                    [94mselector[0m [92m[Point(row=60, column=19) - Point(row=60, column=25)][0m .child
+                      [94munconditional_assignable_selector[0m [92m[Point(row=60, column=19) - Point(row=60, column=25)][0m .child
+                        [94m.[0m [92m[Point(row=60, column=19) - Point(row=60, column=20)][0m .
+                        [94midentifier[0m [92m[Point(row=60, column=20) - Point(row=60, column=25)][0m child
+                  [94m,[0m [92m[Point(row=60, column=25) - Point(row=60, column=26)][0m ,
+                  [94m)[0m [92m[Point(row=61, column=4) - Point(row=61, column=5)][0m )
+            [94m;[0m [92m[Point(row=61, column=5) - Point(row=61, column=6)][0m ;
+          [94m}[0m [92m[Point(row=62, column=2) - Point(row=62, column=3)][0m }
+      [94mmethod_signature[0m [92m[Point(row=64, column=2) - Point(row=64, column=36)][0m void _updateBackButtonDispatcher()
+        [94mfunction_signature[0m [92m[Point(row=64, column=2) - Point(row=64, column=36)][0m void _updateBackButtonDispatcher()
+          [94mvoid_type[0m [92m[Point(row=64, column=2) - Point(row=64, column=6)][0m void
+          [94midentifier[0m [92m[Point(row=64, column=7) - Point(row=64, column=34)][0m _updateBackButtonDispatcher
+          [94mformal_parameter_list[0m [92m[Point(row=64, column=34) - Point(row=64, column=36)][0m ()
+            [94m([0m [92m[Point(row=64, column=34) - Point(row=64, column=35)][0m (
+            [94m)[0m [92m[Point(row=64, column=35) - Point(row=64, column=36)][0m )
+      [94mfunction_body[0m [92m[Point(row=64, column=37) - Point(row=80, column=3)][0m {
+    if (!_enable) return;
+
+    var dispatcher = Router.maybeOf(context)?.backButtonDispatcher;
+    if (dispatcher != _parentBackBtnDispatcher) {
+      _disposeBackBtnDispatcher();
+      _parentBackBtnDispatcher = dispatcher;
+      if (dispatcher is BackButtonDispatcher &&
+          dispatcher is! ChildBackButtonDispatcher) {
+        dispatcher = dispatcher.createChildBackButtonDispatcher();
+      }
+      _backBtnDispatcher = dispatcher as ChildBackButtonDispatcher;
+    }
+    _backBtnDispatcher?.removeCallback(_handleBackButton);
+    _backBtnDispatcher?.addCallback(_handleBackButton);
+    _backBtnDispatcher?.takePriority();
+  }
+        [94mblock[0m [92m[Point(row=64, column=37) - Point(row=80, column=3)][0m {
+    if (!_enable) return;
+
+    var dispatcher = Router.maybeOf(context)?.backButtonDispatcher;
+    if (dispatcher != _parentBackBtnDispatcher) {
+      _disposeBackBtnDispatcher();
+      _parentBackBtnDispatcher = dispatcher;
+      if (dispatcher is BackButtonDispatcher &&
+          dispatcher is! ChildBackButtonDispatcher) {
+        dispatcher = dispatcher.createChildBackButtonDispatcher();
+      }
+      _backBtnDispatcher = dispatcher as ChildBackButtonDispatcher;
+    }
+    _backBtnDispatcher?.removeCallback(_handleBackButton);
+    _backBtnDispatcher?.addCallback(_handleBackButton);
+    _backBtnDispatcher?.takePriority();
+  }
+          [94m{[0m [92m[Point(row=64, column=37) - Point(row=64, column=38)][0m {
+          [94mif_statement[0m [92m[Point(row=65, column=4) - Point(row=65, column=25)][0m if (!_enable) return;
+            [94mif[0m [92m[Point(row=65, column=4) - Point(row=65, column=6)][0m if
+            [94m([0m [92m[Point(row=65, column=7) - Point(row=65, column=8)][0m (
+            [94munary_expression[0m [92m[Point(row=65, column=8) - Point(row=65, column=16)][0m !_enable
+              [94mprefix_operator[0m [92m[Point(row=65, column=8) - Point(row=65, column=9)][0m !
+                [94mnegation_operator[0m [92m[Point(row=65, column=8) - Point(row=65, column=9)][0m !
+                  [94m![0m [92m[Point(row=65, column=8) - Point(row=65, column=9)][0m !
+              [94midentifier[0m [92m[Point(row=65, column=9) - Point(row=65, column=16)][0m _enable
+            [94m)[0m [92m[Point(row=65, column=16) - Point(row=65, column=17)][0m )
+            [94mreturn_statement[0m [92m[Point(row=65, column=18) - Point(row=65, column=25)][0m return;
+              [94mreturn[0m [92m[Point(row=65, column=18) - Point(row=65, column=24)][0m return
+              [94m;[0m [92m[Point(row=65, column=24) - Point(row=65, column=25)][0m ;
+          [94mlocal_variable_declaration[0m [92m[Point(row=67, column=4) - Point(row=67, column=67)][0m var dispatcher = Router.maybeOf(context)?.backButtonDispatcher;
+            [94minitialized_variable_definition[0m [92m[Point(row=67, column=4) - Point(row=67, column=66)][0m var dispatcher = Router.maybeOf(context)?.backButtonDispatcher
+              [94minferred_type[0m [92m[Point(row=67, column=4) - Point(row=67, column=7)][0m var
+                [94mvar[0m [92m[Point(row=67, column=4) - Point(row=67, column=7)][0m var
+              [94midentifier[0m [92m[Point(row=67, column=8) - Point(row=67, column=18)][0m dispatcher
+              [94m=[0m [92m[Point(row=67, column=19) - Point(row=67, column=20)][0m =
+              [94midentifier[0m [92m[Point(row=67, column=21) - Point(row=67, column=27)][0m Router
+              [94mselector[0m [92m[Point(row=67, column=27) - Point(row=67, column=35)][0m .maybeOf
+                [94munconditional_assignable_selector[0m [92m[Point(row=67, column=27) - Point(row=67, column=35)][0m .maybeOf
+                  [94m.[0m [92m[Point(row=67, column=27) - Point(row=67, column=28)][0m .
+                  [94midentifier[0m [92m[Point(row=67, column=28) - Point(row=67, column=35)][0m maybeOf
+              [94mselector[0m [92m[Point(row=67, column=35) - Point(row=67, column=44)][0m (context)
+                [94margument_part[0m [92m[Point(row=67, column=35) - Point(row=67, column=44)][0m (context)
+                  [94marguments[0m [92m[Point(row=67, column=35) - Point(row=67, column=44)][0m (context)
+                    [94m([0m [92m[Point(row=67, column=35) - Point(row=67, column=36)][0m (
+                    [94margument[0m [92m[Point(row=67, column=36) - Point(row=67, column=43)][0m context
+                      [94midentifier[0m [92m[Point(row=67, column=36) - Point(row=67, column=43)][0m context
+                    [94m)[0m [92m[Point(row=67, column=43) - Point(row=67, column=44)][0m )
+              [94mselector[0m [92m[Point(row=67, column=44) - Point(row=67, column=66)][0m ?.backButtonDispatcher
+                [94mconditional_assignable_selector[0m [92m[Point(row=67, column=44) - Point(row=67, column=66)][0m ?.backButtonDispatcher
+                  [94m?.[0m [92m[Point(row=67, column=44) - Point(row=67, column=46)][0m ?.
+                  [94midentifier[0m [92m[Point(row=67, column=46) - Point(row=67, column=66)][0m backButtonDispatcher
+            [94m;[0m [92m[Point(row=67, column=66) - Point(row=67, column=67)][0m ;
+          [94mif_statement[0m [92m[Point(row=68, column=4) - Point(row=76, column=5)][0m if (dispatcher != _parentBackBtnDispatcher) {
+      _disposeBackBtnDispatcher();
+      _parentBackBtnDispatcher = dispatcher;
+      if (dispatcher is BackButtonDispatcher &&
+          dispatcher is! ChildBackButtonDispatcher) {
+        dispatcher = dispatcher.createChildBackButtonDispatcher();
+      }
+      _backBtnDispatcher = dispatcher as ChildBackButtonDispatcher;
+    }
+            [94mif[0m [92m[Point(row=68, column=4) - Point(row=68, column=6)][0m if
+            [94m([0m [92m[Point(row=68, column=7) - Point(row=68, column=8)][0m (
+            [94mequality_expression[0m [92m[Point(row=68, column=8) - Point(row=68, column=46)][0m dispatcher != _parentBackBtnDispatcher
+              [94midentifier[0m [92m[Point(row=68, column=8) - Point(row=68, column=18)][0m dispatcher
+              [94mequality_operator[0m [92m[Point(row=68, column=19) - Point(row=68, column=21)][0m !=
+              [94midentifier[0m [92m[Point(row=68, column=22) - Point(row=68, column=46)][0m _parentBackBtnDispatcher
+            [94m)[0m [92m[Point(row=68, column=46) - Point(row=68, column=47)][0m )
+            [94mblock[0m [92m[Point(row=68, column=48) - Point(row=76, column=5)][0m {
+      _disposeBackBtnDispatcher();
+      _parentBackBtnDispatcher = dispatcher;
+      if (dispatcher is BackButtonDispatcher &&
+          dispatcher is! ChildBackButtonDispatcher) {
+        dispatcher = dispatcher.createChildBackButtonDispatcher();
+      }
+      _backBtnDispatcher = dispatcher as ChildBackButtonDispatcher;
+    }
+              [94m{[0m [92m[Point(row=68, column=48) - Point(row=68, column=49)][0m {
+              [94mexpression_statement[0m [92m[Point(row=69, column=6) - Point(row=69, column=34)][0m _disposeBackBtnDispatcher();
+                [94midentifier[0m [92m[Point(row=69, column=6) - Point(row=69, column=31)][0m _disposeBackBtnDispatcher
+                [94mselector[0m [92m[Point(row=69, column=31) - Point(row=69, column=33)][0m ()
+                  [94margument_part[0m [92m[Point(row=69, column=31) - Point(row=69, column=33)][0m ()
+                    [94marguments[0m [92m[Point(row=69, column=31) - Point(row=69, column=33)][0m ()
+                      [94m([0m [92m[Point(row=69, column=31) - Point(row=69, column=32)][0m (
+                      [94m)[0m [92m[Point(row=69, column=32) - Point(row=69, column=33)][0m )
+                [94m;[0m [92m[Point(row=69, column=33) - Point(row=69, column=34)][0m ;
+              [94mexpression_statement[0m [92m[Point(row=70, column=6) - Point(row=70, column=44)][0m _parentBackBtnDispatcher = dispatcher;
+                [94massignment_expression[0m [92m[Point(row=70, column=6) - Point(row=70, column=43)][0m _parentBackBtnDispatcher = dispatcher
+                  [94massignable_expression[0m [92m[Point(row=70, column=6) - Point(row=70, column=30)][0m _parentBackBtnDispatcher
+                    [94midentifier[0m [92m[Point(row=70, column=6) - Point(row=70, column=30)][0m _parentBackBtnDispatcher
+                  [94m=[0m [92m[Point(row=70, column=31) - Point(row=70, column=32)][0m =
+                  [94midentifier[0m [92m[Point(row=70, column=33) - Point(row=70, column=43)][0m dispatcher
+                [94m;[0m [92m[Point(row=70, column=43) - Point(row=70, column=44)][0m ;
+              [94mif_statement[0m [92m[Point(row=71, column=6) - Point(row=74, column=7)][0m if (dispatcher is BackButtonDispatcher &&
+          dispatcher is! ChildBackButtonDispatcher) {
+        dispatcher = dispatcher.createChildBackButtonDispatcher();
+      }
+                [94mif[0m [92m[Point(row=71, column=6) - Point(row=71, column=8)][0m if
+                [94m([0m [92m[Point(row=71, column=9) - Point(row=71, column=10)][0m (
+                [94mlogical_and_expression[0m [92m[Point(row=71, column=10) - Point(row=72, column=50)][0m dispatcher is BackButtonDispatcher &&
+          dispatcher is! ChildBackButtonDispatcher
+                  [94mtype_test_expression[0m [92m[Point(row=71, column=10) - Point(row=71, column=44)][0m dispatcher is BackButtonDispatcher
+                    [94midentifier[0m [92m[Point(row=71, column=10) - Point(row=71, column=20)][0m dispatcher
+                    [94mtype_test[0m [92m[Point(row=71, column=21) - Point(row=71, column=44)][0m is BackButtonDispatcher
+                      [94mis_operator[0m [92m[Point(row=71, column=21) - Point(row=71, column=23)][0m is
+                        [94mis[0m [92m[Point(row=71, column=21) - Point(row=71, column=23)][0m is
+                      [94mtype_identifier[0m [92m[Point(row=71, column=24) - Point(row=71, column=44)][0m BackButtonDispatcher
+                  [94mlogical_and_operator[0m [92m[Point(row=71, column=45) - Point(row=71, column=47)][0m &&
+                    [94m&&[0m [92m[Point(row=71, column=45) - Point(row=71, column=47)][0m &&
+                  [94mtype_test_expression[0m [92m[Point(row=72, column=10) - Point(row=72, column=50)][0m dispatcher is! ChildBackButtonDispatcher
+                    [94midentifier[0m [92m[Point(row=72, column=10) - Point(row=72, column=20)][0m dispatcher
+                    [94mtype_test[0m [92m[Point(row=72, column=21) - Point(row=72, column=50)][0m is! ChildBackButtonDispatcher
+                      [94mis_operator[0m [92m[Point(row=72, column=21) - Point(row=72, column=24)][0m is!
+                        [94mis[0m [92m[Point(row=72, column=21) - Point(row=72, column=23)][0m is
+                        [94m![0m [92m[Point(row=72, column=23) - Point(row=72, column=24)][0m !
+                      [94mtype_identifier[0m [92m[Point(row=72, column=25) - Point(row=72, column=50)][0m ChildBackButtonDispatcher
+                [94m)[0m [92m[Point(row=72, column=50) - Point(row=72, column=51)][0m )
+                [94mblock[0m [92m[Point(row=72, column=52) - Point(row=74, column=7)][0m {
+        dispatcher = dispatcher.createChildBackButtonDispatcher();
+      }
+                  [94m{[0m [92m[Point(row=72, column=52) - Point(row=72, column=53)][0m {
+                  [94mexpression_statement[0m [92m[Point(row=73, column=8) - Point(row=73, column=66)][0m dispatcher = dispatcher.createChildBackButtonDispatcher();
+                    [94massignment_expression[0m [92m[Point(row=73, column=8) - Point(row=73, column=65)][0m dispatcher = dispatcher.createChildBackButtonDispatcher()
+                      [94massignable_expression[0m [92m[Point(row=73, column=8) - Point(row=73, column=18)][0m dispatcher
+                        [94midentifier[0m [92m[Point(row=73, column=8) - Point(row=73, column=18)][0m dispatcher
+                      [94m=[0m [92m[Point(row=73, column=19) - Point(row=73, column=20)][0m =
+                      [94midentifier[0m [92m[Point(row=73, column=21) - Point(row=73, column=31)][0m dispatcher
+                      [94mselector[0m [92m[Point(row=73, column=31) - Point(row=73, column=63)][0m .createChildBackButtonDispatcher
+                        [94munconditional_assignable_selector[0m [92m[Point(row=73, column=31) - Point(row=73, column=63)][0m .createChildBackButtonDispatcher
+                          [94m.[0m [92m[Point(row=73, column=31) - Point(row=73, column=32)][0m .
+                          [94midentifier[0m [92m[Point(row=73, column=32) - Point(row=73, column=63)][0m createChildBackButtonDispatcher
+                      [94mselector[0m [92m[Point(row=73, column=63) - Point(row=73, column=65)][0m ()
+                        [94margument_part[0m [92m[Point(row=73, column=63) - Point(row=73, column=65)][0m ()
+                          [94marguments[0m [92m[Point(row=73, column=63) - Point(row=73, column=65)][0m ()
+                            [94m([0m [92m[Point(row=73, column=63) - Point(row=73, column=64)][0m (
+                            [94m)[0m [92m[Point(row=73, column=64) - Point(row=73, column=65)][0m )
+                    [94m;[0m [92m[Point(row=73, column=65) - Point(row=73, column=66)][0m ;
+                  [94m}[0m [92m[Point(row=74, column=6) - Point(row=74, column=7)][0m }
+              [94mexpression_statement[0m [92m[Point(row=75, column=6) - Point(row=75, column=67)][0m _backBtnDispatcher = dispatcher as ChildBackButtonDispatcher;
+                [94massignment_expression[0m [92m[Point(row=75, column=6) - Point(row=75, column=66)][0m _backBtnDispatcher = dispatcher as ChildBackButtonDispatcher
+                  [94massignable_expression[0m [92m[Point(row=75, column=6) - Point(row=75, column=24)][0m _backBtnDispatcher
+                    [94midentifier[0m [92m[Point(row=75, column=6) - Point(row=75, column=24)][0m _backBtnDispatcher
+                  [94m=[0m [92m[Point(row=75, column=25) - Point(row=75, column=26)][0m =
+                  [94mtype_cast_expression[0m [92m[Point(row=75, column=27) - Point(row=75, column=66)][0m dispatcher as ChildBackButtonDispatcher
+                    [94midentifier[0m [92m[Point(row=75, column=27) - Point(row=75, column=37)][0m dispatcher
+                    [94mtype_cast[0m [92m[Point(row=75, column=38) - Point(row=75, column=66)][0m as ChildBackButtonDispatcher
+                      [94mas_operator[0m [92m[Point(row=75, column=38) - Point(row=75, column=40)][0m as
+                        [94mas[0m [92m[Point(row=75, column=38) - Point(row=75, column=40)][0m as
+                      [94mtype_identifier[0m [92m[Point(row=75, column=41) - Point(row=75, column=66)][0m ChildBackButtonDispatcher
+                [94m;[0m [92m[Point(row=75, column=66) - Point(row=75, column=67)][0m ;
+              [94m}[0m [92m[Point(row=76, column=4) - Point(row=76, column=5)][0m }
+          [94mexpression_statement[0m [92m[Point(row=77, column=4) - Point(row=77, column=58)][0m _backBtnDispatcher?.removeCallback(_handleBackButton);
+            [94midentifier[0m [92m[Point(row=77, column=4) - Point(row=77, column=22)][0m _backBtnDispatcher
+            [94mselector[0m [92m[Point(row=77, column=22) - Point(row=77, column=38)][0m ?.removeCallback
+              [94mconditional_assignable_selector[0m [92m[Point(row=77, column=22) - Point(row=77, column=38)][0m ?.removeCallback
+                [94m?.[0m [92m[Point(row=77, column=22) - Point(row=77, column=24)][0m ?.
+                [94midentifier[0m [92m[Point(row=77, column=24) - Point(row=77, column=38)][0m removeCallback
+            [94mselector[0m [92m[Point(row=77, column=38) - Point(row=77, column=57)][0m (_handleBackButton)
+              [94margument_part[0m [92m[Point(row=77, column=38) - Point(row=77, column=57)][0m (_handleBackButton)
+                [94marguments[0m [92m[Point(row=77, column=38) - Point(row=77, column=57)][0m (_handleBackButton)
+                  [94m([0m [92m[Point(row=77, column=38) - Point(row=77, column=39)][0m (
+                  [94margument[0m [92m[Point(row=77, column=39) - Point(row=77, column=56)][0m _handleBackButton
+                    [94midentifier[0m [92m[Point(row=77, column=39) - Point(row=77, column=56)][0m _handleBackButton
+                  [94m)[0m [92m[Point(row=77, column=56) - Point(row=77, column=57)][0m )
+            [94m;[0m [92m[Point(row=77, column=57) - Point(row=77, column=58)][0m ;
+          [94mexpression_statement[0m [92m[Point(row=78, column=4) - Point(row=78, column=55)][0m _backBtnDispatcher?.addCallback(_handleBackButton);
+            [94midentifier[0m [92m[Point(row=78, column=4) - Point(row=78, column=22)][0m _backBtnDispatcher
+            [94mselector[0m [92m[Point(row=78, column=22) - Point(row=78, column=35)][0m ?.addCallback
+              [94mconditional_assignable_selector[0m [92m[Point(row=78, column=22) - Point(row=78, column=35)][0m ?.addCallback
+                [94m?.[0m [92m[Point(row=78, column=22) - Point(row=78, column=24)][0m ?.
+                [94midentifier[0m [92m[Point(row=78, column=24) - Point(row=78, column=35)][0m addCallback
+            [94mselector[0m [92m[Point(row=78, column=35) - Point(row=78, column=54)][0m (_handleBackButton)
+              [94margument_part[0m [92m[Point(row=78, column=35) - Point(row=78, column=54)][0m (_handleBackButton)
+                [94marguments[0m [92m[Point(row=78, column=35) - Point(row=78, column=54)][0m (_handleBackButton)
+                  [94m([0m [92m[Point(row=78, column=35) - Point(row=78, column=36)][0m (
+                  [94margument[0m [92m[Point(row=78, column=36) - Point(row=78, column=53)][0m _handleBackButton
+                    [94midentifier[0m [92m[Point(row=78, column=36) - Point(row=78, column=53)][0m _handleBackButton
+                  [94m)[0m [92m[Point(row=78, column=53) - Point(row=78, column=54)][0m )
+            [94m;[0m [92m[Point(row=78, column=54) - Point(row=78, column=55)][0m ;
+          [94mexpression_statement[0m [92m[Point(row=79, column=4) - Point(row=79, column=39)][0m _backBtnDispatcher?.takePriority();
+            [94midentifier[0m [92m[Point(row=79, column=4) - Point(row=79, column=22)][0m _backBtnDispatcher
+            [94mselector[0m [92m[Point(row=79, column=22) - Point(row=79, column=36)][0m ?.takePriority
+              [94mconditional_assignable_selector[0m [92m[Point(row=79, column=22) - Point(row=79, column=36)][0m ?.takePriority
+                [94m?.[0m [92m[Point(row=79, column=22) - Point(row=79, column=24)][0m ?.
+                [94midentifier[0m [92m[Point(row=79, column=24) - Point(row=79, column=36)][0m takePriority
+            [94mselector[0m [92m[Point(row=79, column=36) - Point(row=79, column=38)][0m ()
+              [94margument_part[0m [92m[Point(row=79, column=36) - Point(row=79, column=38)][0m ()
+                [94marguments[0m [92m[Point(row=79, column=36) - Point(row=79, column=38)][0m ()
+                  [94m([0m [92m[Point(row=79, column=36) - Point(row=79, column=37)][0m (
+                  [94m)[0m [92m[Point(row=79, column=37) - Point(row=79, column=38)][0m )
+            [94m;[0m [92m[Point(row=79, column=38) - Point(row=79, column=39)][0m ;
+          [94m}[0m [92m[Point(row=80, column=2) - Point(row=80, column=3)][0m }
+      [94mmethod_signature[0m [92m[Point(row=82, column=2) - Point(row=82, column=34)][0m void _disposeBackBtnDispatcher()
+        [94mfunction_signature[0m [92m[Point(row=82, column=2) - Point(row=82, column=34)][0m void _disposeBackBtnDispatcher()
+          [94mvoid_type[0m [92m[Point(row=82, column=2) - Point(row=82, column=6)][0m void
+          [94midentifier[0m [92m[Point(row=82, column=7) - Point(row=82, column=32)][0m _disposeBackBtnDispatcher
+          [94mformal_parameter_list[0m [92m[Point(row=82, column=32) - Point(row=82, column=34)][0m ()
+            [94m([0m [92m[Point(row=82, column=32) - Point(row=82, column=33)][0m (
+            [94m)[0m [92m[Point(row=82, column=33) - Point(row=82, column=34)][0m )
+      [94mfunction_body[0m [92m[Point(row=82, column=35) - Point(row=90, column=3)][0m {
+    _backBtnDispatcher?.removeCallback(_handleBackButton);
+    if (_backBtnDispatcher is ChildBackButtonDispatcher) {
+      final child = _backBtnDispatcher as ChildBackButtonDispatcher;
+      _parentBackBtnDispatcher?.forget(child);
+    }
+    _backBtnDispatcher = null;
+    _parentBackBtnDispatcher = null;
+  }
+        [94mblock[0m [92m[Point(row=82, column=35) - Point(row=90, column=3)][0m {
+    _backBtnDispatcher?.removeCallback(_handleBackButton);
+    if (_backBtnDispatcher is ChildBackButtonDispatcher) {
+      final child = _backBtnDispatcher as ChildBackButtonDispatcher;
+      _parentBackBtnDispatcher?.forget(child);
+    }
+    _backBtnDispatcher = null;
+    _parentBackBtnDispatcher = null;
+  }
+          [94m{[0m [92m[Point(row=82, column=35) - Point(row=82, column=36)][0m {
+          [94mexpression_statement[0m [92m[Point(row=83, column=4) - Point(row=83, column=58)][0m _backBtnDispatcher?.removeCallback(_handleBackButton);
+            [94midentifier[0m [92m[Point(row=83, column=4) - Point(row=83, column=22)][0m _backBtnDispatcher
+            [94mselector[0m [92m[Point(row=83, column=22) - Point(row=83, column=38)][0m ?.removeCallback
+              [94mconditional_assignable_selector[0m [92m[Point(row=83, column=22) - Point(row=83, column=38)][0m ?.removeCallback
+                [94m?.[0m [92m[Point(row=83, column=22) - Point(row=83, column=24)][0m ?.
+                [94midentifier[0m [92m[Point(row=83, column=24) - Point(row=83, column=38)][0m removeCallback
+            [94mselector[0m [92m[Point(row=83, column=38) - Point(row=83, column=57)][0m (_handleBackButton)
+              [94margument_part[0m [92m[Point(row=83, column=38) - Point(row=83, column=57)][0m (_handleBackButton)
+                [94marguments[0m [92m[Point(row=83, column=38) - Point(row=83, column=57)][0m (_handleBackButton)
+                  [94m([0m [92m[Point(row=83, column=38) - Point(row=83, column=39)][0m (
+                  [94margument[0m [92m[Point(row=83, column=39) - Point(row=83, column=56)][0m _handleBackButton
+                    [94midentifier[0m [92m[Point(row=83, column=39) - Point(row=83, column=56)][0m _handleBackButton
+                  [94m)[0m [92m[Point(row=83, column=56) - Point(row=83, column=57)][0m )
+            [94m;[0m [92m[Point(row=83, column=57) - Point(row=83, column=58)][0m ;
+          [94mif_statement[0m [92m[Point(row=84, column=4) - Point(row=87, column=5)][0m if (_backBtnDispatcher is ChildBackButtonDispatcher) {
+      final child = _backBtnDispatcher as ChildBackButtonDispatcher;
+      _parentBackBtnDispatcher?.forget(child);
+    }
+            [94mif[0m [92m[Point(row=84, column=4) - Point(row=84, column=6)][0m if
+            [94m([0m [92m[Point(row=84, column=7) - Point(row=84, column=8)][0m (
+            [94mtype_test_expression[0m [92m[Point(row=84, column=8) - Point(row=84, column=55)][0m _backBtnDispatcher is ChildBackButtonDispatcher
+              [94midentifier[0m [92m[Point(row=84, column=8) - Point(row=84, column=26)][0m _backBtnDispatcher
+              [94mtype_test[0m [92m[Point(row=84, column=27) - Point(row=84, column=55)][0m is ChildBackButtonDispatcher
+                [94mis_operator[0m [92m[Point(row=84, column=27) - Point(row=84, column=29)][0m is
+                  [94mis[0m [92m[Point(row=84, column=27) - Point(row=84, column=29)][0m is
+                [94mtype_identifier[0m [92m[Point(row=84, column=30) - Point(row=84, column=55)][0m ChildBackButtonDispatcher
+            [94m)[0m [92m[Point(row=84, column=55) - Point(row=84, column=56)][0m )
+            [94mblock[0m [92m[Point(row=84, column=57) - Point(row=87, column=5)][0m {
+      final child = _backBtnDispatcher as ChildBackButtonDispatcher;
+      _parentBackBtnDispatcher?.forget(child);
+    }
+              [94m{[0m [92m[Point(row=84, column=57) - Point(row=84, column=58)][0m {
+              [94mlocal_variable_declaration[0m [92m[Point(row=85, column=6) - Point(row=85, column=68)][0m final child = _backBtnDispatcher as ChildBackButtonDispatcher;
+                [94minitialized_variable_definition[0m [92m[Point(row=85, column=6) - Point(row=85, column=67)][0m final child = _backBtnDispatcher as ChildBackButtonDispatcher
+                  [94mfinal_builtin[0m [92m[Point(row=85, column=6) - Point(row=85, column=11)][0m final
+                    [94mfinal[0m [92m[Point(row=85, column=6) - Point(row=85, column=11)][0m final
+                  [94midentifier[0m [92m[Point(row=85, column=12) - Point(row=85, column=17)][0m child
+                  [94m=[0m [92m[Point(row=85, column=18) - Point(row=85, column=19)][0m =
+                  [94mtype_cast_expression[0m [92m[Point(row=85, column=20) - Point(row=85, column=67)][0m _backBtnDispatcher as ChildBackButtonDispatcher
+                    [94midentifier[0m [92m[Point(row=85, column=20) - Point(row=85, column=38)][0m _backBtnDispatcher
+                    [94mtype_cast[0m [92m[Point(row=85, column=39) - Point(row=85, column=67)][0m as ChildBackButtonDispatcher
+                      [94mas_operator[0m [92m[Point(row=85, column=39) - Point(row=85, column=41)][0m as
+                        [94mas[0m [92m[Point(row=85, column=39) - Point(row=85, column=41)][0m as
+                      [94mtype_identifier[0m [92m[Point(row=85, column=42) - Point(row=85, column=67)][0m ChildBackButtonDispatcher
+                [94m;[0m [92m[Point(row=85, column=67) - Point(row=85, column=68)][0m ;
+              [94mexpression_statement[0m [92m[Point(row=86, column=6) - Point(row=86, column=46)][0m _parentBackBtnDispatcher?.forget(child);
+                [94midentifier[0m [92m[Point(row=86, column=6) - Point(row=86, column=30)][0m _parentBackBtnDispatcher
+                [94mselector[0m [92m[Point(row=86, column=30) - Point(row=86, column=38)][0m ?.forget
+                  [94mconditional_assignable_selector[0m [92m[Point(row=86, column=30) - Point(row=86, column=38)][0m ?.forget
+                    [94m?.[0m [92m[Point(row=86, column=30) - Point(row=86, column=32)][0m ?.
+                    [94midentifier[0m [92m[Point(row=86, column=32) - Point(row=86, column=38)][0m forget
+                [94mselector[0m [92m[Point(row=86, column=38) - Point(row=86, column=45)][0m (child)
+                  [94margument_part[0m [92m[Point(row=86, column=38) - Point(row=86, column=45)][0m (child)
+                    [94marguments[0m [92m[Point(row=86, column=38) - Point(row=86, column=45)][0m (child)
+                      [94m([0m [92m[Point(row=86, column=38) - Point(row=86, column=39)][0m (
+                      [94margument[0m [92m[Point(row=86, column=39) - Point(row=86, column=44)][0m child
+                        [94midentifier[0m [92m[Point(row=86, column=39) - Point(row=86, column=44)][0m child
+                      [94m)[0m [92m[Point(row=86, column=44) - Point(row=86, column=45)][0m )
+                [94m;[0m [92m[Point(row=86, column=45) - Point(row=86, column=46)][0m ;
+              [94m}[0m [92m[Point(row=87, column=4) - Point(row=87, column=5)][0m }
+          [94mexpression_statement[0m [92m[Point(row=88, column=4) - Point(row=88, column=30)][0m _backBtnDispatcher = null;
+            [94massignment_expression[0m [92m[Point(row=88, column=4) - Point(row=88, column=29)][0m _backBtnDispatcher = null
+              [94massignable_expression[0m [92m[Point(row=88, column=4) - Point(row=88, column=22)][0m _backBtnDispatcher
+                [94midentifier[0m [92m[Point(row=88, column=4) - Point(row=88, column=22)][0m _backBtnDispatcher
+              [94m=[0m [92m[Point(row=88, column=23) - Point(row=88, column=24)][0m =
+              [94mnull_literal[0m [92m[Point(row=88, column=25) - Point(row=88, column=29)][0m null
+                [94mnull[0m [92m[Point(row=88, column=25) - Point(row=88, column=29)][0m null
+            [94m;[0m [92m[Point(row=88, column=29) - Point(row=88, column=30)][0m ;
+          [94mexpression_statement[0m [92m[Point(row=89, column=4) - Point(row=89, column=36)][0m _parentBackBtnDispatcher = null;
+            [94massignment_expression[0m [92m[Point(row=89, column=4) - Point(row=89, column=35)][0m _parentBackBtnDispatcher = null
+              [94massignable_expression[0m [92m[Point(row=89, column=4) - Point(row=89, column=28)][0m _parentBackBtnDispatcher
+                [94midentifier[0m [92m[Point(row=89, column=4) - Point(row=89, column=28)][0m _parentBackBtnDispatcher
+              [94m=[0m [92m[Point(row=89, column=29) - Point(row=89, column=30)][0m =
+              [94mnull_literal[0m [92m[Point(row=89, column=31) - Point(row=89, column=35)][0m null
+                [94mnull[0m [92m[Point(row=89, column=31) - Point(row=89, column=35)][0m null
+            [94m;[0m [92m[Point(row=89, column=35) - Point(row=89, column=36)][0m ;
+          [94m}[0m [92m[Point(row=90, column=2) - Point(row=90, column=3)][0m }
+      [94mmethod_signature[0m [92m[Point(row=92, column=2) - Point(row=92, column=21)][0m bool get _onlyRoute
+        [94mgetter_signature[0m [92m[Point(row=92, column=2) - Point(row=92, column=21)][0m bool get _onlyRoute
+          [94mtype_identifier[0m [92m[Point(row=92, column=2) - Point(row=92, column=6)][0m bool
+          [94mget[0m [92m[Point(row=92, column=7) - Point(row=92, column=10)][0m get
+          [94midentifier[0m [92m[Point(row=92, column=11) - Point(row=92, column=21)][0m _onlyRoute
+      [94mfunction_body[0m [92m[Point(row=92, column=22) - Point(row=92, column=80)][0m => _route != null && _route!.isFirst && _route!.isCurrent;
+        [94m=>[0m [92m[Point(row=92, column=22) - Point(row=92, column=24)][0m =>
+        [94mlogical_and_expression[0m [92m[Point(row=92, column=25) - Point(row=92, column=79)][0m _route != null && _route!.isFirst && _route!.isCurrent
+          [94mequality_expression[0m [92m[Point(row=92, column=25) - Point(row=92, column=39)][0m _route != null
+            [94midentifier[0m [92m[Point(row=92, column=25) - Point(row=92, column=31)][0m _route
+            [94mequality_operator[0m [92m[Point(row=92, column=32) - Point(row=92, column=34)][0m !=
+            [94mnull_literal[0m [92m[Point(row=92, column=35) - Point(row=92, column=39)][0m null
+              [94mnull[0m [92m[Point(row=92, column=35) - Point(row=92, column=39)][0m null
+          [94mlogical_and_operator[0m [92m[Point(row=92, column=40) - Point(row=92, column=42)][0m &&
+            [94m&&[0m [92m[Point(row=92, column=40) - Point(row=92, column=42)][0m &&
+          [94mlogical_and_expression[0m [92m[Point(row=92, column=43) - Point(row=92, column=79)][0m _route!.isFirst && _route!.isCurrent
+            [94midentifier[0m [92m[Point(row=92, column=43) - Point(row=92, column=49)][0m _route
+            [94mselector[0m [92m[Point(row=92, column=49) - Point(row=92, column=50)][0m !
+              [94m![0m [92m[Point(row=92, column=49) - Point(row=92, column=50)][0m !
+            [94mselector[0m [92m[Point(row=92, column=50) - Point(row=92, column=58)][0m .isFirst
+              [94munconditional_assignable_selector[0m [92m[Point(row=92, column=50) - Point(row=92, column=58)][0m .isFirst
+                [94m.[0m [92m[Point(row=92, column=50) - Point(row=92, column=51)][0m .
+                [94midentifier[0m [92m[Point(row=92, column=51) - Point(row=92, column=58)][0m isFirst
+            [94mlogical_and_operator[0m [92m[Point(row=92, column=59) - Point(row=92, column=61)][0m &&
+              [94m&&[0m [92m[Point(row=92, column=59) - Point(row=92, column=61)][0m &&
+            [94midentifier[0m [92m[Point(row=92, column=62) - Point(row=92, column=68)][0m _route
+            [94mselector[0m [92m[Point(row=92, column=68) - Point(row=92, column=69)][0m !
+              [94m![0m [92m[Point(row=92, column=68) - Point(row=92, column=69)][0m !
+            [94mselector[0m [92m[Point(row=92, column=69) - Point(row=92, column=79)][0m .isCurrent
+              [94munconditional_assignable_selector[0m [92m[Point(row=92, column=69) - Point(row=92, column=79)][0m .isCurrent
+                [94m.[0m [92m[Point(row=92, column=69) - Point(row=92, column=70)][0m .
+                [94midentifier[0m [92m[Point(row=92, column=70) - Point(row=92, column=79)][0m isCurrent
+        [94m;[0m [92m[Point(row=92, column=79) - Point(row=92, column=80)][0m ;
+      [94mmethod_signature[0m [92m[Point(row=94, column=2) - Point(row=94, column=34)][0m Future<bool> _handleBackButton()
+        [94mfunction_signature[0m [92m[Point(row=94, column=2) - Point(row=94, column=34)][0m Future<bool> _handleBackButton()
+          [94mtype_identifier[0m [92m[Point(row=94, column=2) - Point(row=94, column=8)][0m Future
+          [94mtype_arguments[0m [92m[Point(row=94, column=8) - Point(row=94, column=14)][0m <bool>
+            [94m<[0m [92m[Point(row=94, column=8) - Point(row=94, column=9)][0m <
+            [94mtype_identifier[0m [92m[Point(row=94, column=9) - Point(row=94, column=13)][0m bool
+            [94m>[0m [92m[Point(row=94, column=13) - Point(row=94, column=14)][0m >
+          [94midentifier[0m [92m[Point(row=94, column=15) - Point(row=94, column=32)][0m _handleBackButton
+          [94mformal_parameter_list[0m [92m[Point(row=94, column=32) - Point(row=94, column=34)][0m ()
+            [94m([0m [92m[Point(row=94, column=32) - Point(row=94, column=33)][0m (
+            [94m)[0m [92m[Point(row=94, column=33) - Point(row=94, column=34)][0m )
+      [94mfunction_body[0m [92m[Point(row=94, column=35) - Point(row=102, column=3)][0m async {
+    if (_onlyRoute) {
+      widget.onPopInvoked?.call(widget.canPop);
+      if (!widget.canPop) {
+        return true;
+      }
+    }
+    return false;
+  }
+        [94masync[0m [92m[Point(row=94, column=35) - Point(row=94, column=40)][0m async
+        [94mblock[0m [92m[Point(row=94, column=41) - Point(row=102, column=3)][0m {
+    if (_onlyRoute) {
+      widget.onPopInvoked?.call(widget.canPop);
+      if (!widget.canPop) {
+        return true;
+      }
+    }
+    return false;
+  }
+          [94m{[0m [92m[Point(row=94, column=41) - Point(row=94, column=42)][0m {
+          [94mif_statement[0m [92m[Point(row=95, column=4) - Point(row=100, column=5)][0m if (_onlyRoute) {
+      widget.onPopInvoked?.call(widget.canPop);
+      if (!widget.canPop) {
+        return true;
+      }
+    }
+            [94mif[0m [92m[Point(row=95, column=4) - Point(row=95, column=6)][0m if
+            [94m([0m [92m[Point(row=95, column=7) - Point(row=95, column=8)][0m (
+            [94midentifier[0m [92m[Point(row=95, column=8) - Point(row=95, column=18)][0m _onlyRoute
+            [94m)[0m [92m[Point(row=95, column=18) - Point(row=95, column=19)][0m )
+            [94mblock[0m [92m[Point(row=95, column=20) - Point(row=100, column=5)][0m {
+      widget.onPopInvoked?.call(widget.canPop);
+      if (!widget.canPop) {
+        return true;
+      }
+    }
+              [94m{[0m [92m[Point(row=95, column=20) - Point(row=95, column=21)][0m {
+              [94mexpression_statement[0m [92m[Point(row=96, column=6) - Point(row=96, column=47)][0m widget.onPopInvoked?.call(widget.canPop);
+                [94midentifier[0m [92m[Point(row=96, column=6) - Point(row=96, column=12)][0m widget
+                [94mselector[0m [92m[Point(row=96, column=12) - Point(row=96, column=25)][0m .onPopInvoked
+                  [94munconditional_assignable_selector[0m [92m[Point(row=96, column=12) - Point(row=96, column=25)][0m .onPopInvoked
+                    [94m.[0m [92m[Point(row=96, column=12) - Point(row=96, column=13)][0m .
+                    [94midentifier[0m [92m[Point(row=96, column=13) - Point(row=96, column=25)][0m onPopInvoked
+                [94mselector[0m [92m[Point(row=96, column=25) - Point(row=96, column=31)][0m ?.call
+                  [94mconditional_assignable_selector[0m [92m[Point(row=96, column=25) - Point(row=96, column=31)][0m ?.call
+                    [94m?.[0m [92m[Point(row=96, column=25) - Point(row=96, column=27)][0m ?.
+                    [94midentifier[0m [92m[Point(row=96, column=27) - Point(row=96, column=31)][0m call
+                [94mselector[0m [92m[Point(row=96, column=31) - Point(row=96, column=46)][0m (widget.canPop)
+                  [94margument_part[0m [92m[Point(row=96, column=31) - Point(row=96, column=46)][0m (widget.canPop)
+                    [94marguments[0m [92m[Point(row=96, column=31) - Point(row=96, column=46)][0m (widget.canPop)
+                      [94m([0m [92m[Point(row=96, column=31) - Point(row=96, column=32)][0m (
+                      [94margument[0m [92m[Point(row=96, column=32) - Point(row=96, column=45)][0m widget.canPop
+                        [94midentifier[0m [92m[Point(row=96, column=32) - Point(row=96, column=38)][0m widget
+                        [94mselector[0m [92m[Point(row=96, column=38) - Point(row=96, column=45)][0m .canPop
+                          [94munconditional_assignable_selector[0m [92m[Point(row=96, column=38) - Point(row=96, column=45)][0m .canPop
+                            [94m.[0m [92m[Point(row=96, column=38) - Point(row=96, column=39)][0m .
+                            [94midentifier[0m [92m[Point(row=96, column=39) - Point(row=96, column=45)][0m canPop
+                      [94m)[0m [92m[Point(row=96, column=45) - Point(row=96, column=46)][0m )
+                [94m;[0m [92m[Point(row=96, column=46) - Point(row=96, column=47)][0m ;
+              [94mif_statement[0m [92m[Point(row=97, column=6) - Point(row=99, column=7)][0m if (!widget.canPop) {
+        return true;
+      }
+                [94mif[0m [92m[Point(row=97, column=6) - Point(row=97, column=8)][0m if
+                [94m([0m [92m[Point(row=97, column=9) - Point(row=97, column=10)][0m (
+                [94munary_expression[0m [92m[Point(row=97, column=10) - Point(row=97, column=24)][0m !widget.canPop
+                  [94mprefix_operator[0m [92m[Point(row=97, column=10) - Point(row=97, column=11)][0m !
+                    [94mnegation_operator[0m [92m[Point(row=97, column=10) - Point(row=97, column=11)][0m !
+                      [94m![0m [92m[Point(row=97, column=10) - Point(row=97, column=11)][0m !
+                  [94midentifier[0m [92m[Point(row=97, column=11) - Point(row=97, column=17)][0m widget
+                  [94mselector[0m [92m[Point(row=97, column=17) - Point(row=97, column=24)][0m .canPop
+                    [94munconditional_assignable_selector[0m [92m[Point(row=97, column=17) - Point(row=97, column=24)][0m .canPop
+                      [94m.[0m [92m[Point(row=97, column=17) - Point(row=97, column=18)][0m .
+                      [94midentifier[0m [92m[Point(row=97, column=18) - Point(row=97, column=24)][0m canPop
+                [94m)[0m [92m[Point(row=97, column=24) - Point(row=97, column=25)][0m )
+                [94mblock[0m [92m[Point(row=97, column=26) - Point(row=99, column=7)][0m {
+        return true;
+      }
+                  [94m{[0m [92m[Point(row=97, column=26) - Point(row=97, column=27)][0m {
+                  [94mreturn_statement[0m [92m[Point(row=98, column=8) - Point(row=98, column=20)][0m return true;
+                    [94mreturn[0m [92m[Point(row=98, column=8) - Point(row=98, column=14)][0m return
+                    [94mtrue[0m [92m[Point(row=98, column=15) - Point(row=98, column=19)][0m true
+                      [94mtrue[0m [92m[Point(row=98, column=15) - Point(row=98, column=19)][0m true
+                    [94m;[0m [92m[Point(row=98, column=19) - Point(row=98, column=20)][0m ;
+                  [94m}[0m [92m[Point(row=99, column=6) - Point(row=99, column=7)][0m }
+              [94m}[0m [92m[Point(row=100, column=4) - Point(row=100, column=5)][0m }
+          [94mreturn_statement[0m [92m[Point(row=101, column=4) - Point(row=101, column=17)][0m return false;
+            [94mreturn[0m [92m[Point(row=101, column=4) - Point(row=101, column=10)][0m return
+            [94mfalse[0m [92m[Point(row=101, column=11) - Point(row=101, column=16)][0m false
+              [94mfalse[0m [92m[Point(row=101, column=11) - Point(row=101, column=16)][0m false
+            [94m;[0m [92m[Point(row=101, column=16) - Point(row=101, column=17)][0m ;
+          [94m}[0m [92m[Point(row=102, column=2) - Point(row=102, column=3)][0m }
+      [94m}[0m [92m[Point(row=103, column=0) - Point(row=103, column=1)][0m }

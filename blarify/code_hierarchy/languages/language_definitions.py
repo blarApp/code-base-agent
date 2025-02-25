@@ -2,10 +2,12 @@ from abc import ABC, abstractmethod
 from tree_sitter import Parser
 from typing import Set
 from blarify.code_hierarchy.languages.FoundRelationshipScope import FoundRelationshipScope
-from blarify.graph.relationship import RelationshipType
 from blarify.graph.node import NodeLabels
 from tree_sitter import Node
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from blarify.graph.relationship import RelationshipType
 
 
 class BodyNodeNotFound(Exception):
@@ -82,7 +84,7 @@ class LanguageDefinitions(ABC):
     @staticmethod
     def _get_relationship_type_for_node(
         tree_sitter_node: Node, relationships_types: dict
-    ) -> Optional[RelationshipType]:
+    ) -> Optional["RelationshipType"]:
         if tree_sitter_node is None:
             return None
 
