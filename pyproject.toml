@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "blarify"
-version = "1.0.1"
+version = "1.0.2"
 description = "A simple graph builder based on LSP calls"
 authors = ["Juan Vargas <juan@blar.io>", "Benjamín Errazuriz <benjamin@blar.io>"]
 readme = "README.md"
@@ -24,6 +24,7 @@ tree-sitter-c-sharp = "^0.23.1"
 tree-sitter-go = "^0.23.4"
 falkordb = "^1.0.10"
 requests = "^2.32.3"
+typing-extensions = "^4.12.2"
 
 [tool.vendoring]
 destination = "blarify/vendor"
