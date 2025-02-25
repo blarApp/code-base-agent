@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "blarify"
-version = "1.0.3"
+version = "1.0.6"
 description = "A simple graph builder based on LSP calls"
 authors = ["Juan Vargas <juan@blar.io>", "Benjamín Errazuriz <benjamin@blar.io>"]
 readme = "README.md"
@@ -25,11 +25,15 @@ tree-sitter-go = "^0.23.4"
 falkordb = "^1.0.10"
 requests = "^2.32.3"
 typing-extensions = "^4.12.2"
+jedi-language-server = "^0.43.1"
+
+
 
 [tool.vendoring]
 destination = "blarify/vendor"
 namespace = "blarify.vendor"
 requirements = "requirements-vendor.txt"
+include = ["*.json"]
 
 [build-system]
 requires = ["poetry-core"]
