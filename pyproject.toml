@@ -24,8 +24,11 @@ tree-sitter-c-sharp = "^0.23.1"
 tree-sitter-go = "^0.23.4"
 falkordb = "^1.0.10"
 requests = "^2.32.3"
-multilspy = {path = "vendor/multilspy"}
 
+[tool.vendoring]
+destination = "vendor"
+namespace = "vendor"
+requirements = "requirements-vendor.txt"
 
 [build-system]
 requires = ["poetry-core"]
