@@ -316,10 +316,8 @@ pydantic = ">=1.10.5,<2"
 requests = "2.32.3"
 
 [package.source]
-type = "git"
-url = "https://github.com/blarApp/multilspy.git"
-reference = "HEAD"
-resolved_reference = "048bbeca841b6ae2e8891e6addfcc2328fc56219"
+type = "directory"
+url = "vendor/multilspy"
 
 [[package]]
 name = "neo4j"
@@ -821,4 +819,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<=3.14"
-content-hash = "06565b2c28596ebb4359a4c55aae0ec1a9d06478d8399bc12164fe9ab8b832c8"
+content-hash = "6f76f68e463ad7691184a6993568a3e8e95de3d41a384423a21c7a1ff766a5cd"

@@ -5,7 +5,7 @@ description = "A simple graph builder based on LSP calls"
 authors = ["Juan Vargas <juan@blar.io>", "Benjamín Errazuriz <benjamin@blar.io>"]
 readme = "README.md"
 homepage = "https://blar.io"
-repository = "https://github.com/blarApp/code-base-agent"
+repository = "https://github.com/blarApp/blarify"
 license = "MIT"
 packages = [{include = "blarify"}]
 
@@ -21,9 +21,10 @@ tree-sitter-ruby = "^0.23.0"
 tree-sitter-javascript = "^0.23.0"
 tree-sitter-typescript = "^0.23.2"
 tree-sitter-c-sharp = "^0.23.1"
-multilspy = {git = "https://github.com/blarApp/multilspy.git"}
 tree-sitter-go = "^0.23.4"
 falkordb = "^1.0.10"
+requests = "^2.32.3"
+multilspy = {path = "vendor/multilspy"}
 
 
 [build-system]
