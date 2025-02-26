@@ -7,7 +7,9 @@ import os
 
 
 def build(root_path: str = None):
-    graph_builder = GraphBuilder(root_path=root_path, extensions_to_skip=[".json"], names_to_skip=["__pycache__"])
+    graph_builder = GraphBuilder(
+        root_path=root_path, extensions_to_skip=[".json"], names_to_skip=["__pycache__", ".venv", ".git"]
+    )
     graph = graph_builder.build()
 
     relationships = graph.get_relationships_as_objects()
