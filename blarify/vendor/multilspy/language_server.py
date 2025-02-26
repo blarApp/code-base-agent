@@ -27,7 +27,7 @@ from .multilspy_config import MultilspyConfig, Language
 from .multilspy_exceptions import MultilspyException
 from .multilspy_utils import PathUtils, FileUtils, TextUtils
 from pathlib import PurePath
-from typing import AsyncIterator, Iterator, List, Dict, Union, Tuple
+from typing import AsyncIterator, Iterator, List, Dict, Optional, Union, Tuple
 from .type_helpers import ensure_all_methods_implemented
 
 
@@ -111,6 +111,12 @@ class LanguageServer:
             from blarify.vendor.multilspy.language_servers.solargraph.solargraph import Solargraph
 
             return Solargraph(config, logger, repository_root_path)
+        elif config.code_language == Language.DART:
+            from blarify.vendor.multilspy.language_servers.dart_language_server.dart_language_server import (
+                DartLanguageServer,
+            )
+
+            return DartLanguageServer(config, logger, repository_root_path)
         else:
             logger.log(
                 f"Language {config.code_language} is not supported", logging.ERROR
@@ -751,14 +757,21 @@ class SyncLanguageServer:
     It is used to communicate with Language Servers of different programming languages.
     """
 
-    def __init__(self, language_server: LanguageServer) -> None:
+    def __init__(
+        self, language_server: LanguageServer, timeout: Optional[int] = None
+    ) -> None:
         self.language_server = language_server
         self.loop = None
         self.loop_thread = None
+        self.timeout = timeout
 
     @classmethod
     def create(
-        cls, config: MultilspyConfig, logger: MultilspyLogger, repository_root_path: str
+        cls,
+        config: MultilspyConfig,
+        logger: MultilspyLogger,
+        repository_root_path: str,
+        timeout: Optional[int] = None,
     ) -> "SyncLanguageServer":
         """
         Creates a language specific LanguageServer instance based on the given configuration, and appropriate settings for the programming language.
@@ -772,7 +785,8 @@ class SyncLanguageServer:
         :return SyncLanguageServer: A language specific LanguageServer instance.
         """
         return SyncLanguageServer(
-            LanguageServer.create(config, logger, repository_root_path)
+            LanguageServer.create(config, logger, repository_root_path),
+            timeout=timeout,
         )
 
     @contextmanager
@@ -856,7 +870,7 @@ class SyncLanguageServer:
         """
         result = asyncio.run_coroutine_threadsafe(
             self.language_server.request_definition(file_path, line, column), self.loop
-        ).result()
+        ).result(timeout=self.timeout)
         return result
 
     def request_references(
@@ -874,7 +888,7 @@ class SyncLanguageServer:
         """
         result = asyncio.run_coroutine_threadsafe(
             self.language_server.request_references(file_path, line, column), self.loop
-        ).result(timeout=15)
+        ).result(timeout=self.timeout)
         return result
 
     def request_completions(
@@ -899,7 +913,7 @@ class SyncLanguageServer:
                 relative_file_path, line, column, allow_incomplete
             ),
             self.loop,
-        ).result()
+        ).result(timeout=self.timeout)
         return result
 
     def request_document_symbols(
@@ -918,7 +932,7 @@ class SyncLanguageServer:
         """
         result = asyncio.run_coroutine_threadsafe(
             self.language_server.request_document_symbols(relative_file_path), self.loop
-        ).result()
+        ).result(timeout=self.timeout)
         return result
 
     def request_hover(
@@ -937,5 +951,5 @@ class SyncLanguageServer:
         result = asyncio.run_coroutine_threadsafe(
             self.language_server.request_hover(relative_file_path, line, column),
             self.loop,
-        ).result()
+        ).result(timeout=self.timeout)
         return result

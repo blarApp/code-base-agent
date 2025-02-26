@@ -33,7 +33,6 @@ jedi-language-server = "^0.43.1"
 destination = "blarify/vendor"
 namespace = "blarify.vendor"
 requirements = "requirements-vendor.txt"
-include = ["*.json"]
 
 [build-system]
 requires = ["poetry-core"]

@@ -56,13 +56,13 @@ class LspQueryHelper:
         else:
             raise FileExtensionNotSupported(f'File extension "{extension}" is not supported)')
 
-    def _create_lsp_server(self, language_definitions: LanguageDefinitions):
+    def _create_lsp_server(self, language_definitions: LanguageDefinitions, timeout=15) -> SyncLanguageServer:
         language = language_definitions.get_language_name()
 
         config = MultilspyConfig.from_dict({"code_language": language})
 
         logger = MultilspyLogger()
-        lsp = SyncLanguageServer.create(config, logger, PathCalculator.uri_to_path(self.root_uri))
+        lsp = SyncLanguageServer.create(config, logger, PathCalculator.uri_to_path(self.root_uri), timeout=timeout)
         return lsp
 
     def start(self) -> None:
@@ -70,14 +70,14 @@ class LspQueryHelper:
         DEPRECATED, LSP servers are started on demand
         """
 
-    def _get_or_create_lsp_server(self, extension):
+    def _get_or_create_lsp_server(self, extension, timeout=15) -> SyncLanguageServer:
         language_definitions = self._get_language_definition_for_extension(extension)
         language = language_definitions.get_language_name()
 
         if language in self.language_to_lsp_server:
             return self.language_to_lsp_server[language]
         else:
-            new_lsp = self._create_lsp_server(language_definitions)
+            new_lsp = self._create_lsp_server(language_definitions, timeout)
             self.language_to_lsp_server[language] = new_lsp
             self._initialize_lsp_server(language, new_lsp)
             return new_lsp
@@ -94,33 +94,31 @@ class LspQueryHelper:
 
     def get_paths_where_node_is_referenced(self, node: DefinitionNode) -> list[Reference]:
         server = self._get_or_create_lsp_server(node.extension)
-        references = self._request_references_with_fallback(node, server)
-
-        if not references:
-            return []
+        references = self._request_references_with_exponential_backoff(node, server)
 
         return [Reference(reference) for reference in references]
 
-    def _request_references_with_fallback(self, node, lsp):
-        try:
-            references = lsp.request_references(
-                file_path=PathCalculator.get_relative_path_from_uri(root_uri=self.root_uri, uri=node.path),
-                line=node.definition_range.start_dict["line"],
-                column=node.definition_range.start_dict["character"],
-            )
+    def _request_references_with_exponential_backoff(self, node, lsp):
+        timeout = 10
+        for _ in range(1, 3):
+            try:
+                references = lsp.request_references(
+                    file_path=PathCalculator.get_relative_path_from_uri(root_uri=self.root_uri, uri=node.path),
+                    line=node.definition_range.start_dict["line"],
+                    column=node.definition_range.start_dict["character"],
+                )
 
-        except (TimeoutError, ConnectionResetError) as e:
-            logger.warning(f"Error requesting references: {e}, attempting to restart LSP server")
+                return references
 
-            self._restart_lsp_for_extension(node)
-            lsp = self._get_or_create_lsp_server(node.extension)
-            references = lsp.request_references(
-                file_path=PathCalculator.get_relative_path_from_uri(root_uri=self.root_uri, uri=node.path),
-                line=node.definition_range.start_dict["line"],
-                column=node.definition_range.start_dict["character"],
-            )
+            except (TimeoutError, ConnectionResetError) as e:
+                timeout = timeout * 2
 
-        return references
+                logger.warning(f"Error requesting references, attempting to restart LSP server with timeout {timeout}")
+                self._restart_lsp_for_extension(node)
+                lsp = self._get_or_create_lsp_server(node.extension, timeout)
+
+        logger.error("Failed to get references, returning empty list")
+        return []
 
     def _restart_lsp_for_extension(self, node):
         language_definitions = self._get_language_definition_for_extension(node.extension)
