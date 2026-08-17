@@ -26,8 +26,8 @@ class MCPToolWrapper:
             return {"type": "object", "properties": {}, "required": []}
 
         schema_class = self.langchain_tool.args_schema
-        # Check if it's actually a Pydantic model class
-        if not isinstance(schema_class, type):
+        # args_schema may also be a dict or a pydantic v1 model, neither of which has model_fields
+        if not isinstance(schema_class, type) or not issubclass(schema_class, BaseModel):
             return {"type": "object", "properties": {}, "required": []}
         return self._pydantic_to_mcp_schema(schema_class)
 

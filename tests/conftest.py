@@ -63,7 +63,7 @@ def module_neo4j_config(request: Any) -> Neo4jContainerConfig:
     )
 
 
-@pytest_asyncio.fixture(scope="module")  # type: ignore[misc]
+@pytest_asyncio.fixture(scope="module")
 async def module_neo4j_container(
     module_neo4j_config: Neo4jContainerConfig,
     neo4j_manager: Neo4jContainerManager,
@@ -242,7 +242,7 @@ def temp_project_dir() -> Generator[Path, None, None]:
         yield Path(temp_dir)
 
 
-@pytest_asyncio.fixture  # type: ignore[misc]
+@pytest_asyncio.fixture
 async def graph_assertions(
     test_data_isolation: Dict[str, Any],
 ) -> GraphAssertions:
@@ -262,7 +262,7 @@ async def graph_assertions(
     )
 
 
-@pytest_asyncio.fixture  # type: ignore[misc]
+@pytest_asyncio.fixture
 async def mcp_server_with_neo4j(
     test_data_isolation: Dict[str, Any],
     temp_project_dir: Path,
